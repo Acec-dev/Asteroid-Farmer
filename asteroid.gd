@@ -25,6 +25,9 @@ func _ready() -> void:
 	can_sleep = false
 	sleeping = false
 	angular_velocity = randf_range(-1.2, 1.2)
+
+	# Connect collision signal to damage player on impact
+	body_entered.connect(_on_body_entered)
 	
 	
 func _kick() -> void:
@@ -58,10 +61,30 @@ func _physics_process(_delta: float) -> void:
 func hit_by_projectile(_p: Node) -> void:
 	hit_points -= 1
 	if hit_points <= 0:
-		# Defer the break; don’t modify the tree/collision right now
+		# Defer the break; don't modify the tree/collision right now
 		call_deferred("_break_safe")
 	else:
 		apply_central_impulse(Vector2(randf_range(-80, 80), randf_range(-80, 80)))
+
+func _on_body_entered(body: Node) -> void:
+	"""Damage player shield when asteroid collides with them"""
+	# Check if the colliding body is the player
+	if body.has_method("take_damage"):
+		var damage_amount := 20.0  # Base damage per collision
+		# Scale damage based on asteroid size (larger asteroids = more damage)
+		var size_multiplier := radius / 28.0  # 28.0 is the default radius
+		var total_damage := damage_amount * size_multiplier
+
+		body.take_damage(total_damage)
+
+		# Apply knockback to both asteroid and player
+		var collision_normal := (global_position - body.global_position).normalized()
+		apply_central_impulse(collision_normal * 100.0 * mass)
+
+		# Reduce asteroid health from the impact
+		hit_points = max(0, hit_points - 1)
+		if hit_points <= 0:
+			call_deferred("_break_safe")
 
 func _spawn_particles() -> void:
 	if particle_scene == null:

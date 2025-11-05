@@ -24,6 +24,11 @@ var _fire_timer: Timer
 
 var _mouse_delta := Vector2.ZERO
 
+# Shield system
+var current_shield: float = 0.0
+var _shield_regen_timer: float = 0.0
+var _can_regenerate: bool = true
+
 func _draw() -> void:
 	var points = PackedVector2Array([
 		Vector2(60, 0),
@@ -50,11 +55,16 @@ func _ready() -> void:
 	_fire_timer.wait_time = 1.0 / max(GameState.fire_rate, 0.01)
 	_fire_timer.start()
 	#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+	# Initialize shield to maximum
+	current_shield = GameState.max_shield
+	GameState.emit_signal("shield_changed", current_shield, GameState.max_shield)
 	
 	
 func _physics_process(delta: float) -> void:
 	_handle_move(delta)
 	_handle_aim(delta)
+	_handle_shield_regeneration(delta)
 	_mouse_delta = Vector2.ZERO  # reset every physics tick
 
 func _handle_move(delta: float) -> void:
@@ -123,12 +133,48 @@ func spawn_rocket():
 	if not rocket_scene:
 		print("ERROR: No rocket scene assigned!")
 		return
-	
+
 	var rocket = rocket_scene.instantiate()
 	rocket.global_position = global_position
 	rocket.rotation = rotation
-	
+
 	# Add to the scene tree
 	get_parent().add_child(rocket)  # Or get_tree().root.add_child(rocket)
-	
+
 	print("Rocket spawned at: ", rocket.global_position)
+
+# === Shield System Functions ===
+
+func _handle_shield_regeneration(delta: float) -> void:
+	"""Regenerate shield over time after the regen delay"""
+	if current_shield < GameState.max_shield:
+		if _can_regenerate:
+			_shield_regen_timer += delta
+			if _shield_regen_timer >= GameState.shield_regen_delay:
+				# Start regenerating
+				current_shield = min(current_shield + GameState.shield_regen_rate * delta, GameState.max_shield)
+				GameState.emit_signal("shield_changed", current_shield, GameState.max_shield)
+
+func take_damage(amount: float) -> void:
+	"""Damage the shield and reset regeneration timer"""
+	current_shield = max(0.0, current_shield - amount)
+	_shield_regen_timer = 0.0  # Reset regen timer
+	_can_regenerate = true
+	GameState.emit_signal("shield_changed", current_shield, GameState.max_shield)
+
+	# Visual feedback - flash the ship
+	modulate = Color(1.5, 0.5, 0.5)  # Red flash
+	await get_tree().create_timer(0.1).timeout
+	modulate = Color.WHITE
+
+	if current_shield <= 0:
+		_on_shield_depleted()
+
+func _on_shield_depleted() -> void:
+	"""Called when shield reaches zero - handle player death/respawn"""
+	print("Shield depleted! Game Over!")
+	# You can add death/respawn logic here
+	# For now, just respawn the shield after a delay
+	await get_tree().create_timer(2.0).timeout
+	current_shield = GameState.max_shield
+	GameState.emit_signal("shield_changed", current_shield, GameState.max_shield)
