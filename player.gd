@@ -126,7 +126,7 @@ func spawn_rocket():
 	
 	var rocket = rocket_scene.instantiate()
 	rocket.global_position = global_position
-	rocket.rotation = rotation
+	rocket.rotation = rotation - deg_to_rad(-90)
 	
 	# Add to the scene tree
 	get_parent().add_child(rocket)  # Or get_tree().root.add_child(rocket)

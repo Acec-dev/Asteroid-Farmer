@@ -35,8 +35,8 @@ func _process(delta):
 	if not is_locked:
 		find_nearest_asteroid()
 		
-		# Move forward (accounting for upward-facing sprite)
-		var velocity = Vector2.UP.rotated(rotation) * base_speed  # Changed to UP
+		# Move forward - sprite points up, so use UP
+		var velocity = Vector2.UP.rotated(rotation) * base_speed
 		global_position += velocity * delta
 	else:
 		if target_asteroid and is_instance_valid(target_asteroid):
@@ -51,10 +51,11 @@ func _process(delta):
 			
 			global_position = current_pos
 			
-			# Rotate to face direction (with -90° offset for upward sprite)
+			# Calculate direction of travel
 			var direction = (next_pos - current_pos).normalized()
 			if direction.length() > 0:
-				var target_rotation = direction.angle() - deg_to_rad(90)
+				# For upward-facing sprite, subtract 90 degrees (PI/2)
+				var target_rotation = direction.angle() + deg_to_rad(90)
 				rotation = lerp_angle(rotation, target_rotation, rotation_speed * delta)
 		else:
 			unlock_target()
@@ -74,7 +75,8 @@ func find_nearest_asteroid():
 		
 		# Check if asteroid is in front cone
 		var direction_to = (asteroid.global_position - global_position).normalized()
-		var forward = Vector2.RIGHT.rotated(rotation)
+		# For upward-facing sprite, forward is UP rotated by current rotation
+		var forward = Vector2.UP.rotated(rotation)
 		var dot_product = forward.dot(direction_to)
 		
 		# Only consider targets in front cone
@@ -143,11 +145,6 @@ func _on_body_entered(body):
 	if body.is_in_group("asteroids"):
 		hit_asteroid()
 
-#func _on_area_entered(area):
-	#if area.is_in_group("asteroids"):
-		#hit_asteroid()
-
-
 func _spawn_particles() -> void:
 	if explosion_scene == null:
 		return
@@ -159,7 +156,7 @@ func _spawn_particles() -> void:
 	if fx is GPUParticles2D:
 		fx.one_shot = true
 		fx.emitting = true
-		fx.finished.connect(fx.queue_free) # Godot 4 signal
+		fx.finished.connect(fx.queue_free)
 	else:
 		var p := fx.get_node_or_null("GPUParticles2D")
 		if p:
@@ -167,7 +164,6 @@ func _spawn_particles() -> void:
 			p.emitting = true
 			p.finished.connect(fx.queue_free)
 		else:
-			# Fallback: timed self-destruct if you don’t have a GPUParticles2D under fx
 			var t := Timer.new()
 			t.one_shot = true
 			t.wait_time = 2.0
