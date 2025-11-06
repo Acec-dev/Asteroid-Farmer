@@ -6,6 +6,7 @@ extends Node
 signal credits_changed(new_credits: int)
 signal inventory_changed()
 signal new_pickup
+signal shield_changed(current: float, maximum: float)
 
 var credits: int = 0
 var minerals := {
@@ -18,6 +19,13 @@ var minerals := {
 var fire_rate: float = 4.0 # shots per second (pairs)
 var move_follow_strength: float = 12.0 # higher -> snappier cursor follow
 var projectile_speed: float = 800.0
+
+#Shield/Armor upgrade system
+var max_shield: float = 100.0 # maximum shield capacity (upgradeable)
+var shield_regen_rate: float = 10.0 # shield points per second (upgradeable)
+var shield_regen_delay: float = 3.0 # seconds before shield starts regenerating after damage
+
+
 
 @export var current_mat: String = "iron"
 
