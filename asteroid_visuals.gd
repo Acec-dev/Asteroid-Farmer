@@ -6,6 +6,16 @@ extends Node2D
 var _poly: PackedVector2Array
 
 func _ready() -> void:
+	_generate_shape()
+
+func set_radius(new_radius: float) -> void:
+	"""Update the asteroid's visual size"""
+	radius = new_radius
+	_generate_shape()
+	queue_redraw()
+
+func _generate_shape() -> void:
+	"""Generate the irregular asteroid shape"""
 	_poly = PackedVector2Array()
 	for i in segments:
 		var ang := TAU * float(i) / float(segments)
@@ -14,8 +24,7 @@ func _ready() -> void:
 	# Close the loop
 	_poly.append(_poly[0])
 	queue_redraw()
-		#scale = Vector2(0.5, 0.5)
 
 func _draw() -> void:
-	# White irregular outline (same as before)
+	# White irregular outline
 	draw_polyline(_poly, Color.WHITE, 2.0)
