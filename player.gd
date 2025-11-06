@@ -41,10 +41,6 @@ func _draw() -> void:
 		Vector2(60, 0)
 	])
 	draw_polyline(points, Color.WHITE)
-	
-	# Initialize shield to maximum
-	current_shield = GameState.max_shield
-	GameState.emit_signal("shield_changed", current_shield, GameState.max_shield)
 
 func _ready() -> void:
 	_fire_timer = Timer.new()
@@ -56,9 +52,8 @@ func _ready() -> void:
 	
 	#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	# Initialize shield to full
-	GameState.current_shield = GameState.max_shield
-
-	GameState.shield_changed.emit(GameState.current_shield, GameState.max_shield)
+	current_shield = GameState.max_shield
+	GameState.shield_changed.emit(current_shield, GameState.max_shield)
 	
 func _physics_process(delta: float) -> void:
 	_handle_move(delta)
