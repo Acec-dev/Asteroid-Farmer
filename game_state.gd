@@ -22,6 +22,7 @@ var projectile_speed: float = 800.0
 
 #Shield/Armor upgrade system
 var max_shield: float = 100.0 # maximum shield capacity (upgradeable)
+var current_shield: float = 100.0 # current shield value
 var shield_regen_rate: float = 10.0 # shield points per second (upgradeable)
 var shield_regen_delay: float = 3.0 # seconds before shield starts regenerating after damage
 

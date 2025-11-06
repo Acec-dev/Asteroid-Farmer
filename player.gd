@@ -19,6 +19,7 @@ var aim := Vector2.ZERO
 var FloatingText2D := preload("res://Scenes/floating_text_2d.tscn")
 var _vel: Vector2 = Vector2.ZERO
 var _fire_timer: Timer
+var _shield_regen_timer: float = 0.0  # Time since last damage
 
 @export var mouse_move_threshold := 0.5  # pixels per frame
 
@@ -50,11 +51,16 @@ func _ready() -> void:
 	_fire_timer.wait_time = 1.0 / max(GameState.fire_rate, 0.01)
 	_fire_timer.start()
 	#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+
+	# Initialize shield to full
+	GameState.current_shield = GameState.max_shield
+	GameState.shield_changed.emit(GameState.current_shield, GameState.max_shield)
 	
 	
 func _physics_process(delta: float) -> void:
 	_handle_move(delta)
 	_handle_aim(delta)
+	_handle_shield_regen(delta)
 	_mouse_delta = Vector2.ZERO  # reset every physics tick
 
 func _handle_move(delta: float) -> void:
@@ -110,6 +116,40 @@ func popup_mineral(mineral_name: String) -> void:
 	# start position just above the player, with tiny x jitter
 	var start := global_position
 	ft.show_text(mineral_name, start)
+
+func take_damage(amount: float) -> void:
+	"""Called when the player takes damage from asteroids or other sources"""
+	# Reduce shield by damage amount
+	GameState.current_shield = max(0.0, GameState.current_shield - amount)
+
+	# Reset the regeneration timer (delay before regen starts)
+	_shield_regen_timer = 0.0
+
+	# Emit signal to update UI
+	GameState.shield_changed.emit(GameState.current_shield, GameState.max_shield)
+
+	# Optional: Add visual feedback or sound effect here
+	# print("Player took ", amount, " damage! Shield: ", GameState.current_shield)
+
+func _handle_shield_regen(delta: float) -> void:
+	"""Regenerate shield after a delay following damage"""
+	# Only regenerate if shield is not at max
+	if GameState.current_shield < GameState.max_shield:
+		# Increment the timer
+		_shield_regen_timer += delta
+
+		# Check if enough time has passed since last damage
+		if _shield_regen_timer >= GameState.shield_regen_delay:
+			# Regenerate shield
+			var old_shield = GameState.current_shield
+			GameState.current_shield = min(
+				GameState.max_shield,
+				GameState.current_shield + GameState.shield_regen_rate * delta
+			)
+
+			# Only emit signal if shield actually changed
+			if GameState.current_shield != old_shield:
+				GameState.shield_changed.emit(GameState.current_shield, GameState.max_shield)
 	
 func enable_rockets():
 	print("enabling rockets")
