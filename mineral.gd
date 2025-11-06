@@ -4,12 +4,15 @@ signal mineral_pickup
 
 @export var value: int = 1
 @export var drift: float = 40.0
+@export var magnet_range: float = 150.0  # Distance at which magnetism starts working
+@export var magnet_strength: float = 80.0  # How strong the pull is
 var _life := 8.0
 
 var minerals := ["iron", "nickel", "silica"]
 
-
 @export var kind: StringName = minerals.pick_random()
+
+var _player: Node2D = null
 
 func _get_kind():
 	return kind
@@ -20,9 +23,37 @@ func _ready() -> void:
 	area_entered.connect(_on_area)
 	body_entered.connect(_on_body)
 	queue_redraw()
+	
+	# Find the player
+	_find_player()
+
+func _find_player() -> void:
+	# Look for player in the scene
+	var root = get_tree().current_scene
+	for child in root.get_children():
+		if child.name == "Player" or child.has_method("popup_mineral"):
+			_player = child
+			break
 
 func _process(delta: float) -> void:
-	position += Vector2(randf_range(-1,1), randf_range(-1,1)) * drift * delta
+	# Random drift
+	var movement = Vector2(randf_range(-1,1), randf_range(-1,1)) * drift * delta
+	
+	# Magnetic attraction to player
+	if _player and is_instance_valid(_player):
+		var distance_to_player = global_position.distance_to(_player.global_position)
+		
+		if distance_to_player < magnet_range:
+			# Calculate pull strength (stronger when closer)
+			var pull_factor = 1.0 - (distance_to_player / magnet_range)
+			var direction_to_player = ((_player.global_position - global_position).normalized())
+			
+			# Add magnetic pull to movement
+			movement += direction_to_player * magnet_strength * pull_factor * delta
+	
+	position += movement
+	
+	# Lifetime
 	_life -= delta
 	if _life <= 0:
 		queue_free()
