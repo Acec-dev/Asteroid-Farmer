@@ -32,7 +32,10 @@ func _ready() -> void:
 		visuals.set_radius(radius)
 	
 	# Connect collision signal
-	body_entered.connect(_on_body_entered)
+	#body_entered.connect(_on_body_entered)
+	
+	contact_monitor = true
+	max_contacts_reported = 4
 	
 func _kick() -> void:
 	linear_damp = 0.0
@@ -86,7 +89,7 @@ func _on_body_entered(body: Node) -> void:
 		apply_central_impulse(collision_normal * 100.0 * mass)
 
 		# Reduce asteroid health from the impact
-		hit_points = max(0, hit_points - 1)
+		hit_points = 0
 		if hit_points <= 0:
 			call_deferred("_break_safe")
 

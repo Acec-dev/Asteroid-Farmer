@@ -193,6 +193,10 @@ func _on_shield_depleted() -> void:
 	print("Shield depleted! Game Over!")
 	# You can add death/respawn logic here
 	# For now, just respawn the shield after a delay
-	await get_tree().create_timer(2.0).timeout
-	current_shield = GameState.max_shield
-	GameState.emit_signal("shield_changed", current_shield, GameState.max_shield)
+	
+	#get_tree().quit()
+	
+	#await get_tree().create_timer(2.0).timeout
+	get_tree().change_scene_to_file("res://Scenes/GameOver.tscn")
+	#current_shield = GameState.max_shield
+	#GameState.emit_signal("shield_changed", current_shield, GameState.max_shield)
