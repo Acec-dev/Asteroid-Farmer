@@ -34,6 +34,10 @@ var _market_timer: float = 0.0
 const MARKET_UPDATE_INTERVAL := 3.0
 var _market_cycle: float = 0.0  # For sine wave calculation
 
+# Nickel sales tracking for supply/demand
+var _nickel_recent_sales: float = 0.0  # Tracks recent nickel sales
+const NICKEL_SALES_DECAY_RATE := 0.15  # How fast sales pressure decays per tick
+
 # Upgrade hooks (read by Player/Spawner/etc.)
 var fire_rate: float = 4.0 # shots per second (pairs)
 var move_follow_strength: float = 12.0 # higher -> snappier cursor follow
@@ -74,6 +78,11 @@ func sell_all() -> void:
 		if count > 0:
 			var price := _price_for(k)
 			total += price * count
+
+			# Track nickel sales for market pressure
+			if k == "nickel":
+				_nickel_recent_sales += count
+
 			minerals[k] = 0
 	if total > 0:
 		add_credits(total)
@@ -97,13 +106,15 @@ func _update_market_prices() -> void:
 	var new_iron_price = market_prices["iron"] + iron_change
 	market_prices["iron"] = clampi(new_iron_price, 1, 7)
 
-	# Nickel: Supply and demand based (1-7 credits)
-	var nickel_inventory = minerals["nickel"]
-	# More inventory = lower prices (each unit reduces price by 1%)
-	var supply_factor = 1.0 - (nickel_inventory * 0.01)
-	supply_factor = clamp(supply_factor, 0.25, 1.75)  # Range to produce 1-7
+	# Nickel: Supply and demand based on recent sales (1-7 credits)
+	# Decay recent sales pressure over time
+	_nickel_recent_sales = max(0.0, _nickel_recent_sales - NICKEL_SALES_DECAY_RATE)
+
+	# Price decreases with recent sales (each unit sold reduces price)
+	var sales_pressure = 1.0 - (_nickel_recent_sales * 0.05)  # 5% reduction per unit sold
+	sales_pressure = clamp(sales_pressure, 0.14, 1.71)  # Range to produce 1-7 when multiplied by 4
 	var base_price = 4  # Middle of 1-7 range
-	market_prices["nickel"] = clampi(int(base_price * supply_factor), 1, 7)
+	market_prices["nickel"] = clampi(int(base_price * sales_pressure), 1, 7)
 
 	# Silica: Sine wave pattern (1-7 credits)
 	_market_cycle += 1.0
@@ -112,3 +123,29 @@ func _update_market_prices() -> void:
 	market_prices["silica"] = clampi(int(center_price + wave), 1, 7)
 
 	emit_signal("prices_changed")
+
+# Debug function to simulate and display price changes over N ticks
+func simulate_market_ticks(num_ticks: int, nickel_sale_at_tick: int = -1, nickel_sale_amount: int = 0) -> void:
+	print("\n=== Market Price Simulation (%d ticks) ===" % num_ticks)
+	print("Tick | Iron | Nickel | Silica | Nickel Sales Pressure")
+	print("-----|------|--------|--------|---------------------")
+
+	# Reset to initial state
+	market_prices = {"iron": 1, "nickel": 4, "silica": 4}
+	_market_cycle = 0.0
+	_nickel_recent_sales = 0.0
+
+	for tick in range(num_ticks):
+		# Simulate a nickel sale at specific tick if requested
+		if tick == nickel_sale_at_tick and nickel_sale_amount > 0:
+			_nickel_recent_sales += nickel_sale_amount
+			print(">>> SELLING %d NICKEL AT TICK %d <<<" % [nickel_sale_amount, tick])
+
+		_update_market_prices()
+		print("%4d | %4d | %6d | %6d | %.2f" % [
+			tick + 1,
+			market_prices["iron"],
+			market_prices["nickel"],
+			market_prices["silica"],
+			_nickel_recent_sales
+		])
