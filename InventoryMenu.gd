@@ -17,7 +17,7 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("toggle_inventory"):
 		visible = not visible
 
-func _refresh() -> void:
+func _refresh(_new_credits: int = 0) -> void:
 	iron_label.text   = "Iron: %d"   % GameState.minerals["iron"]
 	nickel_label.text = "Nickel: %d" % GameState.minerals["nickel"]
 	silica_label.text = "Silica: %d" % GameState.minerals["silica"]
