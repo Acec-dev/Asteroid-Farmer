@@ -13,6 +13,7 @@ func _ready() -> void:
 	visible = true # set to true for debug
 	GameState.inventory_changed.connect(_refresh)
 	GameState.credits_changed.connect(_refresh)
+	GameState.prices_changed.connect(_price_refresh)
 	sell_btn.pressed.connect(_on_sell)
 	_refresh()
 
@@ -27,6 +28,7 @@ func _refresh(_new_credits: int = 0) -> void:
 	silica_label.text = "Silica: %d" % GameState.minerals["silica"]
 	credit_label.text = "Credits: %d" % GameState.credits
 	
+func _price_refresh():
 	iron_price_label.text   = "Iron: $%d"   % GameState.market_prices["iron"]
 	nickel_price_label.text = "Nickel: $%d" % GameState.market_prices["nickel"]
 	silica_price_label.text = "Silica: $%d" % GameState.market_prices["silica"]
