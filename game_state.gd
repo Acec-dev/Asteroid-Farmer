@@ -16,27 +16,12 @@ var minerals := {
 "silica": 0,
 }
 
-# Market price system
-const BASE_PRICES := {
-	"iron": 1,
-	"nickel": 2,
-	"silica": 3
-}
-
+# Market price system (updated by Market singleton)
 var market_prices := {
 	"iron": 1,
 	"nickel": 2,
 	"silica": 3
 }
-
-# Market update timing
-var _market_timer: float = 0.0
-const MARKET_UPDATE_INTERVAL := 3.0
-var _market_cycle: float = 0.0  # For sine wave calculation
-
-# Nickel sales tracking for supply/demand
-var _nickel_recent_sales: float = 0.0  # Tracks recent nickel sales
-const NICKEL_SALES_DECAY_RATE := 0.15  # How fast sales pressure decays per tick
 
 # Upgrade hooks (read by Player/Spawner/etc.)
 var fire_rate: float = 4.0 # shots per second (pairs)
@@ -52,6 +37,20 @@ var shield_regen_delay: float = 3.0 # seconds before shield starts regenerating 
 
 
 @export var current_mat: String = "iron"
+
+
+func _ready() -> void:
+	# Connect to Market singleton for price updates
+	if Market:
+		Market.prices_changed.connect(_on_market_prices_changed)
+		# Sync initial prices
+		market_prices = Market.market_prices.duplicate()
+
+
+func _on_market_prices_changed(new_prices: Dictionary) -> void:
+	market_prices = new_prices.duplicate()
+	emit_signal("prices_changed")
+
 
 func get_mat():
 	return current_mat
@@ -80,8 +79,8 @@ func sell_all() -> void:
 			total += price * count
 
 			# Track nickel sales for market pressure
-			if k == "nickel":
-				_nickel_recent_sales += count
+			if k == "nickel" and Market:
+				Market.record_nickel_sale(count)
 
 			minerals[k] = 0
 	if total > 0:
@@ -93,59 +92,9 @@ func _price_for(kind: StringName) -> int:
 		return market_prices[kind]
 	return 1
 
-# Market price fluctuation system
-func _process(delta: float) -> void:
-	_market_timer += delta
-	if _market_timer >= MARKET_UPDATE_INTERVAL:
-		_market_timer = 0.0
-		_update_market_prices()
 
-func _update_market_prices() -> void:
-	# Iron: Random walk with bounds (1-7 credits)
-	var iron_change = randi_range(-1, 1)  # -1, 0, or +1 credit change
-	var new_iron_price = market_prices["iron"] + iron_change
-	market_prices["iron"] = clampi(new_iron_price, 1, 7)
-
-	# Nickel: Supply and demand based on recent sales (1-7 credits)
-	# Decay recent sales pressure over time
-	_nickel_recent_sales = max(0.0, _nickel_recent_sales - NICKEL_SALES_DECAY_RATE)
-
-	# Price decreases with recent sales (each unit sold reduces price)
-	var sales_pressure = 1.0 - (_nickel_recent_sales * 0.05)  # 5% reduction per unit sold
-	sales_pressure = clamp(sales_pressure, 0.14, 1.71)  # Range to produce 1-7 when multiplied by 4
-	var base_price = 4  # Middle of 1-7 range
-	market_prices["nickel"] = clampi(int(base_price * sales_pressure), 1, 7)
-
-	# Silica: Sine wave pattern (1-7 credits)
-	_market_cycle += 1.0
-	var wave = sin(_market_cycle * 0.5) * 3.0  # Amplitude of 3
-	var center_price = 4  # Center of 1-7 range
-	market_prices["silica"] = clampi(int(center_price + wave), 1, 7)
-
-	emit_signal("prices_changed")
-
-# Debug function to simulate and display price changes over N ticks
-func simulate_market_ticks(num_ticks: int, nickel_sale_at_tick: int = -1, nickel_sale_amount: int = 0) -> void:
-	print("\n=== Market Price Simulation (%d ticks) ===" % num_ticks)
-	print("Tick | Iron | Nickel | Silica | Nickel Sales Pressure")
-	print("-----|------|--------|--------|---------------------")
-
-	# Reset to initial state
-	market_prices = {"iron": 1, "nickel": 4, "silica": 4}
-	_market_cycle = 0.0
-	_nickel_recent_sales = 0.0
-
-	for tick in range(num_ticks):
-		# Simulate a nickel sale at specific tick if requested
-		if tick == nickel_sale_at_tick and nickel_sale_amount > 0:
-			_nickel_recent_sales += nickel_sale_amount
-			print(">>> SELLING %d NICKEL AT TICK %d <<<" % [nickel_sale_amount, tick])
-
-		_update_market_prices()
-		print("%4d | %4d | %6d | %6d | %.2f" % [
-			tick + 1,
-			market_prices["iron"],
-			market_prices["nickel"],
-			market_prices["silica"],
-			_nickel_recent_sales
-		])
+## Get price from Market singleton (convenience wrapper)
+func get_market_price(mineral: String) -> int:
+	if Market:
+		return Market.get_price(mineral)
+	return _price_for(mineral)
