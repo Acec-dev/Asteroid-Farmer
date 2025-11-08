@@ -9,6 +9,7 @@ func _ready() -> void:
 	visible = true
 	GameState.inventory_changed.connect(_refresh)
 	GameState.credits_changed.connect(_refresh)
+	GameState.prices_changed.connect(_refresh)
 	sell_btn.pressed.connect(_on_sell)
 	_refresh()
 
@@ -18,9 +19,13 @@ func _input(event: InputEvent) -> void:
 		visible = not visible
 
 func _refresh(_new_credits: int = 0) -> void:
-	iron_label.text   = "Iron: %d"   % GameState.minerals["iron"]
-	nickel_label.text = "Nickel: %d" % GameState.minerals["nickel"]
-	silica_label.text = "Silica: %d" % GameState.minerals["silica"]
+	var iron_price = GameState.market_prices["iron"]
+	var nickel_price = GameState.market_prices["nickel"]
+	var silica_price = GameState.market_prices["silica"]
+
+	iron_label.text   = "Iron: %d (@%dc)"   % [GameState.minerals["iron"], iron_price]
+	nickel_label.text = "Nickel: %d (@%dc)" % [GameState.minerals["nickel"], nickel_price]
+	silica_label.text = "Silica: %d (@%dc)" % [GameState.minerals["silica"], silica_price]
 
 func _on_sell() -> void:
 	GameState.sell_all()
