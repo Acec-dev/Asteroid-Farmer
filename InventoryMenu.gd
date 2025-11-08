@@ -6,7 +6,7 @@ extends Control
 @onready var silica_label := $Panel/VBox/SilicaLabel
 
 func _ready() -> void:
-	visible = true
+	visible = true # true for debugging
 	GameState.inventory_changed.connect(_refresh)
 	GameState.credits_changed.connect(_refresh)
 	sell_btn.pressed.connect(_on_sell)
