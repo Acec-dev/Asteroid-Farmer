@@ -16,6 +16,7 @@ func _ready() -> void:
 	GameState.prices_changed.connect(_price_refresh)
 	sell_btn.pressed.connect(_on_sell)
 	_refresh()
+	_price_refresh()
 
 
 func _input(event: InputEvent) -> void:
