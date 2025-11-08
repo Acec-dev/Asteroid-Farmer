@@ -31,7 +31,7 @@ var market_prices := {
 
 # Market update timing
 var _market_timer: float = 0.0
-const MARKET_UPDATE_INTERVAL := 10.0
+const MARKET_UPDATE_INTERVAL := 3.0
 var _market_cycle: float = 0.0  # For sine wave calculation
 
 # Upgrade hooks (read by Player/Spawner/etc.)
@@ -92,23 +92,23 @@ func _process(delta: float) -> void:
 		_update_market_prices()
 
 func _update_market_prices() -> void:
-	# Iron: Random walk with bounds (50% - 200% of base price)
+	# Iron: Random walk with bounds (1-7 credits)
 	var iron_change = randi_range(-1, 1)  # -1, 0, or +1 credit change
 	var new_iron_price = market_prices["iron"] + iron_change
-	var iron_min = int(BASE_PRICES["iron"] * 0.5)
-	var iron_max = int(BASE_PRICES["iron"] * 2.0)
-	market_prices["iron"] = clampi(new_iron_price, max(1, iron_min), iron_max)
+	market_prices["iron"] = clampi(new_iron_price, 1, 7)
 
-	# Nickel: Supply and demand based
+	# Nickel: Supply and demand based (1-7 credits)
 	var nickel_inventory = minerals["nickel"]
-	# More inventory = lower prices (each unit reduces price by 2%)
-	var supply_factor = 1.0 - (nickel_inventory * 0.02)
-	supply_factor = clamp(supply_factor, 0.5, 2.0)  # 50% - 200% range
-	market_prices["nickel"] = max(1, int(BASE_PRICES["nickel"] * supply_factor))
+	# More inventory = lower prices (each unit reduces price by 1%)
+	var supply_factor = 1.0 - (nickel_inventory * 0.01)
+	supply_factor = clamp(supply_factor, 0.25, 1.75)  # Range to produce 1-7
+	var base_price = 4  # Middle of 1-7 range
+	market_prices["nickel"] = clampi(int(base_price * supply_factor), 1, 7)
 
-	# Silica: Sine wave pattern (±30% fluctuation)
+	# Silica: Sine wave pattern (1-7 credits)
 	_market_cycle += 1.0
-	var wave = sin(_market_cycle * 0.5) * 0.3  # ±30%
-	market_prices["silica"] = max(1, int(BASE_PRICES["silica"] * (1.0 + wave)))
+	var wave = sin(_market_cycle * 0.5) * 3.0  # Amplitude of 3
+	var center_price = 4  # Center of 1-7 range
+	market_prices["silica"] = clampi(int(center_price + wave), 1, 7)
 
 	emit_signal("prices_changed")
