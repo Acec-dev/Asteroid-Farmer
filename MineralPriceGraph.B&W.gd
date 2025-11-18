@@ -106,8 +106,8 @@ func _draw_grid(origin: Vector2, width: float, height: float) -> void:
 
 func _draw_labels(origin: Vector2, width: float, height: float) -> void:
 	# Title
-	var mineral_name := GameState.MINERAL_NAMES.get(mineral_type, "Unknown")
-	var title := mineral_name.capitalize() + " Price History"
+	var mineral_name = GameState.MINERAL_NAMES.get(mineral_type, "Unknown")
+	var title = mineral_name.capitalize() + " Price History"
 	draw_string(
 		title_font,
 		Vector2(margin_left, margin_top - 10),
