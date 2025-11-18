@@ -9,12 +9,17 @@ extends CharacterBody2D
 @export var muzzle_separation: float = 16.0
 var projectile_scene: PackedScene = preload("res://Scenes/projectile.tscn")
 var rocket_scene: PackedScene = preload("res://Scenes/rocket.tscn")
+var laser_scene: PackedScene  # Will be set when laser is enabled
 
 # --- Hitscan settings ---
 @export var fire_interval: float = 0.5  # seconds between shots
 @export var max_range: float = 2000.0   # maximum shooting range
 @export var visual_projectile_speed: float = 2500.0  # purely visual
 @export var damage_per_shot: int = 1  # damage dealt per hitscan shot
+
+# --- Laser system ---
+var _laser_node: Node2D = null
+var _laser_enabled: bool = false
 
 var FloatingText2D := preload("res://Scenes/floating_text_2d.tscn")
 var _vel: Vector2 = Vector2.ZERO
@@ -55,11 +60,15 @@ func _ready() -> void:
 	current_shield = GameState.max_shield
 	GameState.shield_changed.emit(current_shield, GameState.max_shield)
 	
+	enable_laser()
+	
 func _physics_process(delta: float) -> void:
 	_handle_move(delta)
 	_handle_aim()
 	_handle_shield_regeneration(delta)
 	_mouse_delta = Vector2.ZERO  # Reset after processing
+	
+	_handle_laser()
 
 func _handle_move(delta: float) -> void:
 	# WASD movement - completely independent of aiming
@@ -76,6 +85,18 @@ func _handle_aim() -> void:
 		var mouse_pos := get_global_mouse_position()
 		var direction := (mouse_pos - global_position).normalized()
 		rotation = direction.angle()
+
+func _handle_laser() -> void:
+	"""Handle laser firing based on input"""
+	if not _laser_enabled or not _laser_node:
+		return
+	# Check if right mouse button is held down
+	if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+		if _laser_node.has_method("activate"):
+			_laser_node.activate()
+	else:
+		if _laser_node.has_method("deactivate"):
+			_laser_node.deactivate()
 
 func _on_fire_timeout() -> void:
 	# Perform hitscan from both muzzle positions
@@ -160,6 +181,19 @@ func spawn_rocket():
 	
 	get_parent().add_child(rocket)
 	print("Rocket spawned at: ", rocket.global_position, " with rotation: ", rad_to_deg(rocket.rotation))
+
+func enable_laser():
+	"""Enable the laser weapon upgrade"""
+	print("Enabling laser weapon")
+	_laser_enabled = true
+	# Load the laser scene
+	var laser_script = load("res://scripts/laser.gd")
+	_laser_node = Node2D.new()
+	_laser_node.set_script(laser_script)
+	_laser_node.name = "Laser"
+	# Add as child so it follows the ship
+	add_child(_laser_node)
+	print("Laser weapon enabled! Hold RIGHT MOUSE BUTTON to fire.")
 
 # === Shield System Functions ===
 
