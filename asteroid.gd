@@ -5,7 +5,7 @@ class_name Asteroid
 @export var hit_points: int = 2  # Big asteroids take 2 hits
 @export var split_radius_factor: float = 0.5  # Child radius = parent radius * this factor
 @export var min_split_radius: float = 14.0  # Don't split if radius would be smaller than this
-@export var mineral_kind: StringName = "iron"
+@export var mineral_kind: GameState.MineralType = GameState.MineralType.IRON
 @export var mineral_drop_scene: PackedScene = preload("res://Scenes/mineral.tscn")
 @export var mineral_drop_count: int = 1
 @export var debug_draw_path: bool = false
@@ -135,6 +135,7 @@ func _break_safe() -> void:
 	for i in mineral_drop_count:
 		if mineral_drop_scene:
 			var m = mineral_drop_scene.instantiate()
+			m.kind = mineral_kind  # Set the mineral type
 			m.global_position = global_position + Vector2(randf_range(-8,8), randf_range(-8,8))
 			get_tree().current_scene.add_child(m)
 	

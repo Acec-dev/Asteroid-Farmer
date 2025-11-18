@@ -9,23 +9,23 @@ signal prices_changed(new_prices: Dictionary)
 
 ## Base prices for each mineral
 const BASE_PRICES := {
-	"iron": 1,
-	"nickel": 2,
-	"silica": 3
+	GameState.MineralType.IRON: 1,
+	GameState.MineralType.NICKEL: 2,
+	GameState.MineralType.SILICA: 3
 }
 
 ## Current market prices
 var market_prices := {
-	"iron": 1,
-	"nickel": 2,
-	"silica": 3
+	GameState.MineralType.IRON: 1,
+	GameState.MineralType.NICKEL: 2,
+	GameState.MineralType.SILICA: 3
 }
 
 ## Price history - tracks last 10 prices for each mineral
 var price_history := {
-	"iron": [],
-	"nickel": [],
-	"silica": []
+	GameState.MineralType.IRON: [],
+	GameState.MineralType.NICKEL: [],
+	GameState.MineralType.SILICA: []
 }
 
 ## Maximum number of historical prices to track
@@ -44,7 +44,7 @@ var _timer: Timer
 
 func _ready() -> void:
 	# Initialize price history with starting prices
-	for mineral in ["iron", "nickel", "silica"]:
+	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA]:
 		price_history[mineral].append(market_prices[mineral])
 
 	# Create and configure timer
@@ -68,7 +68,7 @@ func _update_market_prices() -> void:
 	_update_silica_price()
 
 	# Add current prices to history (limited to MAX_HISTORY_LENGTH)
-	for mineral in ["iron", "nickel", "silica"]:
+	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA]:
 		price_history[mineral].append(market_prices[mineral])
 		if price_history[mineral].size() > MAX_HISTORY_LENGTH:
 			price_history[mineral].pop_front()
@@ -78,16 +78,16 @@ func _update_market_prices() -> void:
 
 	# Debug output
 	print("Market Update - Iron: $%d  Nickel: $%d  Silica: $%d" % [
-		market_prices["iron"],
-		market_prices["nickel"],
-		market_prices["silica"]
+		market_prices[GameState.MineralType.IRON],
+		market_prices[GameState.MineralType.NICKEL],
+		market_prices[GameState.MineralType.SILICA]
 	])
 
 
 ## Iron uses a random walk model
 func _update_iron_price() -> void:
 	var change := randi() % 3 - 1  # -1, 0, or +1
-	market_prices["iron"] = clampi(market_prices["iron"] + change, 1, 7)
+	market_prices[GameState.MineralType.IRON] = clampi(market_prices[GameState.MineralType.IRON] + change, 1, 7)
 
 
 ## Nickel uses supply/demand based on player sales
@@ -98,14 +98,14 @@ func _update_nickel_price() -> void:
 	# Calculate price based on sales pressure
 	var base_price := 4
 	var sales_impact := int(_nickel_recent_sales * 0.05 * base_price)
-	market_prices["nickel"] = clampi(base_price - sales_impact, 1, 7)
+	market_prices[GameState.MineralType.NICKEL] = clampi(base_price - sales_impact, 1, 7)
 
 
 ## Silica uses a predictable sine wave pattern
 func _update_silica_price() -> void:
 	_market_cycle += 1
 	var wave := sin(_market_cycle * 0.5) * 3
-	market_prices["silica"] = clampi(4 + int(wave), 1, 7)
+	market_prices[GameState.MineralType.SILICA] = clampi(4 + int(wave), 1, 7)
 
 
 ## Called when player sells nickel - affects future prices
@@ -114,26 +114,26 @@ func record_nickel_sale(amount: int) -> void:
 
 
 ## Get current price for a mineral
-func get_price(mineral: String) -> int:
+func get_price(mineral: GameState.MineralType) -> int:
 	return market_prices.get(mineral, 0)
 
 
 ## Get price history for a mineral (returns array of last N prices)
-func get_price_history(mineral: String) -> Array:
+func get_price_history(mineral: GameState.MineralType) -> Array:
 	return price_history.get(mineral, [])
 
 
 ## Reset market to initial state
 func reset_market() -> void:
 	market_prices = {
-		"iron": 1,
-		"nickel": 2,
-		"silica": 3
+		GameState.MineralType.IRON: 1,
+		GameState.MineralType.NICKEL: 2,
+		GameState.MineralType.SILICA: 3
 	}
 	price_history = {
-		"iron": [1],
-		"nickel": [2],
-		"silica": [3]
+		GameState.MineralType.IRON: [1],
+		GameState.MineralType.NICKEL: [2],
+		GameState.MineralType.SILICA: [3]
 	}
 	_nickel_recent_sales = 0.0
 	_market_cycle = 0
