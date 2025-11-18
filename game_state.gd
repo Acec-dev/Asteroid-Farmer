@@ -1,5 +1,24 @@
 extends Node
 
+# Mineral type enum for type-safe mineral handling
+enum MineralType {
+	IRON,
+	NICKEL,
+	SILICA
+}
+
+# Helper dictionaries for enum/string conversion
+const MINERAL_NAMES = {
+	MineralType.IRON: "iron",
+	MineralType.NICKEL: "nickel",
+	MineralType.SILICA: "silica"
+}
+
+const STRING_TO_MINERAL = {
+	"iron": MineralType.IRON,
+	"nickel": MineralType.NICKEL,
+	"silica": MineralType.SILICA
+}
 
 # Global, super-lightweight state. Autoload this as "GameState".
 
@@ -11,16 +30,16 @@ signal prices_changed()
 
 var credits: int = 0
 var minerals := {
-"iron": 0,
-"nickel": 0,
-"silica": 0,
+	MineralType.IRON: 0,
+	MineralType.NICKEL: 0,
+	MineralType.SILICA: 0,
 }
 
 # Market price system (updated by Market singleton)
 var market_prices := {
-	"iron": 1,
-	"nickel": 2,
-	"silica": 3
+	MineralType.IRON: 1,
+	MineralType.NICKEL: 2,
+	MineralType.SILICA: 3
 }
 
 # Upgrade hooks (read by Player/Spawner/etc.)
@@ -36,7 +55,7 @@ var shield_regen_delay: float = 3.0 # seconds before shield starts regenerating 
 
 
 
-@export var current_mat: String = "iron"
+@export var current_mat: MineralType = MineralType.IRON
 
 
 func _ready() -> void:
@@ -55,7 +74,7 @@ func _on_market_prices_changed(new_prices: Dictionary) -> void:
 func get_mat():
 	return current_mat
 
-func add_mat(kind):
+func add_mat(kind: MineralType):
 	current_mat = kind
 	return current_mat
 
@@ -63,7 +82,7 @@ func add_credits(amount: int) -> void:
 	credits = max(0, credits + amount)
 	emit_signal("credits_changed", credits)
 
-func add_mineral(kind: StringName, amount: int = 1) -> void:
+func add_mineral(kind: MineralType, amount: int = 1) -> void:
 	if not minerals.has(kind):
 		minerals[kind] = 0
 	minerals[kind] += amount
@@ -79,7 +98,7 @@ func sell_all() -> void:
 			total += price * count
 
 			# Track nickel sales for market pressure
-			if k == "nickel" and Market:
+			if k == MineralType.NICKEL and Market:
 				Market.record_nickel_sale(count)
 
 			minerals[k] = 0
@@ -87,14 +106,14 @@ func sell_all() -> void:
 		add_credits(total)
 		emit_signal("inventory_changed")
 
-func _price_for(kind: StringName) -> int:
+func _price_for(kind: MineralType) -> int:
 	if market_prices.has(kind):
 		return market_prices[kind]
 	return 1
 
 
 ## Get price from Market singleton (convenience wrapper)
-func get_market_price(mineral: String) -> int:
+func get_market_price(mineral: MineralType) -> int:
 	if Market:
 		return Market.get_price(mineral)
 	return _price_for(mineral)

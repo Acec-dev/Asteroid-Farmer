@@ -8,9 +8,7 @@ signal mineral_pickup
 @export var magnet_strength: float = 80.0  # How strong the pull is
 var _life := 8.0
 
-var minerals := ["iron", "nickel", "silica"]
-
-@export var kind: StringName = minerals.pick_random()
+@export var kind: GameState.MineralType = GameState.MineralType.IRON
 
 var _player: Node2D = null
 

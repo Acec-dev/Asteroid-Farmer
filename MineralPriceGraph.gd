@@ -4,7 +4,7 @@ extends Control
 ## Automatically updates when Market prices change
 
 ## The mineral to track (iron, nickel, or silica)
-@export var mineral_type: String = "iron"
+@export var mineral_type: GameState.MineralType = GameState.MineralType.IRON
 
 ## Graph visual settings
 @export_group("Appearance")
@@ -99,7 +99,8 @@ func _draw_grid(origin: Vector2, width: float, height: float) -> void:
 
 func _draw_labels(origin: Vector2, width: float, height: float) -> void:
 	# Title
-	var title := mineral_type.capitalize() + " Price History"
+	var mineral_name := GameState.MINERAL_NAMES.get(mineral_type, "Unknown")
+	var title := mineral_name.capitalize() + " Price History"
 	draw_string(
 		ThemeDB.fallback_font,
 		Vector2(margin_left, margin_top - 10),
@@ -174,7 +175,7 @@ func _draw_price_line(origin: Vector2, width: float, height: float) -> void:
 
 
 ## Manually set the mineral type to track
-func set_mineral_type(new_mineral: String) -> void:
+func set_mineral_type(new_mineral: GameState.MineralType) -> void:
 	mineral_type = new_mineral
 	if Market:
 		_price_history = Market.get_price_history(mineral_type).duplicate()

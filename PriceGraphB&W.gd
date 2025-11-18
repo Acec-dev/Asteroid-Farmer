@@ -33,21 +33,21 @@ func _ready() -> void:
 
 	# Create Iron graph
 	var iron_graph = preload("res://Scripts/MineralPriceGraph.B&W.gd").new()
-	iron_graph.mineral_type = "iron"
+	iron_graph.mineral_type = GameState.MineralType.IRON
 	iron_graph.line_color = Color.WHITE
 	iron_graph.custom_minimum_size = Vector2(350, 250)
 	graph_container.add_child(iron_graph)
 
 	# Create Nickel graph
 	var nickel_graph = preload("res://Scripts/MineralPriceGraph.B&W.gd").new()
-	nickel_graph.mineral_type = "nickel"
+	nickel_graph.mineral_type = GameState.MineralType.NICKEL
 	nickel_graph.line_color = Color.WHITE
 	nickel_graph.custom_minimum_size = Vector2(350, 250)
 	graph_container.add_child(nickel_graph)
 
 	# Create Silica graph
 	var silica_graph = preload("res://Scripts/MineralPriceGraph.B&W.gd").new()
-	silica_graph.mineral_type = "silica"
+	silica_graph.mineral_type = GameState.MineralType.SILICA
 	silica_graph.line_color = Color.WHITE
 	silica_graph.custom_minimum_size = Vector2(350, 250)
 	graph_container.add_child(silica_graph)

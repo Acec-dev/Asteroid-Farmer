@@ -50,11 +50,11 @@ func _create_price_graphs() -> void:
 	vbox.add_child(graph_container)
 
 	# Create a graph for each mineral
-	var minerals = ["iron", "nickel", "silica"]
+	var minerals = [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA]
 	var colors = {
-		"iron": Color.STEEL_BLUE,
-		"nickel": Color.DARK_SEA_GREEN,
-		"silica": Color.LIGHT_CORAL
+		GameState.MineralType.IRON: Color.STEEL_BLUE,
+		GameState.MineralType.NICKEL: Color.DARK_SEA_GREEN,
+		GameState.MineralType.SILICA: Color.LIGHT_CORAL
 	}
 
 	for mineral in minerals:
@@ -77,16 +77,16 @@ func _input(event: InputEvent) -> void:
 
 
 func _refresh(_new_credits: int = 0) -> void:
-	iron_label.text   = "Iron: %d"   % GameState.minerals["iron"]
-	nickel_label.text = "Nickel: %d" % GameState.minerals["nickel"]
-	silica_label.text = "Silica: %d" % GameState.minerals["silica"]
+	iron_label.text   = "Iron: %d"   % GameState.minerals[GameState.MineralType.IRON]
+	nickel_label.text = "Nickel: %d" % GameState.minerals[GameState.MineralType.NICKEL]
+	silica_label.text = "Silica: %d" % GameState.minerals[GameState.MineralType.SILICA]
 	credit_label.text = "Credits: %d" % GameState.credits
 
 
 func _price_refresh():
-	iron_price_label.text   = "Iron: $%d"   % GameState.market_prices["iron"]
-	nickel_price_label.text = "Nickel: $%d" % GameState.market_prices["nickel"]
-	silica_price_label.text = "Silica: $%d" % GameState.market_prices["silica"]
+	iron_price_label.text   = "Iron: $%d"   % GameState.market_prices[GameState.MineralType.IRON]
+	nickel_price_label.text = "Nickel: $%d" % GameState.market_prices[GameState.MineralType.NICKEL]
+	silica_price_label.text = "Silica: $%d" % GameState.market_prices[GameState.MineralType.SILICA]
 
 
 func _on_sell() -> void:
