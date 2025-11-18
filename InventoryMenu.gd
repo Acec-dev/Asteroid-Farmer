@@ -10,9 +10,7 @@ extends Control
 @onready var silica_price_label = $Panel/VBox/HBox/VBoxContainer/SilicaPriceLabel
 
 func _ready() -> void:
-	visible = true # true for debugging
-
-
+	visible = true # set to true for debug
 	GameState.inventory_changed.connect(_refresh)
 	GameState.credits_changed.connect(_refresh)
 	GameState.prices_changed.connect(_price_refresh)

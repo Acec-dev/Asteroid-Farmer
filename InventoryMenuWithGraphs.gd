@@ -58,7 +58,7 @@ func _create_price_graphs() -> void:
 	}
 
 	for mineral in minerals:
-		var graph = preload("res://MineralPriceGraph.gd").new()
+		var graph = preload("res://Scripts/MineralPriceGraph.gd").new()
 		graph.mineral_type = mineral
 		graph.line_color = colors[mineral]
 		graph.custom_minimum_size = Vector2(250, 180)

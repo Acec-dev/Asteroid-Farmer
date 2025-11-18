@@ -1,3 +1,4 @@
+@tool
 extends Control
 ## Displays a line graph of the last 10 prices for a specific mineral
 ## Modular - can be configured to track any mineral type
@@ -8,14 +9,18 @@ extends Control
 
 ## Graph visual settings
 @export_group("Appearance")
-@export var line_color: Color = Color.CYAN
+"""This is to test the graph with the style of the game"""
+@export var line_color: Color = Color.WHITE
 @export var line_width: float = 2.0
-@export var point_radius: float = 4.0
-@export var background_color: Color = Color(0.1, 0.1, 0.15, 0.8)
+@export var point_radius: float = 0.0
+@export var background_color: Color = Color(0.0, 0.0, 0.0, 0.8)
 @export var grid_color: Color = Color(0.3, 0.3, 0.4, 0.5)
 @export var text_color: Color = Color.WHITE
-@export var show_grid: bool = true
+@export var show_grid: bool = false
 @export var show_labels: bool = true
+@export var title_font: FontFile
+
+
 
 ## Graph dimensions (margins for labels)
 @export_group("Layout")
@@ -33,6 +38,8 @@ var _price_history: Array = []
 
 
 func _ready() -> void:
+	title_font = preload("res://Assets/DMMono-Regular.ttf")
+	
 	# Connect to Market signals
 	if Market:
 		Market.prices_changed.connect(_on_prices_changed)
@@ -101,7 +108,7 @@ func _draw_labels(origin: Vector2, width: float, height: float) -> void:
 	# Title
 	var title := mineral_type.capitalize() + " Price History"
 	draw_string(
-		ThemeDB.fallback_font,
+		title_font,
 		Vector2(margin_left, margin_top - 10),
 		title,
 		HORIZONTAL_ALIGNMENT_LEFT,

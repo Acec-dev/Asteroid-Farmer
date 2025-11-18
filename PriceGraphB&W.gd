@@ -32,34 +32,38 @@ func _ready() -> void:
 	vbox.add_child(graph_container)
 
 	# Create Iron graph
-	var iron_graph = preload("res://Scripts/MineralPriceGraph.gd").new()
+	var iron_graph = preload("res://Scripts/MineralPriceGraph.B&W.gd").new()
 	iron_graph.mineral_type = "iron"
-	iron_graph.line_color = Color.STEEL_BLUE
+	iron_graph.line_color = Color.WHITE
 	iron_graph.custom_minimum_size = Vector2(350, 250)
 	graph_container.add_child(iron_graph)
 
 	# Create Nickel graph
-	var nickel_graph = preload("res://Scripts/MineralPriceGraph.gd").new()
+	var nickel_graph = preload("res://Scripts/MineralPriceGraph.B&W.gd").new()
 	nickel_graph.mineral_type = "nickel"
-	nickel_graph.line_color = Color.DARK_SEA_GREEN
+	nickel_graph.line_color = Color.WHITE
 	nickel_graph.custom_minimum_size = Vector2(350, 250)
 	graph_container.add_child(nickel_graph)
 
 	# Create Silica graph
-	var silica_graph = preload("res://Scripts/MineralPriceGraph.gd").new()
+	var silica_graph = preload("res://Scripts/MineralPriceGraph.B&W.gd").new()
 	silica_graph.mineral_type = "silica"
-	silica_graph.line_color = Color.LIGHT_CORAL
+	silica_graph.line_color = Color.WHITE
 	silica_graph.custom_minimum_size = Vector2(350, 250)
 	graph_container.add_child(silica_graph)
 
 	# Add info label
-	var spacer2 = Control.new()
-	spacer2.custom_minimum_size = Vector2(0, 20)
-	vbox.add_child(spacer2)
+	#var spacer2 = Control.new()
+	#spacer2.custom_minimum_size = Vector2(0, 20)
+	#vbox.add_child(spacer2)
+#
+	#var info = Label.new()
+	#info.text = "Prices update every %.1f seconds. Graphs show last 10 prices." % Market.update_interval
+	#info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	#vbox.add_child(info)
+#
+	#print("Price Graph Example scene initialized")
 
-	var info = Label.new()
-	info.text = "Prices update every %.1f seconds. Graphs show last 10 prices." % Market.update_interval
-	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(info)
 
-	print("Price Graph Example scene initialized")
+func _on_iron_sell_pressed() -> void:
+	print("PASS")
