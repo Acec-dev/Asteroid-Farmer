@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://minion_character_001"]
+
+[ext_resource type="Script" path="res://minion.gd" id="1_minion_script"]
+
+[node name="Minion" type="CharacterBody2D"]
+script = ExtResource("1_minion_script")
+waddle_speed = 50.0
+waddle_distance = 100.0
+direction_change_time = 3.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+
+[node name="WaddleTimer" type="Timer" parent="."]
+wait_time = 3.0
+autostart = true
