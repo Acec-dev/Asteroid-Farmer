@@ -35,10 +35,12 @@ func _draw() -> void:
 	# Calculate bar width based on shield percentage
 	var percentage = current_shield / max_shield if max_shield > 0 else 0.0
 	var fill_width = bar_width * percentage
-	
+
+	print("ShieldBar: _draw() called - shield: ", current_shield, "/", max_shield, " percentage: ", percentage, " fill_width: ", fill_width)
+
 	# Draw white rectangle (shrinks from right)
 	if fill_width > 0:
 		draw_rect(Rect2(0, 0, fill_width, bar_height), Color.WHITE, true)
-	
+
 	# Optional: Draw border outline
 	draw_rect(Rect2(0, 0, bar_width, bar_height), Color.WHITE, false, 2.0)
