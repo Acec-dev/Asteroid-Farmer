@@ -10,6 +10,7 @@ extends CharacterBody2D
 var projectile_scene: PackedScene = preload("res://Scenes/projectile.tscn")
 var rocket_scene: PackedScene = preload("res://Scenes/rocket.tscn")
 var laser_scene: PackedScene  # Will be set when laser is enabled
+var mine_scene: PackedScene
 
 # --- Mineral Deposit System ---
 @export var minerals_per_drop: int = 5  # How many minerals to drop per button press
@@ -29,8 +30,8 @@ var _laser_enabled: bool = false
 var FloatingText2D := preload("res://Scenes/floating_text_2d.tscn")
 var _vel: Vector2 = Vector2.ZERO
 var _fire_timer: Timer
-
 var _mouse_delta := Vector2.ZERO
+var _mine_was_pressed: bool = false  # Track M key state to prevent spam
 
 # Shield system
 var current_shield: float = 0.0
@@ -61,9 +62,11 @@ func _ready() -> void:
 	_fire_timer.timeout.connect(_on_fire_timeout)
 	_fire_timer.wait_time = fire_interval
 	_fire_timer.start()
-
+	
+	
 	# Initialize shield to full
 	current_shield = GameState.max_shield
+	print("Player: Initializing shield! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
 	GameState.shield_changed.emit(current_shield, GameState.max_shield)
 
 	enable_laser()
@@ -76,6 +79,7 @@ func _physics_process(delta: float) -> void:
 
 	_handle_laser()
 	_handle_mineral_deposit()
+	_handle_mine_placement()
 
 func _handle_move(delta: float) -> void:
 	# WASD movement - completely independent of aiming
@@ -105,6 +109,26 @@ func _handle_laser() -> void:
 	else:
 		if _laser_node.has_method("deactivate"):
 			_laser_node.deactivate()
+
+func _handle_mine_placement() -> void:
+	"""Handle mine placement based on input"""
+	# Check if M key is pressed (with edge detection to prevent spam)
+	var m_pressed = Input.is_physical_key_pressed(KEY_M)
+	if m_pressed and not _mine_was_pressed:
+		place_mine()
+	_mine_was_pressed = m_pressed
+
+func place_mine() -> void:
+	"""Place a mine at the player's current position"""
+	if not mine_scene:
+		print("ERROR: No mine scene assigned!")
+		return
+
+	var mine = mine_scene.instantiate()
+	mine.global_position = global_position
+
+	get_parent().add_child(mine)
+	print("Mine placed at: ", mine.global_position)
 
 func _on_fire_timeout() -> void:
 	# Perform hitscan from both muzzle positions
@@ -288,14 +312,18 @@ func _handle_shield_regeneration(delta: float) -> void:
 			if _shield_regen_timer >= GameState.shield_regen_delay:
 				# Start regenerating
 				current_shield = min(current_shield + GameState.shield_regen_rate * delta, GameState.max_shield)
+				print("Player: Regenerating shield! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
 				GameState.shield_changed.emit(current_shield, GameState.max_shield)
+	
 
 func take_damage(amount: float) -> void:
 	"""Damage the shield and reset regeneration timer"""
 	current_shield = max(0.0, current_shield - amount)
 	_shield_regen_timer = 0.0  # Reset regen timer
 	_can_regenerate = true
+	print("Player: Taking damage! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
 	GameState.shield_changed.emit(current_shield, GameState.max_shield)
+
 
 	# Visual feedback - flash the ship
 	modulate = Color(1.5, 0.5, 0.5)  # Red flash
@@ -316,4 +344,4 @@ func _on_shield_depleted() -> void:
 	#await get_tree().create_timer(2.0).timeout
 	get_tree().change_scene_to_file("res://Scenes/GameOver.tscn")
 	#current_shield = GameState.max_shield
-	#GameState.emit_signal("shield_changed", current_shield, GameState.max_shield)
+	#GameState.emit("shield_changed", current_shield, GameState.max_shield)
