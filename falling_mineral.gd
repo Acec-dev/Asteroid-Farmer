@@ -5,7 +5,7 @@ class_name FallingMineral
 
 @export var kind: GameState.MineralType = GameState.MineralType.IRON
 @export var fall_speed: float = 200.0
-@export var gravity: float = 400.0
+@export var fall_gravity: float = 400.0  # Renamed to avoid conflict with Area2D.gravity
 @export var lifetime: float = 5.0  # Auto-delete if not collected
 
 var _velocity: Vector2 = Vector2.ZERO
@@ -31,7 +31,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	# Apply gravity
-	_velocity.y += gravity * delta
+	_velocity.y += fall_gravity * delta
 
 	# Move
 	global_position += _velocity * delta
