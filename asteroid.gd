@@ -65,13 +65,25 @@ func _physics_process(_delta: float) -> void:
 
 func hit_by_projectile(_p: Node) -> void:
 	hit_points -= 1
-	
+
 	if hit_points <= 0:
 		# Defer the break; don't modify the tree/collision right now
 		call_deferred("_break_safe")
 	else:
 		# Just nudge it a bit
 		apply_central_impulse(Vector2(randf_range(-80, 80), randf_range(-80, 80)))
+
+func hit_by_railgun(_railgun: Node, damage: float) -> void:
+	"""Handle damage from railgun weapon with variable damage"""
+	# Railgun damage is float-based, so we reduce hit_points accordingly
+	hit_points -= int(ceil(damage))
+
+	if hit_points <= 0:
+		# Defer the break; don't modify the tree/collision right now
+		call_deferred("_break_safe")
+	else:
+		# Larger nudge from railgun impact
+		apply_central_impulse(Vector2(randf_range(-120, 120), randf_range(-120, 120)))
 
 func _on_body_entered(body: Node) -> void:
 	"""Damage player shield when asteroid collides with them"""

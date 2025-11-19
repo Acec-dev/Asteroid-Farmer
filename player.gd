@@ -21,6 +21,10 @@ var laser_scene: PackedScene  # Will be set when laser is enabled
 var _laser_node: Node2D = null
 var _laser_enabled: bool = false
 
+# --- Railgun system ---
+var _railgun_node: Node2D = null
+var _railgun_enabled: bool = false
+
 var FloatingText2D := preload("res://Scenes/floating_text_2d.tscn")
 var _vel: Vector2 = Vector2.ZERO
 var _fire_timer: Timer
@@ -67,8 +71,9 @@ func _physics_process(delta: float) -> void:
 	_handle_aim()
 	_handle_shield_regeneration(delta)
 	_mouse_delta = Vector2.ZERO  # Reset after processing
-	
+
 	_handle_laser()
+	_handle_railgun()
 
 func _handle_move(delta: float) -> void:
 	# WASD movement - completely independent of aiming
@@ -194,6 +199,30 @@ func enable_laser():
 	# Add as child so it follows the ship
 	add_child(_laser_node)
 	print("Laser weapon enabled! Hold RIGHT MOUSE BUTTON to fire.")
+
+func _handle_railgun() -> void:
+	"""Handle railgun firing based on input"""
+	if not _railgun_enabled or not _railgun_node:
+		return
+
+	# Check if space bar is pressed (manual fire)
+	if Input.is_action_just_pressed("ui_accept"):  # Space bar
+		if _railgun_node.has_method("can_fire") and _railgun_node.can_fire():
+			var forward := Vector2.RIGHT.rotated(rotation)
+			_railgun_node.fire(global_position, forward)
+
+func enable_railgun():
+	"""Enable the railgun weapon upgrade"""
+	print("Enabling railgun weapon")
+	_railgun_enabled = true
+	# Load the railgun script
+	var railgun_script = load("res://railgun.gd")
+	_railgun_node = Node2D.new()
+	_railgun_node.set_script(railgun_script)
+	_railgun_node.name = "Railgun"
+	# Add as child so it follows the ship
+	add_child(_railgun_node)
+	print("Railgun weapon enabled! Press SPACE to fire (2s cooldown).")
 
 # === Shield System Functions ===
 
