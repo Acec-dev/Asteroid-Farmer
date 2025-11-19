@@ -58,7 +58,6 @@ func _ready() -> void:
 	#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	# Initialize shield to full
 	current_shield = GameState.max_shield
-	print("Player: Initializing shield! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
 	GameState.shield_changed.emit(current_shield, GameState.max_shield)
 	
 	enable_laser()
@@ -206,7 +205,6 @@ func _handle_shield_regeneration(delta: float) -> void:
 			if _shield_regen_timer >= GameState.shield_regen_delay:
 				# Start regenerating
 				current_shield = min(current_shield + GameState.shield_regen_rate * delta, GameState.max_shield)
-				print("Player: Regenerating shield! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
 				GameState.shield_changed.emit(current_shield, GameState.max_shield)
 
 func take_damage(amount: float) -> void:
@@ -214,7 +212,6 @@ func take_damage(amount: float) -> void:
 	current_shield = max(0.0, current_shield - amount)
 	_shield_regen_timer = 0.0  # Reset regen timer
 	_can_regenerate = true
-	print("Player: Taking damage! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
 	GameState.shield_changed.emit(current_shield, GameState.max_shield)
 
 	# Visual feedback - flash the ship
