@@ -33,3 +33,7 @@ func _on_drill_timer_timeout() -> void:
 	if fuel_capacity < 100:
 		fuel_capacity += 1
 		print("Fuel at " + fuel_capacity + "%")
+
+
+func _on_back_button_pressed() -> void:
+	get_tree().change_scene_to_file("res://main.tscn")
