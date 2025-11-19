@@ -76,12 +76,12 @@ func _update_market_prices() -> void:
 	# Notify listeners
 	prices_changed.emit(market_prices)
 
-	# Debug output
-	print("Market Update - Iron: $%d  Nickel: $%d  Silica: $%d" % [
-		market_prices[GameState.MineralType.IRON],
-		market_prices[GameState.MineralType.NICKEL],
-		market_prices[GameState.MineralType.SILICA]
-	])
+	# --- Debug output ---
+	#print("Market Update - Iron: $%d  Nickel: $%d  Silica: $%d" % [
+		#market_prices[GameState.MineralType.IRON],
+		#market_prices[GameState.MineralType.NICKEL],
+		#market_prices[GameState.MineralType.SILICA]
+	#])
 
 
 ## Iron uses a random walk model
