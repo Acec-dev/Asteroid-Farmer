@@ -12,9 +12,11 @@ extends Node2D
 
 @onready var _spawn_timer := $SpawnTimer as Timer
 @onready var rocket_button = $CanvasLayer/InventoryMenu/RocketsButton
+@onready var _canvas_layer := $CanvasLayer
 
 @onready var mineral_name = GameState.get_mat()
 var _player: Node2D
+var _shield_bar: Control
 
 signal spawn_text
 
@@ -23,8 +25,18 @@ func _ready() -> void:
 	_spawn_timer.timeout.connect(_spawn_asteroid)
 	_spawn_timer.start()
 	_spawn_player()
-	
+	_setup_shield_bar()
+
 	GameState.new_pickup.connect(Callable(self, "_spawn_text"))
+
+func _setup_shield_bar() -> void:
+	"""Create and add the shield bar to the UI"""
+	var ShieldBarScript = load("res://shield_bar.gd")
+	_shield_bar = ShieldBarScript.new()
+	_shield_bar.bar_width = 200.0
+	_shield_bar.bar_height = 20.0
+	_shield_bar.position = Vector2(10, 10)  # Top-left corner with small margin
+	_canvas_layer.add_child(_shield_bar)
 
 func _spawn_player() -> void:
 	_player = player_scene.instantiate()
