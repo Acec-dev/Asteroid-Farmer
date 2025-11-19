@@ -66,3 +66,6 @@ func _get_player_pos():
 func _on_rockets_button_pressed() -> void:
 	print("Upgraded to rockets")
 	_player.enable_rockets()
+
+func _on_base_button_pressed() -> void:
+	get_tree().change_scene_to_file("res://Scenes/base.tscn")
