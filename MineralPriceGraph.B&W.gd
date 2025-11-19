@@ -1,4 +1,4 @@
-@tool
+class_name PriceGraph
 extends Control
 ## Displays a line graph of the last 10 prices for a specific mineral
 ## Modular - can be configured to track any mineral type
@@ -48,6 +48,9 @@ func _ready() -> void:
 
 	# Ensure we redraw when ready
 	queue_redraw()
+	
+	if Engine.is_editor_hint():
+		_draw()
 
 
 func _on_prices_changed(_new_prices: Dictionary) -> void:
