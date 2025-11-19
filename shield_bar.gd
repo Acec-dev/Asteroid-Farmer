@@ -38,9 +38,12 @@ func _draw() -> void:
 
 	print("ShieldBar: _draw() called - shield: ", current_shield, "/", max_shield, " percentage: ", percentage, " fill_width: ", fill_width)
 
-	# Draw white rectangle (shrinks from right)
+	# Clear background - draw a dark/transparent background first
+	draw_rect(Rect2(0, 0, bar_width, bar_height), Color(0, 0, 0, 0.5), true)
+
+	# Draw white filled portion (shrinks from right as shield depletes)
 	if fill_width > 0:
 		draw_rect(Rect2(0, 0, fill_width, bar_height), Color.WHITE, true)
 
-	# Optional: Draw border outline
+	# Draw border outline
 	draw_rect(Rect2(0, 0, bar_width, bar_height), Color.WHITE, false, 2.0)
