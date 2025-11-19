@@ -29,14 +29,14 @@ signal shield_changed(current: float, maximum: float)
 signal prices_changed()
 
 var credits: int = 0
-var minerals := {
+var minerals = {
 	MineralType.IRON: 0,
 	MineralType.NICKEL: 0,
 	MineralType.SILICA: 0,
 }
 
 # Market price system (updated by Market singleton)
-var market_prices := {
+var market_prices = {
 	MineralType.IRON: 1,
 	MineralType.NICKEL: 2,
 	MineralType.SILICA: 3

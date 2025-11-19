@@ -31,9 +31,11 @@ func _ready() -> void:
 	if visuals and visuals.has_method("set_radius"):
 		visuals.set_radius(radius)
 	
-	# Connect collision signal
-	#body_entered.connect(_on_body_entered)
-	
+	if visuals and visuals.has_method("set_radius"):
+
+		visuals.set_radius(radius)
+
+	body_entered.connect(_on_body_entered)
 	contact_monitor = true
 	max_contacts_reported = 4
 	
