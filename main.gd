@@ -56,7 +56,7 @@ func _spawn_asteroid() -> void:
 	a.setup_motion(spawn_pos, band_point, speed)
 	
 func _spawn_text():
-	_player.popup_mineral(GameState.current_mat)
+	_player.popup_mineral(GameState.MINERAL_NAMES[GameState.current_mat])
 	emit_signal("spawn_text")
 	
 func _get_player_pos():
