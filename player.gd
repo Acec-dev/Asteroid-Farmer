@@ -11,6 +11,11 @@ var projectile_scene: PackedScene = preload("res://Scenes/projectile.tscn")
 var rocket_scene: PackedScene = preload("res://Scenes/rocket.tscn")
 var laser_scene: PackedScene  # Will be set when laser is enabled
 
+# --- Mineral Deposit System ---
+@export var minerals_per_drop: int = 5  # How many minerals to drop per button press
+@export var drop_spread: float = 30.0  # Horizontal spread of dropped minerals
+var _nearby_deposit_box: Node2D = null  # Reference to deposit box we're near
+
 # --- Hitscan settings ---
 @export var fire_interval: float = 0.5  # seconds between shots
 @export var max_range: float = 2000.0   # maximum shooting range
@@ -48,18 +53,20 @@ func _draw() -> void:
 	draw_polyline(points, Color.WHITE)
 
 func _ready() -> void:
+	add_to_group("player")  # Add to group for detection by deposit box
+
 	_fire_timer = Timer.new()
 	_fire_timer.one_shot = false
 	add_child(_fire_timer)
 	_fire_timer.timeout.connect(_on_fire_timeout)
 	_fire_timer.wait_time = fire_interval
 	_fire_timer.start()
-	
+
 	#Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	# Initialize shield to full
 	current_shield = GameState.max_shield
 	GameState.shield_changed.emit(current_shield, GameState.max_shield)
-	
+
 	enable_laser()
 	
 func _physics_process(delta: float) -> void:
@@ -67,8 +74,9 @@ func _physics_process(delta: float) -> void:
 	_handle_aim()
 	_handle_shield_regeneration(delta)
 	_mouse_delta = Vector2.ZERO  # Reset after processing
-	
+
 	_handle_laser()
+	_handle_mineral_deposit()
 
 func _handle_move(delta: float) -> void:
 	# WASD movement - completely independent of aiming
@@ -194,6 +202,81 @@ func enable_laser():
 	# Add as child so it follows the ship
 	add_child(_laser_node)
 	print("Laser weapon enabled! Hold RIGHT MOUSE BUTTON to fire.")
+
+# === Mineral Deposit System ===
+
+func _handle_mineral_deposit() -> void:
+	"""Check for nearby deposit boxes and handle mineral dropping"""
+	# Find nearby deposit box
+	_nearby_deposit_box = null
+	var boxes = get_tree().get_nodes_in_group("mineral_deposit_box")
+	for box in boxes:
+		if box.has_method("is_player_in_range") and box.is_player_in_range():
+			_nearby_deposit_box = box
+			break
+
+	# Handle deposit input (E key or Space)
+	if Input.is_action_just_pressed("ui_accept") or Input.is_key_pressed(KEY_E):
+		if _nearby_deposit_box:
+			_drop_minerals()
+
+func _drop_minerals() -> void:
+	"""Drop minerals from the player ship into the deposit box below"""
+	# Check if player has any minerals to drop
+	var has_minerals = false
+	for count in GameState.minerals.values():
+		if count > 0:
+			has_minerals = true
+			break
+
+	if not has_minerals:
+		print("No minerals to deposit!")
+		return
+
+	# Drop up to minerals_per_drop minerals
+	var dropped_count = 0
+	for mineral_type in GameState.minerals.keys():
+		var available = GameState.minerals[mineral_type]
+		if available <= 0:
+			continue
+
+		# Calculate how many of this type to drop
+		var to_drop = min(available, minerals_per_drop - dropped_count)
+		if to_drop <= 0:
+			break
+
+		# Spawn falling minerals
+		for i in range(to_drop):
+			_spawn_falling_mineral(mineral_type)
+			dropped_count += 1
+
+		# Remove from GameState inventory
+		GameState.minerals[mineral_type] -= to_drop
+		GameState.emit_signal("inventory_changed")
+
+		if dropped_count >= minerals_per_drop:
+			break
+
+	if dropped_count > 0:
+		print("Dropped ", dropped_count, " minerals!")
+
+func _spawn_falling_mineral(mineral_type: GameState.MineralType) -> void:
+	"""Spawn a single falling mineral that drops from the ship"""
+	var falling_mineral_script = load("res://falling_mineral.gd")
+	var mineral = Node2D.new()
+	mineral.set_script(falling_mineral_script)
+	mineral.set("kind", mineral_type)
+
+	# Spawn slightly below the ship with random horizontal offset
+	var offset_x = randf_range(-drop_spread, drop_spread)
+	mineral.global_position = global_position + Vector2(offset_x, 20)
+
+	# Give it a small initial velocity (downward + some horizontal)
+	var initial_vel = Vector2(randf_range(-20, 20), 50)
+	if mineral.has_method("set_initial_velocity"):
+		mineral.set_initial_velocity(initial_vel)
+
+	get_tree().current_scene.add_child(mineral)
 
 # === Shield System Functions ===
 

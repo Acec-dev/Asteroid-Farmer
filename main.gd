@@ -10,11 +10,16 @@ extends Node2D
 @export var band_half_size: Vector2 = Vector2(160, 120)  # "middle band" around screen center
 @export var asteroid_speed_range: Vector2 = Vector2(220, 360) # min/max straight speed
 
+# Mineral deposit box settings
+@export var spawn_deposit_box: bool = true  # Toggle deposit box on/off
+@export var deposit_box_position: Vector2 = Vector2(640, 600)  # Bottom center by default
+
 @onready var _spawn_timer := $SpawnTimer as Timer
 @onready var rocket_button = $CanvasLayer/InventoryMenu/RocketsButton
 
 @onready var mineral_name = GameState.get_mat()
 var _player: Node2D
+var _deposit_box: Node2D = null
 
 signal spawn_text
 
@@ -23,13 +28,26 @@ func _ready() -> void:
 	_spawn_timer.timeout.connect(_spawn_asteroid)
 	_spawn_timer.start()
 	_spawn_player()
-	
+
+	if spawn_deposit_box:
+		_spawn_deposit_box()
+
 	GameState.new_pickup.connect(Callable(self, "_spawn_text"))
 
 func _spawn_player() -> void:
 	_player = player_scene.instantiate()
 	_player.global_position = get_viewport_rect().size * 0.5
 	add_child(_player)
+
+func _spawn_deposit_box() -> void:
+	"""Spawn the mineral deposit box at the configured position"""
+	var deposit_box_script = load("res://mineral_deposit_box.gd")
+	_deposit_box = Area2D.new()
+	_deposit_box.set_script(deposit_box_script)
+	_deposit_box.global_position = deposit_box_position
+	add_child(_deposit_box)
+	print("Mineral deposit box spawned at: ", deposit_box_position)
+	print("Fly over the box and press E or Space to deposit minerals!")
 
 func _spawn_asteroid() -> void:
 	if not asteroid_scene or _player == null:
