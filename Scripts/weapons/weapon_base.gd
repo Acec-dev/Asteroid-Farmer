@@ -27,8 +27,8 @@ var _is_active: bool = false
 var _owner_node: Node2D = null
 
 ## Called when weapon is added to the weapon manager
-func initialize(owner: Node2D) -> void:
-	_owner_node = owner
+func initialize(weapon_owner: Node2D) -> void:
+	_owner_node = weapon_owner
 	current_damage = base_damage
 	current_cooldown = base_cooldown
 	_ready_weapon()
@@ -96,7 +96,7 @@ func apply_upgrade(level: int, stats: Dictionary) -> void:
 	stats_updated.emit()
 
 ## Override this for weapon-specific upgrade handling
-func _apply_custom_upgrade(stats: Dictionary) -> void:
+func _apply_custom_upgrade(_stats: Dictionary) -> void:
 	pass
 
 ## Get weapon info for UI
@@ -109,6 +109,6 @@ func get_weapon_info() -> Dictionary:
 		"enabled": enabled
 	}
 
-## Helper to get the player node
-func get_owner() -> Node2D:
+## Helper to get the player node (weapon owner)
+func get_weapon_owner() -> Node2D:
 	return _owner_node
