@@ -1,0 +1,211 @@
+[gd_scene load_steps=15 format=3 uid="uid://c6c6wf1l6nudr"]
+
+[ext_resource type="Script" uid="uid://b78u8tc2qckls" path="res://Scripts/main.gd" id="1_bo1nx"]
+[ext_resource type="PackedScene" uid="uid://cw77j44xrwsi7" path="res://Scenes/player.tscn" id="1_jjgbg"]
+[ext_resource type="PackedScene" uid="uid://c6cbnimduidb3" path="res://Scenes/asteroid.tscn" id="3_8gbba"]
+[ext_resource type="PackedScene" uid="uid://b6yaf544oid0q" path="res://Scenes/floating_text_2d.tscn" id="6_6bp64"]
+[ext_resource type="PackedScene" uid="uid://btat7s0ech64f" path="res://Scenes/inventory_menu.tscn" id="6_21xkr"]
+[ext_resource type="Script" uid="uid://dao5rg7pc1yop" path="res://Scripts/shield_bar.gd" id="6_344ge"]
+[ext_resource type="PackedScene" uid="uid://n22orxsm6s66" path="res://Scenes/market_menu.tscn" id="7_6bp64"]
+[ext_resource type="Theme" uid="uid://cpptlgmgejiaq" path="res://Assets/upgrade_button.tres" id="8_344ge"]
+[ext_resource type="Texture2D" uid="uid://be2r7jl0nuwkd" path="res://Assets/outline_rocket.png" id="8_ynf5e"]
+[ext_resource type="Theme" uid="uid://h5oarse33pa7" path="res://Assets/market_ui.tres" id="10_6iyac"]
+[ext_resource type="Script" uid="uid://oxc45140dro6" path="res://Scripts/MineralPriceGraph.B&W.gd" id="10_hptm8"]
+[ext_resource type="FontFile" uid="uid://br1r0sdo5mn8j" path="res://Assets/DMMono-Regular.ttf" id="11_d1ilt"]
+[ext_resource type="Script" uid="uid://ptyb63ehn5yg" path="res://Scripts/radar.gd" id="13_fdnlq"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_fdnlq"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_bo1nx")
+player_scene = ExtResource("1_jjgbg")
+asteroid_scene = ExtResource("3_8gbba")
+floating_text = ExtResource("6_6bp64")
+
+[node name="SpawnTimer" type="Timer" parent="."]
+wait_time = 1.75
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="InventoryMenu" parent="CanvasLayer" instance=ExtResource("6_21xkr")]
+
+[node name="ShieldBar" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 264.0
+offset_top = 55.0
+offset_right = 464.0
+offset_bottom = 75.0
+script = ExtResource("6_344ge")
+
+[node name="ShieldBarOutlineBox" type="Panel" parent="CanvasLayer/ShieldBar"]
+z_index = -1
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 20.0
+theme = ExtResource("10_6iyac")
+
+[node name="TabContainer" type="TabContainer" parent="CanvasLayer"]
+visible = false
+custom_minimum_size = Vector2(200, 0)
+anchors_preset = -1
+anchor_left = 0.93100005
+anchor_right = 0.93100005
+offset_left = -131.52014
+offset_right = 132.47986
+offset_bottom = 39.0
+grow_horizontal = 0
+tab_alignment = 2
+current_tab = 1
+
+[node name="Market" type="Control" parent="CanvasLayer/TabContainer"]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+metadata/_tab_index = 0
+
+[node name="MarketMenu" parent="CanvasLayer/TabContainer/Market" instance=ExtResource("7_6bp64")]
+layout_mode = 1
+offset_left = -100.0
+offset_top = -4.0
+offset_right = 1030.0
+offset_bottom = 396.0
+
+[node name="Upgrades" type="Control" parent="CanvasLayer/TabContainer"]
+layout_mode = 2
+metadata/_tab_index = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/TabContainer/Upgrades"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/TabContainer/Upgrades/HBoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="CanvasLayer/TabContainer/Upgrades/HBoxContainer/VBoxContainer"]
+custom_minimum_size = Vector2(50, 300)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("8_ynf5e")
+expand_mode = 3
+stretch_mode = 5
+
+[node name="RocketsUpgradeBtn" type="Button" parent="CanvasLayer/TabContainer/Upgrades/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme = ExtResource("8_344ge")
+text = "Upgrade Rockets"
+
+[node name="Label" type="Label" parent="CanvasLayer/TabContainer/Upgrades/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Adds Rockets that automatically fire and seek nearest asteroid"
+horizontal_alignment = 1
+
+[node name="X" type="Control" parent="CanvasLayer/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="CanvasLayer"]
+custom_minimum_size = Vector2(200, 200)
+anchors_preset = -1
+anchor_top = 0.61733335
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 0.27996826
+theme = ExtResource("10_6iyac")
+metadata/_edit_use_anchors_ = true
+
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer"]
+anchors_preset = -1
+anchor_top = 0.6296296
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 30
+metadata/_edit_use_anchors_ = true
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 46
+alignment = 1
+
+[node name="IronGraph" type="Panel" parent="CanvasLayer/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(450, 0)
+layout_mode = 2
+theme = ExtResource("10_6iyac")
+script = ExtResource("10_hptm8")
+background_color = Color(0, 0, 0, 0)
+title_font = ExtResource("11_d1ilt")
+
+[node name="NickelGraph" type="Panel" parent="CanvasLayer/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(450, 0)
+layout_mode = 2
+theme = ExtResource("10_6iyac")
+script = ExtResource("10_hptm8")
+mineral_type = 1
+background_color = Color(0, 0, 0, 0)
+title_font = ExtResource("11_d1ilt")
+
+[node name="SilicaGraph" type="Panel" parent="CanvasLayer/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(450, 0)
+layout_mode = 2
+theme = ExtResource("10_6iyac")
+script = ExtResource("10_hptm8")
+mineral_type = 2
+background_color = Color(0, 0, 0, 0)
+title_font = ExtResource("11_d1ilt")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -47.0
+offset_bottom = 40.0
+grow_horizontal = 0
+
+[node name="BaseButton" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "BASE
+"
+metadata/_edit_use_anchors_ = true
+
+[node name="ExploreButton" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "EXPLORATION-MODE"
+
+[node name="RadarButton" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "RADAR UPGRADE"
+
+[node name="RocketsButton" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "Upgrade Rockets
+"
+
+[node name="Radar" type="Camera2D" parent="."]
+limit_left = 0
+limit_top = 0
+limit_right = 1920
+limit_bottom = 1080
+script = ExtResource("13_fdnlq")
+
+[node name="StaticBody2D" type="StaticBody2D" parent="."]
+position = Vector2(953, 667)
+collision_layer = 16
+collision_mask = 8
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="StaticBody2D"]
+shape = SubResource("WorldBoundaryShape2D_fdnlq")
+
+[connection signal="pressed" from="CanvasLayer/TabContainer/Upgrades/HBoxContainer/VBoxContainer/RocketsUpgradeBtn" to="." method="_on_rockets_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/BaseButton" to="." method="_on_base_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/ExploreButton" to="." method="_on_explore_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/RadarButton" to="Radar" method="_on_radar_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/RocketsButton" to="." method="_on_rockets_button_pressed"]

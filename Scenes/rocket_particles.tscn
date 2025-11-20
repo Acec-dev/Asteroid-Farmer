@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://ww7ulmv4btbp"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_4sddi"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_60ajs"]
+particle_flag_disable_z = true
+radial_velocity_min = 99.70998
+radial_velocity_max = 158.35997
+gravity = Vector3(-98, 0, 0)
+tangential_accel_min = -90.0
+tangential_accel_max = 89.99999
+scale_max = 3.0
+
+[node name="rocket_particles" type="GPUParticles2D"]
+amount = 100
+texture = SubResource("CanvasTexture_4sddi")
+lifetime = 0.3
+speed_scale = 3.0
+explosiveness = 0.1
+process_material = SubResource("ParticleProcessMaterial_60ajs")

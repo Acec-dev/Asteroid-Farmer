@@ -1,0 +1,77 @@
+[gd_scene load_steps=3 format=3 uid="uid://cwl0be3dp82g8"]
+
+[ext_resource type="Script" uid="uid://c86pmg5nv8pme" path="res://Scripts/base.gd" id="1_1w1q6"]
+[ext_resource type="Texture2D" uid="uid://d3crlc5ghm1y5" path="res://Assets/only_planet.png" id="1_31hd7"]
+
+[node name="Base" type="Node2D"]
+script = ExtResource("1_1w1q6")
+
+[node name="BaseSprite" type="Sprite2D" parent="."]
+position = Vector2(0, -86.00001)
+scale = Vector2(1.4800011, 1.4800011)
+texture = ExtResource("1_31hd7")
+
+[node name="BackButton" type="Button" parent="."]
+offset_left = -939.0
+offset_top = -519.0
+offset_right = -843.0
+offset_bottom = -490.0
+text = "BACK"
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Control"]
+layout_mode = 1
+offset_left = -236.0
+offset_top = 236.0
+offset_right = 244.0
+offset_bottom = 276.0
+theme_override_constants/separation = 300
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/HBoxContainer"]
+layout_mode = 2
+
+[node name="SiloButton" type="Button" parent="Control/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Buy Fuel Silo"
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="Control/HBoxContainer"]
+layout_mode = 2
+
+[node name="DrillButton" type="Button" parent="Control/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+text = "Buy Drill"
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="DrillTimer" type="Timer" parent="."]
+wait_time = 6.0
+
+[node name="Control2" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_top = 196.0
+offset_right = 40.0
+offset_bottom = 228.89883
+scale = Vector2(24.2, 10.279997)
+
+[node name="SiloMenu" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -965.0
+offset_top = 206.99998
+offset_right = -925.0
+offset_bottom = 239.89882
+scale = Vector2(24.2, 10.279997)
+
+[connection signal="pressed" from="BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="Control/HBoxContainer/VBoxContainer/SiloButton" to="." method="_on_silo_button_pressed"]
+[connection signal="pressed" from="Control/HBoxContainer/VBoxContainer2/DrillButton" to="." method="_on_drill_button_pressed"]
+[connection signal="timeout" from="DrillTimer" to="." method="_on_drill_timer_timeout"]

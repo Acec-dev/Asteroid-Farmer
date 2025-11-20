@@ -1,0 +1,64 @@
+[gd_scene load_steps=2 format=3 uid="uid://btat7s0ech64f"]
+
+[ext_resource type="Script" uid="uid://cyqqsn7pr30o4" path="res://Scripts/InventoryMenu.gd" id="1_m23wo"]
+
+[node name="InventoryMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_m23wo")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 256.0
+offset_bottom = 200.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="IronLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Iron: 0"
+
+[node name="NickelLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Nickel: 0"
+
+[node name="SilicaLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Silica: 0"
+
+[node name="CreditLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+text = "Credits: 0"
+
+[node name="HBox" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+
+[node name="SellAll" type="Button" parent="Panel/VBox/HBox"]
+layout_mode = 2
+text = "Sell All"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/VBox/HBox"]
+layout_mode = 2
+
+[node name="PriceLabel" type="Label" parent="Panel/VBox/HBox/VBoxContainer"]
+layout_mode = 2
+text = "-- Prices --"
+
+[node name="IronPriceLabel" type="Label" parent="Panel/VBox/HBox/VBoxContainer"]
+layout_mode = 2
+text = "Iron: $0"
+
+[node name="NickelPriceLabel" type="Label" parent="Panel/VBox/HBox/VBoxContainer"]
+layout_mode = 2
+text = "Nickel: $0"
+
+[node name="SilicaPriceLabel" type="Label" parent="Panel/VBox/HBox/VBoxContainer"]
+layout_mode = 2
+text = "Prices: Iron $0"

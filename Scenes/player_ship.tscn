@@ -1,0 +1,44 @@
+[gd_scene load_steps=6 format=3 uid="uid://dpoe7k7as1cvo"]
+
+[ext_resource type="ArrayMesh" uid="uid://c0f70hg6c76ss" path="res://Assets/asteroid_ship.obj" id="1_3k1ca"]
+[ext_resource type="Script" uid="uid://mjxdbll5wncm" path="res://Scripts/camera_3d_path.gd" id="2_6s7s7"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6s7s7"]
+emission_enabled = true
+emission = Color(1, 1, 1, 1)
+
+[sub_resource type="Curve3D" id="Curve3D_3k1ca"]
+closed = true
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, -9.67671, 6.95469, 10.7806, 0, 0, 0, 0, 0, 0, 0.0414402, 2.93056, 16.3625, 0, 0, 0, 0, 0, 0, 4.5381, 0.0943527, 12.6726, 0, 0, 0, 0, 0, 0, -4.97054, 1.03593, 15.0839),
+"tilts": PackedFloat32Array(0, 0, 0, 0)
+}
+point_count = 4
+
+[sub_resource type="Environment" id="Environment_6s7s7"]
+background_mode = 1
+
+[node name="PlayerShip" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(-1.00881, -0.000696305, -5.37302e-05, 0.000696301, -1.00881, 9.03753e-05, -5.37912e-05, 9.0339e-05, 1.00881, 0, 0, 0)
+mesh = ExtResource("1_3k1ca")
+surface_material_override/0 = SubResource("StandardMaterial3D_6s7s7")
+
+[node name="Path3D" type="Path3D" parent="."]
+curve = SubResource("Curve3D_3k1ca")
+
+[node name="PathFollow3D" type="PathFollow3D" parent="Path3D"]
+transform = Transform3D(-0.4980657, 0.29303998, -0.8161203, 1.4901141e-08, 0.941155, 0.3379423, 0.86713773, 0.168316, -0.46876237, -9.67671, 6.95469, 10.7806)
+script = ExtResource("2_6s7s7")
+
+[node name="Camera3D" type="Camera3D" parent="Path3D/PathFollow3D"]
+transform = Transform3D(0.223447, -0.539885, 0.811541, 0.304426, 0.829607, 0.468083, -0.92596, 0.142461, 0.349725, 0, 0, 0)
+current = true
+fov = 90.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_6s7s7")
+
+[node name="Marker3D" type="Marker3D" parent="."]
+transform = Transform3D(-0.364161, 0.345369, -0.864928, 2.48903e-08, 0.928687, 0.370836, 0.931334, 0.135043, -0.338195, 0.279307, 0.464567, 5.18943)

@@ -1,0 +1,38 @@
+[gd_scene load_steps=4 format=3 uid="uid://cw77j44xrwsi7"]
+
+[ext_resource type="Script" uid="uid://ham6gpi307dg" path="res://Scripts/player.gd" id="1_v0iea"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bo1nx"]
+radius = 22.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_jjgbg"]
+radius = 17.129642
+
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 8
+collision_mask = 32784
+script = ExtResource("1_v0iea")
+
+[node name="RocketTimer" type="Timer" parent="."]
+wait_time = 3.0
+
+[node name="PickupArea" type="Area2D" parent="." groups=["player_pickup"]]
+position = Vector2(13, 0)
+scale = Vector2(2.2000008, 1)
+collision_layer = 2
+collision_mask = 0
+
+[node name="PickupShape" type="CollisionShape2D" parent="PickupArea"]
+shape = SubResource("CircleShape2D_bo1nx")
+
+[node name="HurtShape" type="CollisionShape2D" parent="."]
+position = Vector2(12, 0)
+scale = Vector2(2.5599968, 1)
+shape = SubResource("CircleShape2D_jjgbg")
+
+[node name="PlayerCam" type="Camera2D" parent="."]
+unique_name_in_owner = true
+enabled = false
+zoom = Vector2(0.5, 0.5)
+
+[connection signal="timeout" from="RocketTimer" to="." method="_on_rocket_timer_timeout"]

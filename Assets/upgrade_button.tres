@@ -1,0 +1,36 @@
+[gd_resource type="Theme" load_steps=6 format=3 uid="uid://cpptlgmgejiaq"]
+
+[ext_resource type="FontFile" uid="uid://br1r0sdo5mn8j" path="res://Assets/DMMono-Regular.ttf" id="1_urygy"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_6k6x1"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ipqjm"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_qn0vu"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_urygy"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+
+[resource]
+Button/font_sizes/font_size = 24
+Button/fonts/font = ExtResource("1_urygy")
+Button/styles/focus = SubResource("StyleBoxEmpty_6k6x1")
+Button/styles/hover = SubResource("StyleBoxFlat_ipqjm")
+Button/styles/normal = SubResource("StyleBoxFlat_qn0vu")
+Label/font_sizes/font_size = 26
+Label/fonts/font = ExtResource("1_urygy")
+Label/styles/normal = SubResource("StyleBoxFlat_urygy")

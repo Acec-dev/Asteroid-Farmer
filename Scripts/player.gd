@@ -1,0 +1,347 @@
+extends CharacterBody2D
+
+# --- Movement (left stick / WASD) ---
+@export var max_speed: float = 600.0
+@export var acceleration: float = 2400.0
+@export var friction: float = 1800.0
+
+# --- Firing ---
+@export var muzzle_separation: float = 16.0
+var projectile_scene: PackedScene = preload("res://Scenes/projectile.tscn")
+var rocket_scene: PackedScene = preload("res://Scenes/rocket.tscn")
+var laser_scene: PackedScene  # Will be set when laser is enabled
+var mine_scene: PackedScene
+
+# --- Mineral Deposit System ---
+@export var minerals_per_drop: int = 5  # How many minerals to drop per button press
+@export var drop_spread: float = 30.0  # Horizontal spread of dropped minerals
+var _nearby_deposit_box: Node2D = null  # Reference to deposit box we're near
+
+# --- Hitscan settings ---
+@export var fire_interval: float = 0.5  # seconds between shots
+@export var max_range: float = 2000.0   # maximum shooting range
+@export var visual_projectile_speed: float = 2500.0  # purely visual
+@export var damage_per_shot: int = 1  # damage dealt per hitscan shot
+
+# --- Laser system ---
+var _laser_node: Node2D = null
+var _laser_enabled: bool = false
+
+var FloatingText2D := preload("res://Scenes/floating_text_2d.tscn")
+var _vel: Vector2 = Vector2.ZERO
+var _fire_timer: Timer
+var _mouse_delta := Vector2.ZERO
+var _mine_was_pressed: bool = false  # Track M key state to prevent spam
+
+# Shield system
+var current_shield: float = 0.0
+var _shield_regen_timer: float = 0.0
+var _can_regenerate: bool = true
+
+@export var mouse_move_threshold := 0.5  # pixels per frame
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_mouse_delta = event.relative
+
+func _draw() -> void:
+	var points = PackedVector2Array([
+		Vector2(60, 0),
+		Vector2(-20, -16),
+		Vector2(-20, 16),
+		Vector2(60, 0)
+	])
+	draw_polyline(points, Color.WHITE)
+
+func _ready() -> void:
+	add_to_group("player")  # Add to group for detection by deposit box
+
+	_fire_timer = Timer.new()
+	_fire_timer.one_shot = false
+	add_child(_fire_timer)
+	_fire_timer.timeout.connect(_on_fire_timeout)
+	_fire_timer.wait_time = fire_interval
+	_fire_timer.start()
+	
+	
+	# Initialize shield to full
+	current_shield = GameState.max_shield
+	print("Player: Initializing shield! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
+	GameState.shield_changed.emit(current_shield, GameState.max_shield)
+
+	enable_laser()
+	
+func _physics_process(delta: float) -> void:
+	_handle_move(delta)
+	_handle_aim()
+	_handle_shield_regeneration(delta)
+	_mouse_delta = Vector2.ZERO  # Reset after processing
+
+	_handle_laser()
+	_handle_mineral_deposit()
+	_handle_mine_placement()
+
+func _handle_move(delta: float) -> void:
+	# WASD movement - completely independent of aiming
+	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	if move_input != Vector2.ZERO:
+		_vel = _vel.move_toward(move_input.normalized() * max_speed, acceleration * delta)
+	else:
+		_vel = _vel.move_toward(Vector2.ZERO, friction * delta)
+	global_position += _vel * delta
+	
+
+func _handle_aim() -> void:
+	# Ship only rotates when you MOVE the mouse, not constantly
+	if _mouse_delta.length() > 0.1:  # Only if mouse actually moved
+		var mouse_pos := get_global_mouse_position()
+		var direction := (mouse_pos - global_position).normalized()
+		rotation = direction.angle()
+
+func _handle_laser() -> void:
+	"""Handle laser firing based on input"""
+	if not _laser_enabled or not _laser_node:
+		return
+	# Check if right mouse button is held down
+	if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
+		if _laser_node.has_method("activate"):
+			_laser_node.activate()
+	else:
+		if _laser_node.has_method("deactivate"):
+			_laser_node.deactivate()
+
+func _handle_mine_placement() -> void:
+	"""Handle mine placement based on input"""
+	# Check if M key is pressed (with edge detection to prevent spam)
+	var m_pressed = Input.is_physical_key_pressed(KEY_M)
+	if m_pressed and not _mine_was_pressed:
+		place_mine()
+	_mine_was_pressed = m_pressed
+
+func place_mine() -> void:
+	"""Place a mine at the player's current position"""
+	if not mine_scene:
+		print("ERROR: No mine scene assigned!")
+		return
+
+	var mine = mine_scene.instantiate()
+	mine.global_position = global_position
+
+	get_parent().add_child(mine)
+	print("Mine placed at: ", mine.global_position)
+
+func _on_fire_timeout() -> void:
+	# Perform hitscan from both muzzle positions
+	var forward := Vector2.RIGHT.rotated(rotation)
+	var left_offset := Vector2(0, -muzzle_separation).rotated(rotation)
+	var right_offset := Vector2(0, muzzle_separation).rotated(rotation)
+	
+	_hitscan_shot(global_position + left_offset, forward)
+	_hitscan_shot(global_position + right_offset, forward)
+
+func _hitscan_shot(spawn_pos: Vector2, direction: Vector2) -> void:
+	# Create the raycast
+	var space_state = get_world_2d().direct_space_state
+	var query = PhysicsRayQueryParameters2D.create(
+		spawn_pos,
+		spawn_pos + direction * max_range
+	)
+	
+	# Try all collision layers to ensure we hit asteroids
+	query.collision_mask = 0xFFFFFFFF  # Check all layers
+	query.collide_with_areas = true
+	query.collide_with_bodies = true
+	
+	var result = space_state.intersect_ray(query)
+	
+	# Spawn visual projectile
+	_spawn_visual_projectile(spawn_pos, direction, result)
+	
+	# Apply damage if we hit something
+	if result and result.collider:
+		var hit_object = result.collider
+		if hit_object.has_method("hit_by_projectile"):
+			# Apply damage multiple times if needed to match old behavior
+			for i in damage_per_shot:
+				hit_object.hit_by_projectile(self)
+
+func _spawn_visual_projectile(spawn_pos: Vector2, direction: Vector2, raycast_result: Dictionary) -> void:
+	if projectile_scene == null:
+		return
+	
+	var p = projectile_scene.instantiate()
+	p.global_position = spawn_pos
+	p.rotation = direction.angle()
+	
+	# Configure as visual-only
+	if p.has_method("configure_as_visual"):
+		var target_distance: float
+		if raycast_result and raycast_result.collider:
+			# Stop at hit point
+			target_distance = spawn_pos.distance_to(raycast_result.position)
+		else:
+			# Travel max range
+			target_distance = max_range
+		
+		p.configure_as_visual(visual_projectile_speed, target_distance)
+	
+	get_tree().current_scene.add_child(p)
+
+func popup_mineral(mineral_name: String) -> void:
+	var ft := FloatingText2D.instantiate()
+	get_tree().current_scene.add_child(ft)
+	var start := global_position
+	ft.show_text(mineral_name, start)
+	
+func enable_rockets():
+	print("enabling rockets")
+	$RocketTimer.start()
+
+func _on_rocket_timer_timeout() -> void:
+	spawn_rocket()
+	print("Timer timeout - spawning rocket")
+	
+func spawn_rocket():
+	if not rocket_scene:
+		print("ERROR: No rocket scene assigned!")
+		return
+	
+	var rocket = rocket_scene.instantiate()
+	rocket.global_position = global_position
+	# Rocket should face the same direction as the ship
+	rocket.rotation = rotation
+	
+	get_parent().add_child(rocket)
+	print("Rocket spawned at: ", rocket.global_position, " with rotation: ", rad_to_deg(rocket.rotation))
+
+func enable_laser():
+	"""Enable the laser weapon upgrade"""
+	print("Enabling laser weapon")
+	_laser_enabled = true
+	# Load the laser scene
+	var laser_script = load("res://scripts/laser.gd")
+	_laser_node = Node2D.new()
+	_laser_node.set_script(laser_script)
+	_laser_node.name = "Laser"
+	# Add as child so it follows the ship
+	add_child(_laser_node)
+	print("Laser weapon enabled! Hold RIGHT MOUSE BUTTON to fire.")
+
+# === Mineral Deposit System ===
+
+func _handle_mineral_deposit() -> void:
+	"""Check for nearby deposit boxes and handle mineral dropping"""
+	# Find nearby deposit box
+	_nearby_deposit_box = null
+	var boxes = get_tree().get_nodes_in_group("mineral_deposit_box")
+	for box in boxes:
+		if box.has_method("is_player_in_range") and box.is_player_in_range():
+			_nearby_deposit_box = box
+			break
+
+	# Handle deposit input (E key or Space)
+	if Input.is_action_just_pressed("ui_accept") or Input.is_key_pressed(KEY_E):
+		if _nearby_deposit_box:
+			_drop_minerals()
+
+func _drop_minerals() -> void:
+	"""Drop minerals from the player ship into the deposit box below"""
+	# Check if player has any minerals to drop
+	var has_minerals = false
+	for count in GameState.minerals.values():
+		if count > 0:
+			has_minerals = true
+			break
+
+	if not has_minerals:
+		print("No minerals to deposit!")
+		return
+
+	# Drop up to minerals_per_drop minerals
+	var dropped_count = 0
+	for mineral_type in GameState.minerals.keys():
+		var available = GameState.minerals[mineral_type]
+		if available <= 0:
+			continue
+
+		# Calculate how many of this type to drop
+		var to_drop = min(available, minerals_per_drop - dropped_count)
+		if to_drop <= 0:
+			break
+
+		# Spawn falling minerals
+		for i in range(to_drop):
+			_spawn_falling_mineral(mineral_type)
+			dropped_count += 1
+
+		# Remove from GameState inventory
+		GameState.minerals[mineral_type] -= to_drop
+		GameState.emit_signal("inventory_changed")
+
+		if dropped_count >= minerals_per_drop:
+			break
+
+	if dropped_count > 0:
+		print("Dropped ", dropped_count, " minerals!")
+
+func _spawn_falling_mineral(mineral_type: GameState.MineralType) -> void:
+	"""Spawn a single falling mineral that drops from the ship"""
+	var falling_mineral_script = load("res://falling_mineral.gd")
+	var mineral = Node2D.new()
+	mineral.set_script(falling_mineral_script)
+	mineral.set("kind", mineral_type)
+
+	# Spawn slightly below the ship with random horizontal offset
+	var offset_x = randf_range(-drop_spread, drop_spread)
+	mineral.global_position = global_position + Vector2(offset_x, 20)
+
+	# Give it a small initial velocity (downward + some horizontal)
+	var initial_vel = Vector2(randf_range(-20, 20), 50)
+	if mineral.has_method("set_initial_velocity"):
+		mineral.set_initial_velocity(initial_vel)
+
+	get_tree().current_scene.add_child(mineral)
+
+# === Shield System Functions ===
+
+func _handle_shield_regeneration(delta: float) -> void:
+	"""Regenerate shield over time after the regen delay"""
+	if current_shield < GameState.max_shield:
+		if _can_regenerate:
+			_shield_regen_timer += delta
+			if _shield_regen_timer >= GameState.shield_regen_delay:
+				# Start regenerating
+				current_shield = min(current_shield + GameState.shield_regen_rate * delta, GameState.max_shield)
+				print("Player: Regenerating shield! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
+				GameState.shield_changed.emit(current_shield, GameState.max_shield)
+	
+
+func take_damage(amount: float) -> void:
+	"""Damage the shield and reset regeneration timer"""
+	current_shield = max(0.0, current_shield - amount)
+	_shield_regen_timer = 0.0  # Reset regen timer
+	_can_regenerate = true
+	print("Player: Taking damage! Emitting shield_changed - current: ", current_shield, " max: ", GameState.max_shield)
+	GameState.shield_changed.emit(current_shield, GameState.max_shield)
+
+
+	# Visual feedback - flash the ship
+	modulate = Color(1.5, 0.5, 0.5)  # Red flash
+	await get_tree().create_timer(0.1).timeout
+	modulate = Color.WHITE
+
+	if current_shield <= 0:
+		_on_shield_depleted()
+
+func _on_shield_depleted() -> void:
+	"""Called when shield reaches zero - handle player death/respawn"""
+	print("Shield depleted! Game Over!")
+	# You can add death/respawn logic here
+	# For now, just respawn the shield after a delay
+	
+	#get_tree().quit()
+	
+	#await get_tree().create_timer(2.0).timeout
+	get_tree().change_scene_to_file("res://Scenes/GameOver.tscn")
+	#current_shield = GameState.max_shield
+	#GameState.emit("shield_changed", current_shield, GameState.max_shield)

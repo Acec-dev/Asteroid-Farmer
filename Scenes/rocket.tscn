@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://dkb2mfc0p35cn"]
+
+[ext_resource type="Script" path="res://Scripts/rocket.gd" id="1_hthiq"]
+[ext_resource type="PackedScene" uid="uid://ww7ulmv4btbp" path="res://Scenes/rocket_particles.tscn" id="2_hthiq"]
+[ext_resource type="Texture2D" uid="uid://be2r7jl0nuwkd" path="res://Assets/outline_rocket.png" id="3_hthiq"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_n4fq7"]
+height = 64.0
+
+[node name="Rocket" type="Area2D" groups=["rockets"]]
+collision_layer = 128
+collision_mask = 32768
+script = ExtResource("1_hthiq")
+
+[node name="rocket_particles" parent="." instance=ExtResource("2_hthiq")]
+show_behind_parent = true
+position = Vector2(-21, 0)
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture_filter = 1
+scale = Vector2(0.15, 0.15)
+texture = ExtResource("3_hthiq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(-1, 0)
+rotation = 1.5716741
+shape = SubResource("CapsuleShape2D_n4fq7")

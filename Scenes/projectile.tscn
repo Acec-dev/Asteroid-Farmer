@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://b7lq5do3nwg5f"]
+
+[ext_resource type="Script" uid="uid://b202v1u336e75" path="res://Scripts/Projectile.gd" id="1_f8cdk"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_yr2qt"]
+size = Vector2(8, 2)
+
+[node name="Projectile" type="Area2D"]
+collision_layer = 128
+collision_mask = 32768
+script = ExtResource("1_f8cdk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_yr2qt")

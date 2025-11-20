@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3 uid="uid://csjqdgankgei"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_gwd1f"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_con4s"]
+particle_flag_disable_z = true
+emission_shape = 6
+emission_ring_axis = Vector3(0, 0, 1)
+emission_ring_height = 1.0
+emission_ring_radius = 1.0
+emission_ring_inner_radius = 0.0
+emission_ring_cone_angle = 90.0
+gravity = Vector3(0, 0, 0)
+radial_accel_min = 85.049995
+radial_accel_max = 99.99999
+scale_max = 3.0
+
+[node name="Node2D" type="GPUParticles2D"]
+amount = 40
+texture = SubResource("CanvasTexture_gwd1f")
+lifetime = 0.78
+speed_scale = 3.0
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_con4s")

@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://b6yaf544oid0q"]
+
+[ext_resource type="Script" uid="uid://bl58kg5ncapi5" path="res://Scripts/floating_text_2d.gd" id="1_iad5f"]
+[ext_resource type="FontFile" uid="uid://2l42jripl5fv" path="res://Assets/Kenney Future.ttf" id="2_e084l"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_e084l"]
+font = ExtResource("2_e084l")
+
+[node name="FloatingText2D" type="Node2D"]
+script = ExtResource("1_iad5f")
+
+[node name="Label" type="Label" parent="."]
+offset_right = 40.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 20
+text = "+1 "
+label_settings = SubResource("LabelSettings_e084l")
+
+[node name="Timer" type="Timer" parent="."]
+one_shot = true
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

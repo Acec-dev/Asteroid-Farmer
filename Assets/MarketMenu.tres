@@ -1,0 +1,34 @@
+[gd_resource type="Theme" load_steps=6 format=3 uid="uid://4basnrbekm0a"]
+
+[ext_resource type="FontFile" uid="uid://br1r0sdo5mn8j" path="res://Assets/DMMono-Regular.ttf" id="1_3yc0o"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_mn10s"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3yc0o"]
+border_width_left = 4
+border_width_top = 4
+border_width_right = 5
+border_width_bottom = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mn10s"]
+border_width_left = 6
+border_width_top = 6
+border_width_right = 4
+border_width_bottom = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bxulg"]
+border_width_left = 4
+border_width_top = 4
+border_width_right = 5
+border_width_bottom = 4
+
+[resource]
+default_font = ExtResource("1_3yc0o")
+Button/colors/font_color = Color(0, 0, 0, 1)
+Button/font_sizes/font_size = 18
+Button/fonts/font = ExtResource("1_3yc0o")
+Button/styles/focus = SubResource("StyleBoxEmpty_mn10s")
+Button/styles/hover = SubResource("StyleBoxFlat_3yc0o")
+Button/styles/normal = SubResource("StyleBoxFlat_mn10s")
+Button/styles/pressed = SubResource("StyleBoxFlat_bxulg")
+Label/fonts/font = ExtResource("1_3yc0o")
