@@ -4,18 +4,12 @@ extends Node2D
 @export var asteroid_scene: PackedScene
 @export var floating_text: PackedScene
 
-# Tunables for the new behavior
-@export var spawn_ring_radius: float = 900.0  # how far from the player to spawn
-@export var spawn_ring_jitter: float = 120.0  # randomize radius a bit
-@export var band_half_size: Vector2 = Vector2(160, 120)  # "middle band" around screen center
-@export var asteroid_speed_range: Vector2 = Vector2(220, 360) # min/max straight speed
-
 # Mineral deposit box settings
 @export var spawn_deposit_box: bool = true  # Toggle deposit box on/off
 @export var deposit_box_position: Vector2 = Vector2(640, 600)  # Bottom center by default
 
-@onready var _spawn_timer := $SpawnTimer as Timer
-#@onready var rocket_button = $CanvasLayer/InventoryMenu/RocketsButton
+# Use new asteroid spawner component
+var asteroid_spawner: AsteroidSpawner = null
 
 @onready var player_cam = Camera2D
 
@@ -27,9 +21,10 @@ signal spawn_text
 
 func _ready() -> void:
 	randomize()
-	_spawn_timer.timeout.connect(_spawn_asteroid)
-	_spawn_timer.start()
 	_spawn_player()
+
+	# Setup asteroid spawner component
+	_setup_asteroid_spawner()
 
 	if spawn_deposit_box:
 		_spawn_deposit_box()
@@ -43,6 +38,22 @@ func _spawn_player() -> void:
 	add_child(_player)
 	player_cam = _player.find_child("PlayerCam")
 
+func _setup_asteroid_spawner() -> void:
+	"""Setup the modular asteroid spawner component"""
+	asteroid_spawner = AsteroidSpawner.new()
+	asteroid_spawner.name = "AsteroidSpawner"
+	asteroid_spawner.asteroid_scene = asteroid_scene
+	asteroid_spawner.player = _player
+	asteroid_spawner.camera = player_cam
+
+	# Configure spawner (can be overridden by GameState)
+	asteroid_spawner.trajectory_mode = AsteroidSpawner.TrajectoryMode.RANDOM_ACROSS
+
+	add_child(asteroid_spawner)
+
+	# Spawner will auto-sync with GameState difficulty
+	print("Main: Asteroid spawner initialized")
+
 func _spawn_deposit_box() -> void:
 	"""Spawn the mineral deposit box at the configured position"""
 	var deposit_box_script = load("res://Scripts/mineral_deposit_box.gd")
@@ -53,30 +64,6 @@ func _spawn_deposit_box() -> void:
 	print("Mineral deposit box spawned at: ", deposit_box_position)
 	print("Fly over the box and press E or Space to deposit minerals!")
 
-func _spawn_asteroid() -> void:
-	if not asteroid_scene or _player == null:
-		return
-
-	# 1) Pick a spawn point in a ring AROUND THE PLAYER
-	var ang := randf() * TAU
-	var r := spawn_ring_radius + randf_range(-spawn_ring_jitter, spawn_ring_jitter)
-	var spawn_pos := _player.global_position + Vector2.RIGHT.rotated(ang) * r
-
-	# 2) Pick a target point inside a "middle band"
-	var band_point := _player.global_position + Vector2(
-		randf_range(-band_half_size.x, band_half_size.x),
-		randf_range(-band_half_size.y, band_half_size.y)
-	)
-
-	# 3) Spawn and set its straight-line motion so the line passes through that band
-	var a: RigidBody2D = asteroid_scene.instantiate()
-	add_child(a)
-	
-
-	var speed := randf_range(asteroid_speed_range.x, asteroid_speed_range.y)
-	# Call our new initializer on the asteroid
-	a.setup_motion(spawn_pos, band_point, speed)
-	
 func _spawn_text():
 	_player.popup_mineral(GameState.MINERAL_NAMES[GameState.current_mat])
 	emit_signal("spawn_text")
