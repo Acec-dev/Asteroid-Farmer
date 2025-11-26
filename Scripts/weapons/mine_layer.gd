@@ -1,5 +1,5 @@
 ## Mine layer weapon that places explosive mines
-## Manual firing - player controls when to deploy
+## Automatic placement - mines are deployed at regular intervals
 class_name MineLayer
 extends WeaponBase
 
@@ -8,7 +8,7 @@ var mine_scene: PackedScene
 func _init() -> void:
 	weapon_name = "Mine Layer"
 	base_damage = 1.0
-	base_cooldown = 1.0  # 1 second between mine placements
+	base_cooldown = 3.0  # 3 seconds between mine placements (configurable)
 	enabled = false  # Requires unlock
 
 func _ready_weapon() -> void:
@@ -17,6 +17,9 @@ func _ready_weapon() -> void:
 		mine_scene = load("res://Scenes/mine.tscn")
 	else:
 		push_warning("MineLayer: Mine scene not found at res://Scenes/mine.tscn")
+
+	# Auto-activate so mines are placed automatically
+	activate()
 
 func _execute_fire() -> void:
 	if not _owner_node:

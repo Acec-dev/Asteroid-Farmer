@@ -78,7 +78,7 @@ var upgrades = {
 			"unlocked": false,
 			"level": 0,
 			"damage_values": [1.0, 2.0, 3.0, 5.0],
-			"cooldown_values": [1.0, 0.8, 0.6, 0.4]
+			"cooldown_values": [3.0, 2.5, 2.0, 1.5]  # Auto-placement interval (seconds)
 		},
 		"Railgun": {
 			"unlocked": false,

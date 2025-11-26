@@ -19,7 +19,6 @@ var radar_component: RadarComponent = null
 var FloatingText2D := preload("res://Scenes/floating_text_2d.tscn")
 var _vel: Vector2 = Vector2.ZERO
 var _mouse_delta := Vector2.ZERO
-var _mine_key_was_pressed: bool = false  # Edge detection for mine placement
 var _railgun_key_was_pressed: bool = false  # Edge detection for railgun firing
 
 @export var mouse_move_threshold := 0.5  # pixels per frame
@@ -76,9 +75,8 @@ func _setup_weapon_system() -> void:
 	var railgun = Railgun.new()
 	weapon_manager.add_weapon(railgun, "secondary")
 
-	# Bind input to weapons
+	# Bind input to weapons (mines auto-place, no input needed)
 	weapon_manager.bind_input("fire_laser", "Laser Beam")
-	weapon_manager.bind_input("place_mine", "Mine Layer")
 	weapon_manager.bind_input("fire_railgun", "Railgun")
 
 	# Sync with GameState upgrades
@@ -113,14 +111,7 @@ func _handle_weapon_input() -> void:
 	else:
 		weapon_manager.deactivate_weapon("Laser Beam")
 
-	# Mines - M key (manual placement with edge detection)
-	var m_pressed = Input.is_physical_key_pressed(KEY_M)
-	if m_pressed and not _mine_key_was_pressed:
-		weapon_manager.activate_weapon("Mine Layer")
-		# Deactivate immediately (it's a one-shot weapon)
-		await get_tree().process_frame
-		weapon_manager.deactivate_weapon("Mine Layer")
-	_mine_key_was_pressed = m_pressed
+	# Mines auto-place at intervals (no manual input needed)
 
 	# Railgun - R key (manual fire with edge detection)
 	var r_pressed = Input.is_physical_key_pressed(KEY_R)
