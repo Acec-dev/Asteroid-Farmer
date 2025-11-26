@@ -251,7 +251,7 @@ func sync_with_game_state() -> void:
 		return
 
 	# Check if spawner config exists in GameState
-	if GameState.has("upgrades") and GameState.upgrades.has("spawner"):
+	if "upgrades" in GameState and GameState.upgrades.has("spawner"):
 		var spawner_config = GameState.upgrades.spawner
 
 		# Difficulty level

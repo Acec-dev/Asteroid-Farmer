@@ -85,7 +85,7 @@ func sync_with_game_state() -> void:
 		return
 
 	# Read radar upgrades from GameState
-	if GameState.has("upgrades") and GameState.upgrades.has("radar"):
+	if "upgrades" in GameState and GameState.upgrades.has("radar"):
 		var radar_upgrades = GameState.upgrades.radar
 
 		if radar_upgrades.has("zoom_level"):

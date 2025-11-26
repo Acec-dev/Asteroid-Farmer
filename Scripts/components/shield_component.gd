@@ -79,16 +79,16 @@ func sync_with_game_state() -> void:
 	if not GameState:
 		return
 
-	# Read shield upgrades from GameState
-	if GameState.has("max_shield"):
+	# Read shield upgrades from GameState legacy variables
+	if "max_shield" in GameState:
 		max_shield = GameState.max_shield
-	if GameState.has("shield_regen_rate"):
+	if "shield_regen_rate" in GameState:
 		shield_regen_rate = GameState.shield_regen_rate
-	if GameState.has("shield_regen_delay"):
+	if "shield_regen_delay" in GameState:
 		shield_regen_delay = GameState.shield_regen_delay
 
 	# If we have an upgrade registry, use that instead
-	if GameState.has("upgrades") and GameState.upgrades.has("shield"):
+	if "upgrades" in GameState and GameState.upgrades.has("shield"):
 		var shield_upgrades = GameState.upgrades.shield
 
 		if shield_upgrades.has("max_capacity"):
