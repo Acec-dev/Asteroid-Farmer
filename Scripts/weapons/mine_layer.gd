@@ -36,7 +36,7 @@ func _place_mine() -> void:
 	mine.global_position = _owner_node.global_position
 
 	# Apply damage upgrade to mine if it has the property
-	if mine.has("damage"):
+	if "damage" in mine:
 		mine.damage = int(current_damage)
 
 	_owner_node.get_tree().current_scene.add_child(mine)

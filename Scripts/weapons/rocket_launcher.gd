@@ -31,7 +31,7 @@ func _spawn_rocket() -> void:
 	rocket.rotation = _owner_node.rotation
 
 	# Apply damage upgrade to rocket if it has the property
-	if rocket.has("damage"):
+	if "damage" in rocket:
 		rocket.damage = int(current_damage)
 
 	_owner_node.get_tree().current_scene.add_child(rocket)
