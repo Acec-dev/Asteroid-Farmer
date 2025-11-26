@@ -15,6 +15,10 @@ func _init() -> void:
 	base_cooldown = 0.5
 	enabled = true  # Primary weapon is always enabled
 
+func _ready_weapon() -> void:
+	# Auto-activate so it fires continuously
+	activate()
+
 func _execute_fire() -> void:
 	if not _owner_node:
 		return
