@@ -56,6 +56,18 @@ func _explode() -> void:
 		get_tree().current_scene.add_child(particles)
 		particles.global_position = global_position
 
+		# Activate particles and set up cleanup
+		if particles is GPUParticles2D:
+			particles.one_shot = true
+			particles.emitting = true
+			particles.finished.connect(particles.queue_free)
+		else:
+			var p := particles.get_node_or_null("GPUParticles2D")
+			if p:
+				p.one_shot = true
+				p.emitting = true
+				p.finished.connect(particles.queue_free)
+
 	# Damage all nearby asteroids in explosion radius
 	var space_state = get_world_2d().direct_space_state
 	var query = PhysicsShapeQueryParameters2D.new()
