@@ -7,5 +7,6 @@ func _ready() -> void:
 
 
 func _on_radar_button_pressed() -> void:
-	zoom.x -= 0.25
-	zoom.y -= 0.25
+	# zoom.x -= 0.25
+	# zoom.y -= 0.25
+	GameState.upgrade_system("radar", "zoom_level")

@@ -35,11 +35,16 @@ func _process(delta: float) -> void:
 		_reset_target()
 		queue_redraw()
 		return
+	
+	# Update laser position and rotation to match owner (player)
+	if _owner_node:
+		global_position = _owner_node.global_position
+		rotation = _owner_node.rotation
 
 	# Perform raycast
 	var space_state = get_world_2d().direct_space_state
-	var forward = Vector2.RIGHT.rotated(global_rotation)
-	var start_pos = global_position
+	var forward = Vector2.RIGHT.rotated(_owner_node.rotation)
+	var start_pos = _owner_node.global_position
 	var end_pos = start_pos + forward * max_range
 
 	var query = PhysicsRayQueryParameters2D.create(start_pos, end_pos)

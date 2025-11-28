@@ -135,6 +135,9 @@ func _spawn_single_asteroid() -> void:
 	asteroid.radius = asteroid_radius
 	asteroid.global_position = spawn_pos
 
+	# Randomly assign mineral type (IRON, NICKEL, or SILICA)
+	asteroid.mineral_kind = GameState.MineralType.values()[randi() % 3]
+
 	# Set motion
 	if asteroid.has_method("setup_motion"):
 		# Calculate target point based on direction

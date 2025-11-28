@@ -74,12 +74,14 @@ func _get_player_pos():
 
 func _on_rockets_button_pressed() -> void:
 	print("Upgraded to rockets")
-	_player.enable_rockets()
+	GameState.unlock_weapon("Rocket Launcher")
 
+func _on_laser_button_pressed() -> void:
+	print("Upgraded to laser")
+	GameState.unlock_weapon("Laser Beam")
 
 func _on_base_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://Scenes/base.tscn")
-
 
 func _on_explore_button_pressed() -> void:
 	player_cam.enabled = true
