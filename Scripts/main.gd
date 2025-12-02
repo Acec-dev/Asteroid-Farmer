@@ -85,3 +85,8 @@ func _on_base_button_pressed() -> void:
 
 func _on_explore_button_pressed() -> void:
 	player_cam.enabled = true
+
+
+func _on_mine_button_pressed() -> void:
+	print("Upgraded to mines")
+	GameState.unlock_weapon("Mine Layer")

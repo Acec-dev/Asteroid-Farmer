@@ -194,6 +194,10 @@ layout_mode = 2
 text = "Upgrade Laser
 "
 
+[node name="MineButton" type="Button" parent="CanvasLayer/VBoxContainer"]
+layout_mode = 2
+text = "Upgrade Mine"
+
 [node name="Radar" type="Camera2D" parent="."]
 limit_left = 0
 limit_top = 0
@@ -215,3 +219,4 @@ shape = SubResource("WorldBoundaryShape2D_fdnlq")
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/RadarButton" to="Radar" method="_on_radar_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/RocketsButton" to="." method="_on_rockets_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/VBoxContainer/LaserButton" to="." method="_on_laser_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/VBoxContainer/MineButton" to="." method="_on_mine_button_pressed"]

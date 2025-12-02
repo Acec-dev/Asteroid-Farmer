@@ -1,0 +1,74 @@
+[gd_scene load_steps=4 format=3 uid="uid://ybsanjwyu01t"]
+
+[ext_resource type="PackedScene" uid="uid://c6c6wf1l6nudr" path="res://Scenes/main.tscn" id="1_4cn4m"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_3lwls"]
+bg_color = Color(1, 0.3254095, 0.38516882, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_k1cqw"]
+bg_color = Color(0, 0.67058825, 0.79607844, 0.5372549)
+
+[node name="game_layout" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_right = 200.0
+offset_bottom = 1080.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_3lwls")
+
+[node name="PanelContainer2" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_top = 780.0
+offset_right = 1920.0
+offset_bottom = 1080.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_k1cqw")
+
+[node name="GridContainer" type="GridContainer" parent="."]
+layout_mode = 0
+offset_left = 440.0
+offset_right = 492.0
+offset_bottom = 171.0
+
+[node name="Button" type="Button" parent="GridContainer"]
+layout_mode = 2
+text = "panel"
+
+[node name="Button2" type="Button" parent="GridContainer"]
+layout_mode = 2
+text = "panel"
+
+[node name="Button3" type="Button" parent="GridContainer"]
+layout_mode = 2
+text = "panel"
+
+[node name="Button4" type="Button" parent="GridContainer"]
+layout_mode = 2
+text = "panel"
+
+[node name="Button5" type="Button" parent="GridContainer"]
+layout_mode = 2
+text = "panel"
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_left = 200.0
+offset_right = 1920.0
+offset_bottom = 780.0
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="."]
+layout_mode = 0
+offset_left = 200.0
+offset_right = 1920.0
+offset_bottom = 780.0
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="SubViewportContainer"]
+size = Vector2i(1720, 780)
+
+[node name="Main" parent="SubViewportContainer/SubViewport" instance=ExtResource("1_4cn4m")]
