@@ -55,12 +55,6 @@ text = "panel"
 layout_mode = 2
 text = "panel"
 
-[node name="ColorRect" type="ColorRect" parent="."]
-layout_mode = 0
-offset_left = 200.0
-offset_right = 1920.0
-offset_bottom = 780.0
-
 [node name="SubViewportContainer" type="SubViewportContainer" parent="."]
 layout_mode = 0
 offset_left = 200.0
