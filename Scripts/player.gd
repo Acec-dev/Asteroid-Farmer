@@ -14,6 +14,7 @@ var _nearby_deposit_box: Node2D = null  # Reference to deposit box we're near
 var weapon_manager: WeaponManager = null
 var shield_component: ShieldComponent = null
 var radar_component: RadarComponent = null
+var main_camera: Camera2D = null  # Reference to main camera for bounds
 
 # --- Utility ---
 var FloatingText2D := preload("res://Scenes/floating_text_2d.tscn")
@@ -38,6 +39,9 @@ func _draw() -> void:
 
 func _ready() -> void:
 	add_to_group("player")
+
+	# Get reference to main camera for bounds checking
+	main_camera = get_viewport().get_camera_2d()
 
 	# Initialize component systems
 	_setup_weapon_system()
@@ -130,6 +134,11 @@ func _handle_move(delta: float) -> void:
 	else:
 		_vel = _vel.move_toward(Vector2.ZERO, friction * delta)
 	global_position += _vel * delta
+
+	# Clamp player position to camera bounds
+	if main_camera:
+		global_position.x = clampf(global_position.x, main_camera.limit_left, main_camera.limit_right)
+		global_position.y = clampf(global_position.y, main_camera.limit_top, main_camera.limit_bottom)
 
 func _handle_aim() -> void:
 	# Ship only rotates when you MOVE the mouse, not constantly
