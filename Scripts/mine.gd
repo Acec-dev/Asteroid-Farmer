@@ -52,21 +52,30 @@ func _explode() -> void:
 
 	# Spawn explosion particle effect
 	if _explosion_particle_scene:
-		var particles = _explosion_particle_scene.instantiate()
-		get_tree().current_scene.add_child(particles)
-		particles.global_position = global_position
-
-		# Activate particles and set up cleanup
-		if particles is GPUParticles2D:
-			particles.one_shot = true
-			particles.emitting = true
-			particles.finished.connect(particles.queue_free)
+		var fx = _explosion_particle_scene.instantiate()
+		fx.global_position = global_position
+		fx.global_rotation = rotation
+		#Ensure it cleans up by itself
+		if fx is GPUParticles2D:
+			fx.one_shot = true
+			fx.emitting = true
+			fx.finished.connect(fx.queue_free)
 		else:
-			var p := particles.get_node_or_null("GPUParticles2D")
+			var p = fx.get_node_or_null("GPUParticles2D")
 			if p:
 				p.one_shot = true
 				p.emitting = true
-				p.finished.connect(particles.queue_free)
+				p.finished.connect(fx.queue_free)
+			else:
+				#Fallback: timed self-destruct if you dont have GPUParticles under fx
+				var t = Timer.new()
+				t.one_shot = true
+				t.wait_time = 2.0
+				fx.add_child(t)
+				t.timeout.connect(fx.queue_free)
+				t.start()
+		get_tree().current_scene.add_child(fx)
+
 
 	# Damage all nearby asteroids in explosion radius
 	var space_state = get_world_2d().direct_space_state
