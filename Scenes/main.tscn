@@ -161,3 +161,4 @@ script = ExtResource("13_fdnlq")
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/RocketsButton" to="." method="_on_rockets_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/LaserButton" to="." method="_on_laser_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/MineButton" to="." method="_on_mine_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/GraphButton" to="." method="_on_graph_button_pressed"]

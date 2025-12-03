@@ -90,3 +90,11 @@ func _on_explore_button_pressed() -> void:
 func _on_mine_button_pressed() -> void:
 	print("Upgraded to mines")
 	GameState.unlock_weapon("Mine Layer")
+
+
+func _on_graph_button_pressed() -> void:
+	# Get reference to the GraphsPanel
+	var graphs_panel = $CanvasLayer/GraphsPanel
+
+	# Toggle the panel animation (slide in/out)
+	graphs_panel.toggle()

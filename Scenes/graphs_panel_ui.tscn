@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://bnfwgnvak2ixs"]
+[gd_scene load_steps=5 format=3 uid="uid://bnfwgnvak2ixs"]
 
 [ext_resource type="Theme" uid="uid://h5oarse33pa7" path="res://Assets/market_ui.tres" id="1_5q8ec"]
+[ext_resource type="Script" uid="uid://dixbaskc1mo7e" path="res://Scripts/graphs_panel.gd" id="2_jdmxt"]
 [ext_resource type="Script" uid="uid://oxc45140dro6" path="res://Scripts/MineralPriceGraph.B&W.gd" id="2_nmrdj"]
 [ext_resource type="FontFile" uid="uid://br1r0sdo5mn8j" path="res://Assets/DMMono-Regular.ttf" id="3_jdmxt"]
 
@@ -11,6 +12,7 @@ anchor_top = 0.7222222
 anchor_right = 1.0
 anchor_bottom = 1.0
 theme = ExtResource("1_5q8ec")
+script = ExtResource("2_jdmxt")
 metadata/_edit_use_anchors_ = true
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
