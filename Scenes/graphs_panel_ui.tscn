@@ -4,13 +4,12 @@
 [ext_resource type="Script" uid="uid://oxc45140dro6" path="res://Scripts/MineralPriceGraph.B&W.gd" id="2_nmrdj"]
 [ext_resource type="FontFile" uid="uid://br1r0sdo5mn8j" path="res://Assets/DMMono-Regular.ttf" id="3_jdmxt"]
 
-[node name="PanelContainer" type="PanelContainer"]
+[node name="GraphsPanel" type="PanelContainer"]
 custom_minimum_size = Vector2(200, 200)
 anchors_preset = -1
-anchor_top = 0.61733335
+anchor_top = 0.7222222
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 0.27996826
 theme = ExtResource("1_5q8ec")
 metadata/_edit_use_anchors_ = true
 
