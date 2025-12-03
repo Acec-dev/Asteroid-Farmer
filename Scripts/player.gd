@@ -149,7 +149,9 @@ func _handle_aim() -> void:
 
 func popup_mineral(mineral_name: String) -> void:
 	var ft := FloatingText2D.instantiate()
-	get_tree().current_scene.add_child(ft)
+	# Add to owner's scene root (works with SubViewport)
+	var scene_root = owner if owner else get_tree().current_scene
+	scene_root.add_child(ft)
 	var start := global_position
 	ft.show_text(mineral_name, start)
 
@@ -226,7 +228,9 @@ func _spawn_falling_mineral(mineral_type: GameState.MineralType) -> void:
 	if mineral.has_method("set_initial_velocity"):
 		mineral.set_initial_velocity(initial_vel)
 
-	get_tree().current_scene.add_child(mineral)
+	# Add to owner's scene root (works with SubViewport)
+	var scene_root = owner if owner else get_tree().current_scene
+	scene_root.add_child(mineral)
 
 ## Damage forwarding to shield component
 func take_damage(amount: float) -> void:

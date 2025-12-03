@@ -122,7 +122,9 @@ func _spawn_particles() -> void:
 			t.timeout.connect(fx.queue_free)
 			t.start()
 
-	get_tree().current_scene.add_child(fx)
+	# Add to owner's scene root (works with SubViewport)
+	var scene_root = owner if owner else get_tree().current_scene
+	scene_root.add_child(fx)
 
 func _break_safe() -> void:
 	_spawn_particles()
@@ -139,7 +141,9 @@ func _break_safe() -> void:
 			var m = mineral_drop_scene.instantiate()
 			m.kind = GameState.MineralType.values()[randi() % 3]  # Randomly assign mineral type
 			m.global_position = global_position + Vector2(randf_range(-8,8), randf_range(-8,8))
-			get_tree().current_scene.add_child(m)
+			# Add to owner's scene root (works with SubViewport)
+			var scene_root = owner if owner else get_tree().current_scene
+			scene_root.add_child(m)
 	
 	# Only split if child would be large enough
 	if will_split:

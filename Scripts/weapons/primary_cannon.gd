@@ -76,7 +76,9 @@ func _spawn_visual_projectile(spawn_pos: Vector2, direction: Vector2, raycast_re
 
 		p.configure_as_visual(visual_projectile_speed, target_distance)
 
-	_owner_node.get_tree().current_scene.add_child(p)
+	# Add to owner's scene root (works with SubViewport)
+	var scene_root = _owner_node.owner if _owner_node.owner else _owner_node.get_tree().current_scene
+	scene_root.add_child(p)
 
 func _apply_custom_upgrade(stats: Dictionary) -> void:
 	# Apply primary cannon specific upgrades
