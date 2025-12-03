@@ -201,8 +201,8 @@ text = "Upgrade Mine"
 [node name="Radar" type="Camera2D" parent="."]
 limit_left = 0
 limit_top = 0
-limit_right = 1720
-limit_bottom = 780
+limit_right = 1920
+limit_bottom = 1080
 script = ExtResource("13_fdnlq")
 
 [node name="StaticBody2D" type="StaticBody2D" parent="."]
