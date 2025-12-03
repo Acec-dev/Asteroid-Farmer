@@ -145,7 +145,7 @@ text = "Upgrade Mine"
 layout_mode = 2
 text = "GraphButton"
 
-[node name="PanelContainer" parent="CanvasLayer" instance=ExtResource("11_6iyac")]
+[node name="GraphsPanel" parent="CanvasLayer" instance=ExtResource("11_6iyac")]
 
 [node name="Radar" type="Camera2D" parent="."]
 limit_left = 0
