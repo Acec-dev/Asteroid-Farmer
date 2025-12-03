@@ -74,7 +74,9 @@ func _explode() -> void:
 				fx.add_child(t)
 				t.timeout.connect(fx.queue_free)
 				t.start()
-		get_tree().current_scene.add_child(fx)
+		# Add to owner's scene root (works with SubViewport)
+		var scene_root = owner if owner else get_tree().current_scene
+		scene_root.add_child(fx)
 
 
 	# Damage all nearby asteroids in explosion radius

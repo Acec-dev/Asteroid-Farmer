@@ -34,7 +34,9 @@ func _spawn_rocket() -> void:
 	if "damage" in rocket:
 		rocket.damage = int(current_damage)
 
-	_owner_node.get_tree().current_scene.add_child(rocket)
+	# Add to owner's scene root (works with SubViewport)
+	var scene_root = _owner_node.owner if _owner_node.owner else _owner_node.get_tree().current_scene
+	scene_root.add_child(rocket)
 	print("Rocket spawned at: ", rocket.global_position)
 
 func _apply_custom_upgrade(stats: Dictionary) -> void:

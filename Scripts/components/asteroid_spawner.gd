@@ -144,8 +144,9 @@ func _spawn_single_asteroid() -> void:
 		var target_point = spawn_pos + direction * 5000.0  # Far point in that direction
 		asteroid.setup_motion(spawn_pos, target_point, speed)
 
-	# Add to scene
-	get_tree().current_scene.add_child(asteroid)
+	# Add to scene (use get_parent since this component is added to Main)
+	var scene_root = get_parent() if get_parent() else get_tree().current_scene
+	scene_root.add_child(asteroid)
 
 	# Emit signal
 	asteroid_spawned.emit(asteroid)

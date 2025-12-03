@@ -39,7 +39,9 @@ func _place_mine() -> void:
 	if "damage" in mine:
 		mine.damage = int(current_damage)
 
-	_owner_node.get_tree().current_scene.add_child(mine)
+	# Add to owner's scene root (works with SubViewport)
+	var scene_root = _owner_node.owner if _owner_node.owner else _owner_node.get_tree().current_scene
+	scene_root.add_child(mine)
 	print("Mine placed at: ", mine.global_position)
 
 func _apply_custom_upgrade(stats: Dictionary) -> void:
