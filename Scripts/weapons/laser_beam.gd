@@ -48,7 +48,7 @@ func _process(delta: float) -> void:
 	var end_pos = start_pos + forward * max_range
 
 	var query = PhysicsRayQueryParameters2D.create(start_pos, end_pos)
-	query.collision_mask = 0xFFFFFFFF
+	query.collision_mask = 0x7FFFFFFF  # All layers except layer 31 (minerals)
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
 
@@ -84,6 +84,10 @@ func _process(delta: float) -> void:
 
 func _apply_damage(target: Node) -> void:
 	if not target or not target.has_method("hit_by_projectile"):
+		return
+
+	# Don't damage targets that are off-screen
+	if target is Node2D and not is_node_on_screen(target):
 		return
 
 	# Calculate ramping damage
