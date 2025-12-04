@@ -35,6 +35,9 @@ enabled=PackedStringArray()
 player_pickup=""
 rockets=""
 asteroids=""
+player=""
+falling_mineral=""
+mineral=""
 
 [input]
 
