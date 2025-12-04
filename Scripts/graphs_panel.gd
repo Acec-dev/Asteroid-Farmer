@@ -11,10 +11,10 @@ var original_anchor_right: float
 var original_anchor_top: float
 var tween: Tween
 
-# Camera references
+# Camera and component references
 var radar_camera: Camera2D
+var radar_component: Node  # RadarComponent that controls zoom
 var original_camera_limit_bottom: int
-var original_camera_zoom: Vector2
 var reduced_camera_limit_bottom: int
 
 func _ready() -> void:
@@ -26,10 +26,17 @@ func _ready() -> void:
 	# Get reference to the Radar camera (GraphsPanel is under CanvasLayer, Radar is sibling to CanvasLayer)
 	radar_camera = get_node("../../Radar") if has_node("../../Radar") else null
 
+	# Find the RadarComponent (it's attached to the player)
+	var players = get_tree().get_nodes_in_group("player")
+	if players.size() > 0:
+		var player = players[0]
+		radar_component = player.find_child("RadarComponent")
+		if radar_component:
+			print("GraphsPanel: Found RadarComponent")
+
 	# If we found the camera, store its original values
 	if radar_camera:
 		original_camera_limit_bottom = radar_camera.limit_bottom
-		original_camera_zoom = radar_camera.zoom
 
 		# Calculate where the panel will be when visible
 		var viewport_height = get_viewport_rect().size.y
@@ -68,8 +75,11 @@ func slide_in() -> void:
 	if radar_camera:
 		# Reduce the play area by adjusting camera bottom limit
 		tween.tween_property(radar_camera, "limit_bottom", reduced_camera_limit_bottom, slide_duration)
-		# Zoom out slightly to give the effect that the screen shrank
-		tween.tween_property(radar_camera, "zoom", original_camera_zoom / zoom_amount, slide_duration)
+
+	# Animate radar component zoom multiplier if available
+	if radar_component:
+		# Increase the multiplier to zoom out (higher multiplier = more zoom out)
+		tween.tween_property(radar_component, "zoom_multiplier", zoom_amount, slide_duration)
 
 func slide_out() -> void:
 	"""Slides the panel out from right to left"""
@@ -99,8 +109,11 @@ func slide_out() -> void:
 	if radar_camera:
 		# Restore the full play area
 		tween.tween_property(radar_camera, "limit_bottom", original_camera_limit_bottom, slide_duration)
-		# Zoom back in to original zoom level
-		tween.tween_property(radar_camera, "zoom", original_camera_zoom, slide_duration)
+
+	# Restore radar component zoom multiplier if available
+	if radar_component:
+		# Reset multiplier back to 1.0 (normal zoom)
+		tween.tween_property(radar_component, "zoom_multiplier", 1.0, slide_duration)
 
 func toggle() -> void:
 	"""Toggles the panel visibility with animation"""

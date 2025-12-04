@@ -13,6 +13,9 @@ var zoom_values: Array[float] = [1.0, 1.2, 1.5, 2.0, 2.5]  # Zoom levels per upg
 ## Current zoom (inverse of camera.zoom)
 var current_zoom: float = 1.0
 
+## Zoom multiplier for external effects (like UI panels)
+var zoom_multiplier: float = 1.0
+
 ## Smooth transition
 @export var zoom_transition_speed: float = 2.0
 
@@ -38,9 +41,12 @@ func _process(delta: float) -> void:
 	var target_zoom = _get_target_zoom()
 	current_zoom = lerp(current_zoom, target_zoom, zoom_transition_speed * delta)
 
+	# Apply zoom multiplier for external effects (like UI panels)
+	var final_zoom = current_zoom * zoom_multiplier
+
 	# Camera zoom is inverse - higher value = more zoomed out
-	# We want radar to zoom OUT, so we divide by current_zoom
-	camera.zoom = Vector2.ONE / current_zoom
+	# We want radar to zoom OUT, so we divide by final_zoom
+	camera.zoom = Vector2.ONE / final_zoom
 
 ## Find the camera in the scene
 func _find_camera() -> void:
@@ -109,7 +115,8 @@ func _on_upgrades_changed() -> void:
 func _apply_zoom() -> void:
 	current_zoom = _get_target_zoom()
 	if camera:
-		camera.zoom = Vector2.ONE / current_zoom
+		var final_zoom = current_zoom * zoom_multiplier
+		camera.zoom = Vector2.ONE / final_zoom
 
 ## Manually set radar level (for testing)
 func set_radar_level(level: int) -> void:
