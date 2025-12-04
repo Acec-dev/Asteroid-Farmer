@@ -15,6 +15,7 @@ var weapon_manager: WeaponManager = null
 var shield_component: ShieldComponent = null
 var radar_component: RadarComponent = null
 var main_camera: Camera2D = null  # Reference to main camera for bounds
+var graphs_panel: Node = null  # Reference to graphs panel for dynamic bounds
 
 # --- Utility ---
 var FloatingText2D := preload("res://Scenes/floating_text_2d.tscn")
@@ -113,9 +114,9 @@ func _connect_to_graphs_panel() -> void:
 	# Find the graphs panel in the scene tree
 	var graphs_panels = get_tree().get_nodes_in_group("graphs_panel")
 	if graphs_panels.size() > 0:
-		var panel = graphs_panels[0]
-		if panel.has_signal("camera_bounds_changed"):
-			panel.camera_bounds_changed.connect(_on_camera_bounds_changed)
+		graphs_panel = graphs_panels[0]
+		if graphs_panel.has_signal("camera_bounds_changed"):
+			graphs_panel.camera_bounds_changed.connect(_on_camera_bounds_changed)
 			print("Player: Connected to graphs panel bounds signal")
 	else:
 		# Try alternative path if not in a group
@@ -124,20 +125,31 @@ func _connect_to_graphs_panel() -> void:
 			# Try to find by path (GraphsPanel is under CanvasLayer)
 			var scene_root = get_tree().current_scene
 			if scene_root:
-				var panel = scene_root.find_child("GraphsPanel", true, false)
-				if panel and panel.has_signal("camera_bounds_changed"):
-					panel.camera_bounds_changed.connect(_on_camera_bounds_changed)
+				graphs_panel = scene_root.find_child("GraphsPanel", true, false)
+				if graphs_panel and graphs_panel.has_signal("camera_bounds_changed"):
+					graphs_panel.camera_bounds_changed.connect(_on_camera_bounds_changed)
 					print("Player: Connected to graphs panel bounds signal")
 
 ## Called when camera bounds change (e.g., when graphs panel slides in/out)
 func _on_camera_bounds_changed() -> void:
+	# Immediately clamp when bounds change
 	_clamp_to_camera_bounds()
 
 ## Immediately clamp player position to camera bounds
+## Takes into account the graphs panel if visible
 func _clamp_to_camera_bounds() -> void:
-	if main_camera:
-		global_position.x = clampf(global_position.x, main_camera.limit_left, main_camera.limit_right)
-		global_position.y = clampf(global_position.y, main_camera.limit_top, main_camera.limit_bottom)
+	if not main_camera:
+		return
+
+	# Horizontal bounds from camera
+	global_position.x = clampf(global_position.x, main_camera.limit_left, main_camera.limit_right)
+
+	# Vertical bounds - check if graphs panel is visible and adjust accordingly
+	var max_y = main_camera.limit_bottom
+	if graphs_panel and graphs_panel.has_method("get_player_max_y"):
+		max_y = graphs_panel.get_player_max_y()
+
+	global_position.y = clampf(global_position.y, main_camera.limit_top, max_y)
 
 ## Handle weapon input
 func _handle_weapon_input() -> void:
