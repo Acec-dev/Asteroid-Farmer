@@ -1,11 +1,14 @@
 extends PanelContainer
 
+# Signal emitted when camera bounds are changed
+signal camera_bounds_changed()
+
 # Animation settings
 @export var slide_duration: float = 0.5
 @export var start_hidden: bool = true
 @export var zoom_amount: float = 1.15  # How much to zoom out when panel is visible
 
-var is_visible: bool = false
+var panel_visible: bool = false
 var original_anchor_left: float
 var original_anchor_right: float
 var original_anchor_top: float
@@ -18,6 +21,9 @@ var original_camera_limit_bottom: int
 var reduced_camera_limit_bottom: int
 
 func _ready() -> void:
+	# Add to group so player can find us
+	add_to_group("graphs_panel")
+
 	# Store the original anchor positions from the scene
 	original_anchor_left = anchor_left
 	original_anchor_right = anchor_right
@@ -48,14 +54,14 @@ func _ready() -> void:
 		var offset = anchor_right - anchor_left  # Width in anchor units
 		anchor_left = -offset
 		anchor_right = 0.0
-		is_visible = false
+		panel_visible = false
 
 func slide_in() -> void:
 	"""Slides the panel in from left to right"""
-	if is_visible:
+	if panel_visible:
 		return
 
-	is_visible = true
+	panel_visible = true
 
 	# Cancel any existing tween
 	if tween:
@@ -81,12 +87,15 @@ func slide_in() -> void:
 		# Increase the multiplier to zoom out (higher multiplier = more zoom out)
 		tween.tween_property(radar_component, "zoom_multiplier", zoom_amount, slide_duration)
 
+	# Emit signal when tween finishes to notify player of bounds change
+	tween.finished.connect(func(): camera_bounds_changed.emit())
+
 func slide_out() -> void:
 	"""Slides the panel out from right to left"""
-	if not is_visible:
+	if not panel_visible:
 		return
 
-	is_visible = false
+	panel_visible = false
 
 	# Calculate the hidden position (off-screen to the left)
 	var offset = original_anchor_right - original_anchor_left
@@ -115,9 +124,12 @@ func slide_out() -> void:
 		# Reset multiplier back to 1.0 (normal zoom)
 		tween.tween_property(radar_component, "zoom_multiplier", 1.0, slide_duration)
 
+	# Emit signal when tween finishes to notify player of bounds change
+	tween.finished.connect(func(): camera_bounds_changed.emit())
+
 func toggle() -> void:
 	"""Toggles the panel visibility with animation"""
-	if is_visible:
+	if panel_visible:
 		slide_out()
 	else:
 		slide_in()

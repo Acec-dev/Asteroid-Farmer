@@ -48,6 +48,9 @@ func _ready() -> void:
 	_setup_shield_system()
 	_setup_radar_system()
 
+	# Connect to graphs panel bounds change signal
+	_connect_to_graphs_panel()
+
 func _physics_process(delta: float) -> void:
 	_handle_move(delta)
 	_handle_aim()
@@ -105,6 +108,37 @@ func _setup_radar_system() -> void:
 
 	print("Player: Radar component initialized")
 
+## Connect to graphs panel for bounds updates
+func _connect_to_graphs_panel() -> void:
+	# Find the graphs panel in the scene tree
+	var graphs_panels = get_tree().get_nodes_in_group("graphs_panel")
+	if graphs_panels.size() > 0:
+		var panel = graphs_panels[0]
+		if panel.has_signal("camera_bounds_changed"):
+			panel.camera_bounds_changed.connect(_on_camera_bounds_changed)
+			print("Player: Connected to graphs panel bounds signal")
+	else:
+		# Try alternative path if not in a group
+		var canvas_layer = get_tree().get_first_node_in_group("ui_layer")
+		if not canvas_layer:
+			# Try to find by path (GraphsPanel is under CanvasLayer)
+			var scene_root = get_tree().current_scene
+			if scene_root:
+				var panel = scene_root.find_child("GraphsPanel", true, false)
+				if panel and panel.has_signal("camera_bounds_changed"):
+					panel.camera_bounds_changed.connect(_on_camera_bounds_changed)
+					print("Player: Connected to graphs panel bounds signal")
+
+## Called when camera bounds change (e.g., when graphs panel slides in/out)
+func _on_camera_bounds_changed() -> void:
+	_clamp_to_camera_bounds()
+
+## Immediately clamp player position to camera bounds
+func _clamp_to_camera_bounds() -> void:
+	if main_camera:
+		global_position.x = clampf(global_position.x, main_camera.limit_left, main_camera.limit_right)
+		global_position.y = clampf(global_position.y, main_camera.limit_top, main_camera.limit_bottom)
+
 ## Handle weapon input
 func _handle_weapon_input() -> void:
 	# Primary weapon auto-fires (already handled by weapon manager)
@@ -136,9 +170,7 @@ func _handle_move(delta: float) -> void:
 	global_position += _vel * delta
 
 	# Clamp player position to camera bounds
-	if main_camera:
-		global_position.x = clampf(global_position.x, main_camera.limit_left, main_camera.limit_right)
-		global_position.y = clampf(global_position.y, main_camera.limit_top, main_camera.limit_bottom)
+	_clamp_to_camera_bounds()
 
 func _handle_aim() -> void:
 	# Ship only rotates when you MOVE the mouse, not constantly
