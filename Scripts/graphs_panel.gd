@@ -2,7 +2,6 @@ extends PanelContainer
 
 # Signal emitted when camera bounds are changed
 signal camera_bounds_changed()
-signal panel_visibility_changed(is_visible: bool)
 
 # Animation settings
 @export var slide_duration: float = 0.5
@@ -18,9 +17,8 @@ var tween: Tween
 # Camera and component references
 var radar_camera: Camera2D
 var radar_component: Node  # RadarComponent that controls zoom
-
-# Store the panel's screen position for bounds calculation
-var panel_top_screen_y: float = 0.0
+var original_camera_limit_bottom: int
+var reduced_camera_limit_bottom: int
 
 func _ready() -> void:
 	# Add to group so player can find us
@@ -42,11 +40,13 @@ func _ready() -> void:
 		if radar_component:
 			print("GraphsPanel: Found RadarComponent")
 
-	# Calculate the panel's top edge position in screen space when visible
-	var viewport_height = get_viewport_rect().size.y
-	panel_top_screen_y = viewport_height * original_anchor_top
-
-	print("GraphsPanel: Panel will be at screen Y = ", panel_top_screen_y)
+	# Store original camera limits and calculate reduced limit
+	if radar_camera:
+		original_camera_limit_bottom = radar_camera.limit_bottom
+		# The panel top edge is at this Y position in world space
+		# Since camera shows 0-1080 area and panel is at 72.22% down, it's at Y=780
+		reduced_camera_limit_bottom = int(original_camera_limit_bottom * original_anchor_top)
+		print("GraphsPanel: Will set camera limit_bottom from ", original_camera_limit_bottom, " to ", reduced_camera_limit_bottom)
 
 	# Start hidden if configured (moved off-screen to the left)
 	if start_hidden:
@@ -77,16 +77,18 @@ func slide_in() -> void:
 	tween.tween_property(self, "anchor_left", original_anchor_left, slide_duration)
 	tween.tween_property(self, "anchor_right", original_anchor_right, slide_duration)
 
+	# Don't animate camera limits - just set it immediately to avoid zoom/movement confusion
+	if radar_camera:
+		radar_camera.limit_bottom = reduced_camera_limit_bottom
+		print("GraphsPanel: Set camera limit_bottom to ", reduced_camera_limit_bottom)
+
 	# Animate radar component zoom multiplier if available
 	if radar_component:
 		# Increase the multiplier to zoom out (higher multiplier = more zoom out)
 		tween.tween_property(radar_component, "zoom_multiplier", zoom_amount, slide_duration)
 
-	# Emit signals when tween finishes
-	tween.finished.connect(func():
-		camera_bounds_changed.emit()
-		panel_visibility_changed.emit(true)
-	)
+	# Emit signal when animation finishes
+	tween.finished.connect(func(): camera_bounds_changed.emit())
 
 func slide_out() -> void:
 	"""Slides the panel out from right to left"""
@@ -112,16 +114,18 @@ func slide_out() -> void:
 	tween.tween_property(self, "anchor_left", -offset, slide_duration)
 	tween.tween_property(self, "anchor_right", 0.0, slide_duration)
 
+	# Restore camera limit immediately
+	if radar_camera:
+		radar_camera.limit_bottom = original_camera_limit_bottom
+		print("GraphsPanel: Restored camera limit_bottom to ", original_camera_limit_bottom)
+
 	# Restore radar component zoom multiplier if available
 	if radar_component:
 		# Reset multiplier back to 1.0 (normal zoom)
 		tween.tween_property(radar_component, "zoom_multiplier", 1.0, slide_duration)
 
-	# Emit signals when tween finishes
-	tween.finished.connect(func():
-		camera_bounds_changed.emit()
-		panel_visibility_changed.emit(false)
-	)
+	# Emit signal when animation finishes
+	tween.finished.connect(func(): camera_bounds_changed.emit())
 
 func toggle() -> void:
 	"""Toggles the panel visibility with animation"""
@@ -129,23 +133,3 @@ func toggle() -> void:
 		slide_out()
 	else:
 		slide_in()
-
-## Get the maximum Y position for the player in world coordinates
-## This accounts for the panel's screen position and camera zoom
-func get_player_max_y() -> float:
-	if not panel_visible or not radar_camera:
-		# Panel hidden or no camera - use default camera limit
-		return radar_camera.limit_bottom if radar_camera else 1080.0
-
-	# Convert screen space panel position to world space
-	# Screen Y to world Y formula:
-	# world_y = camera_y + (screen_y - viewport_height/2) / camera_zoom
-
-	var viewport_height = get_viewport_rect().size.y
-	var camera_zoom = radar_camera.zoom.y  # zoom is a Vector2, but usually uniform
-	var camera_y = radar_camera.position.y
-
-	# Calculate world Y position of panel's top edge
-	var world_y = camera_y + (panel_top_screen_y - viewport_height / 2.0) / camera_zoom
-
-	return world_y

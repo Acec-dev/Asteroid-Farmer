@@ -136,20 +136,13 @@ func _on_camera_bounds_changed() -> void:
 	_clamp_to_camera_bounds()
 
 ## Immediately clamp player position to camera bounds
-## Takes into account the graphs panel if visible
 func _clamp_to_camera_bounds() -> void:
 	if not main_camera:
 		return
 
-	# Horizontal bounds from camera
+	# Clamp to camera limits
 	global_position.x = clampf(global_position.x, main_camera.limit_left, main_camera.limit_right)
-
-	# Vertical bounds - check if graphs panel is visible and adjust accordingly
-	var max_y = main_camera.limit_bottom
-	if graphs_panel and graphs_panel.has_method("get_player_max_y"):
-		max_y = graphs_panel.get_player_max_y()
-
-	global_position.y = clampf(global_position.y, main_camera.limit_top, max_y)
+	global_position.y = clampf(global_position.y, main_camera.limit_top, main_camera.limit_bottom)
 
 ## Handle weapon input
 func _handle_weapon_input() -> void:
