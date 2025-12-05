@@ -11,13 +11,10 @@ var original_anchor_right: float
 var original_anchor_top: float
 var tween: Tween
 
-# Camera and component references
+# Component references
 var radar_camera: Camera2D
 var radar_component: Node  # RadarComponent that controls zoom
-var original_camera_limit_bottom: int
-var original_camera_limit_top: int
-var reduced_camera_limit_bottom: int
-var reduced_camera_limit_top: int
+var panel_height_pixels: int = 0  # How many pixels the panel takes up
 
 func _ready() -> void:
 	# Store the original anchor positions from the scene
@@ -25,8 +22,12 @@ func _ready() -> void:
 	original_anchor_right = anchor_right
 	original_anchor_top = anchor_top
 
-	# Get reference to the Radar camera (GraphsPanel is under CanvasLayer, Radar is sibling to CanvasLayer)
+	# Get reference to the Radar camera for ScreenUtils initialization
 	radar_camera = get_node("../../Radar") if has_node("../../Radar") else null
+
+	# Initialize ScreenUtils with the camera
+	if radar_camera:
+		ScreenUtils.set_main_camera(radar_camera)
 
 	# Find the RadarComponent (it's attached to the player)
 	var players = get_tree().get_nodes_in_group("player")
@@ -36,21 +37,13 @@ func _ready() -> void:
 		if radar_component:
 			print("GraphsPanel: Found RadarComponent")
 
-	# Store original camera limits and calculate reduced limits
+	# Calculate how much screen space the panel takes when visible
 	if radar_camera:
-		original_camera_limit_bottom = radar_camera.limit_bottom
-		original_camera_limit_top = radar_camera.limit_top
-
-		# Calculate how much the bottom moves up
-		reduced_camera_limit_bottom = int(original_camera_limit_bottom * original_anchor_top)
-		var bottom_delta = original_camera_limit_bottom - reduced_camera_limit_bottom
-
-		# Move the top down by the same amount to keep the same viewable area
-		reduced_camera_limit_top = original_camera_limit_top + bottom_delta
-
-		print("GraphsPanel: Will adjust camera Y limits:")
-		print("  Bottom: ", original_camera_limit_bottom, " → ", reduced_camera_limit_bottom, " (delta: ", -bottom_delta, ")")
-		print("  Top: ", original_camera_limit_top, " → ", reduced_camera_limit_top, " (delta: +", bottom_delta, ")")
+		var viewport_height = get_viewport_rect().size.y
+		# Panel starts at original_anchor_top (e.g., 0.72 = 72% down)
+		# So it takes up the remaining portion (e.g., 28% = 300 pixels if viewport is 1080)
+		panel_height_pixels = int(viewport_height * (1.0 - original_anchor_top))
+		print("GraphsPanel: Panel will take ", panel_height_pixels, " pixels when open")
 
 	# Start hidden if configured (moved off-screen to the left)
 	if start_hidden:
@@ -81,11 +74,15 @@ func slide_in() -> void:
 	tween.tween_property(self, "anchor_left", original_anchor_left, slide_duration)
 	tween.tween_property(self, "anchor_right", original_anchor_right, slide_duration)
 
-	# Animate camera limits along with zoom for smooth transition
-	if radar_camera:
-		tween.tween_property(radar_camera, "limit_bottom", reduced_camera_limit_bottom, slide_duration)
-		tween.tween_property(radar_camera, "limit_top", reduced_camera_limit_top, slide_duration)
-		print("GraphsPanel: Animating camera limits for panel open")
+	# Adjust world boundaries through ScreenUtils
+	# When panel opens, we lose panel_height_pixels at the bottom
+	# So we need to expand upward by the same amount to compensate
+	ScreenUtils.adjust_boundaries(
+		-panel_height_pixels,  # top_inset: negative = move UP (in Godot Y coords)
+		panel_height_pixels,   # bottom_inset: move bottom boundary UP by panel height
+		0, 0,                  # left/right: no change
+		slide_duration
+	)
 
 	# Animate radar component zoom multiplier if available
 	if radar_component:
@@ -116,11 +113,8 @@ func slide_out() -> void:
 	tween.tween_property(self, "anchor_left", -offset, slide_duration)
 	tween.tween_property(self, "anchor_right", 0.0, slide_duration)
 
-	# Animate camera limits restoration
-	if radar_camera:
-		tween.tween_property(radar_camera, "limit_bottom", original_camera_limit_bottom, slide_duration)
-		tween.tween_property(radar_camera, "limit_top", original_camera_limit_top, slide_duration)
-		print("GraphsPanel: Animating camera limits for panel close")
+	# Restore world boundaries through ScreenUtils
+	ScreenUtils.restore_boundaries(slide_duration)
 
 	# Restore radar component zoom multiplier if available
 	if radar_component:
