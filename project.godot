@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 GameState="*res://Scripts/game_state.gd"
 Market="*res://Scripts/Market.gd"
+ScreenUtils="*res://Scripts/screen_utils.gd"
 
 [display]
 
