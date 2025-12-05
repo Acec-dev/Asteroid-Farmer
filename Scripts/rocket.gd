@@ -58,7 +58,7 @@ func _draw() -> void:
 
 func _on_body_entered(body: Node) -> void:
 	# Only hit on-screen targets
-	if body.has_method("hit_by_projectile") and _is_node_on_screen(body):
+	if body.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(body):
 		print("Rocket hit body: ", body.name)
 		# Apply damage - asteroid needs multiple hits
 		body.hit_by_projectile(self)
@@ -66,7 +66,7 @@ func _on_body_entered(body: Node) -> void:
 
 func _on_area_entered(area: Area2D) -> void:
 	# Only hit on-screen targets
-	if area.has_method("hit_by_projectile") and _is_node_on_screen(area):
+	if area.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(area):
 		print("Rocket hit area: ", area.name)
 		area.hit_by_projectile(self)
 		_explode()
@@ -89,36 +89,11 @@ func _explode() -> void:
 	for result in results:
 		var obj = result.collider
 		# Only damage objects that are on-screen
-		if obj and obj != self and obj.has_method("hit_by_projectile") and _is_node_on_screen(obj):
+		if obj and obj != self and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
 			print("  Explosion hit: ", obj.name)
 			obj.hit_by_projectile(self)
 
 	queue_free()
-
-func _is_node_on_screen(node: Node2D) -> bool:
-	"""Check if a node is visible on screen"""
-	if not node:
-		return false
-
-	var viewport = get_viewport()
-	if not viewport:
-		return true  # Default to allowing if no viewport
-
-	var camera = viewport.get_camera_2d()
-	if not camera:
-		return true  # No camera, allow by default
-
-	# Get viewport size
-	var viewport_size = viewport.get_visible_rect().size
-
-	# Transform world position to camera space
-	var camera_transform = camera.get_canvas_transform()
-	var screen_pos = camera_transform * node.global_position
-
-	# Check if position is within viewport bounds with some margin
-	var margin = 50.0  # Small margin to allow hitting asteroids at edge
-	return screen_pos.x >= -margin and screen_pos.x <= viewport_size.x + margin and \
-		   screen_pos.y >= -margin and screen_pos.y <= viewport_size.y + margin
 
 func _find_nearest_asteroid() -> Node:
 	# Query for nearby asteroids using physics
@@ -140,7 +115,7 @@ func _find_nearest_asteroid() -> Node:
 	for result in results:
 		var obj = result.collider
 		# Check if it's an asteroid (has hit_by_projectile method) and is on screen
-		if obj and obj.has_method("hit_by_projectile") and _is_node_on_screen(obj):
+		if obj and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
 			var distance = global_position.distance_to((obj as Node2D).global_position)
 			if distance < nearest_distance:
 				nearest_distance = distance

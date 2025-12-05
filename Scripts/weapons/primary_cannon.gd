@@ -52,7 +52,7 @@ func _hitscan_shot(spawn_pos: Vector2, direction: Vector2) -> void:
 	if result and result.collider:
 		var hit_object = result.collider
 		# Only damage objects that are on-screen
-		if hit_object.has_method("hit_by_projectile") and is_node_on_screen(hit_object):
+		if hit_object.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(hit_object):
 			# Apply damage multiple times to match damage_per_shot
 			for i in int(current_damage):
 				hit_object.hit_by_projectile(_owner_node)

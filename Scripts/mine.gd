@@ -94,7 +94,7 @@ func _explode() -> void:
 	for result in results:
 		var obj = result.collider
 		# Only damage on-screen targets
-		if obj and obj != self and obj.has_method("hit_by_projectile") and _is_node_on_screen(obj):
+		if obj and obj != self and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
 			print("  Mine explosion hit: ", obj.name)
 			obj.hit_by_projectile(self)
 			hit_count += 1
@@ -103,28 +103,3 @@ func _explode() -> void:
 
 	# Remove the mine
 	queue_free()
-
-func _is_node_on_screen(node: Node2D) -> bool:
-	"""Check if a node is visible on screen"""
-	if not node:
-		return false
-
-	var viewport = get_viewport()
-	if not viewport:
-		return true  # Default to allowing if no viewport
-
-	var camera = viewport.get_camera_2d()
-	if not camera:
-		return true  # No camera, allow by default
-
-	# Get viewport size
-	var viewport_size = viewport.get_visible_rect().size
-
-	# Transform world position to camera space
-	var camera_transform = camera.get_canvas_transform()
-	var screen_pos = camera_transform * node.global_position
-
-	# Check if position is within viewport bounds with some margin
-	var margin = 50.0  # Small margin to allow hitting asteroids at edge
-	return screen_pos.x >= -margin and screen_pos.x <= viewport_size.x + margin and \
-		   screen_pos.y >= -margin and screen_pos.y <= viewport_size.y + margin

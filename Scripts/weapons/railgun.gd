@@ -119,7 +119,7 @@ func _fire_piercing_shot(from_position: Vector2, direction: Vector2) -> void:
 ## Apply damage to a hit object
 func _apply_railgun_damage(hit_object: Object, damage: float) -> void:
 	# Don't damage off-screen targets
-	if hit_object is Node2D and not is_node_on_screen(hit_object):
+	if hit_object is Node2D and not ScreenUtils.is_node_on_screen(hit_object):
 		return
 
 	# Try railgun-specific damage method first

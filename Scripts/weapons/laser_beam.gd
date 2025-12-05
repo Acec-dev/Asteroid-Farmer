@@ -87,7 +87,7 @@ func _apply_damage(target: Node) -> void:
 		return
 
 	# Don't damage targets that are off-screen
-	if target is Node2D and not is_node_on_screen(target):
+	if target is Node2D and not ScreenUtils.is_node_on_screen(target):
 		return
 
 	# Calculate ramping damage

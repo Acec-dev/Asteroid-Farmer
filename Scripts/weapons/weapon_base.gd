@@ -112,33 +112,3 @@ func get_weapon_info() -> Dictionary:
 ## Helper to get the player node (weapon owner)
 func get_weapon_owner() -> Node2D:
 	return _owner_node
-
-## Check if a world position is visible on screen
-## Returns false if position is outside the camera viewport
-func is_position_on_screen(world_pos: Vector2) -> bool:
-	if not _owner_node:
-		return true  # Default to allowing if no owner
-
-	var camera = _owner_node.get_viewport().get_camera_2d()
-	if not camera:
-		return true  # No camera, allow by default
-
-	# Get viewport size
-	var viewport = _owner_node.get_viewport()
-	var viewport_size = viewport.get_visible_rect().size
-
-	# Transform world position to camera space
-	var camera_transform = camera.get_canvas_transform()
-	var screen_pos = camera_transform * world_pos
-
-	# Check if position is within viewport bounds with some margin
-	var margin = 50.0  # Small margin to allow hitting asteroids at edge
-	return screen_pos.x >= -margin and screen_pos.x <= viewport_size.x + margin and \
-		   screen_pos.y >= -margin and screen_pos.y <= viewport_size.y + margin
-
-## Check if a node is visible on screen
-## Returns false if node is outside the camera viewport
-func is_node_on_screen(node: Node2D) -> bool:
-	if not node:
-		return false
-	return is_position_on_screen(node.global_position)
