@@ -72,11 +72,7 @@ func _find_camera_recursive(node: Node) -> Camera2D:
 			return result
 	return null
 
-## Get target zoom based on radar level
-func _get_target_zoom() -> float:
-	if radar_level < zoom_values.size():
-		return zoom_values[radar_level]
-	return zoom_values[-1]  # Max zoom
+
 
 ## Sync radar level with GameState
 func sync_with_game_state() -> void:
