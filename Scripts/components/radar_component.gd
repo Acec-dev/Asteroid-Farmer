@@ -8,7 +8,7 @@ var camera: Camera2D = null
 
 ## Radar stats
 var radar_level: int = 0
-var zoom_values: Array[float] = [1.0, 0.9, 0.8, 0.7, 0.6]  # Lower = more zoomed out
+var zoom_values: Array[float] = [1.0, 1.2, 1.5, 2.0, 2.5]  # Zoom levels per upgrade
 
 ## Base zoom level (set when radar upgrades, not updated every frame)
 var base_zoom: float = 1.0
@@ -37,8 +37,9 @@ func _get_target_zoom() -> float:
 func _apply_base_zoom() -> void:
 	base_zoom = _get_target_zoom()
 	if camera:
-		# Directly set camera zoom - lower values = more zoomed out
-		camera.zoom = Vector2(base_zoom, base_zoom)
+		# Camera zoom is inverse - higher value = more zoomed out
+		# We want radar to zoom OUT, so we divide
+		camera.zoom = Vector2.ONE / base_zoom
 		print("RadarComponent: Set base zoom to ", base_zoom, " (camera.zoom = ", camera.zoom, ")")
 
 ## Find the camera in the scene
