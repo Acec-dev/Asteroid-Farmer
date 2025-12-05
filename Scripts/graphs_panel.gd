@@ -3,7 +3,7 @@ extends PanelContainer
 # Animation settings
 @export var slide_duration: float = 0.5
 @export var start_hidden: bool = true
-@export var zoom_amount: float = 1.15  # How much to zoom out when panel is visible
+@export var zoom_amount: float = 0.75  # Zoom OUT when panel opens (< 1.0 = zoom out)
 
 var panel_visible: bool = false
 var original_anchor_left: float
@@ -75,18 +75,18 @@ func slide_in() -> void:
 	tween.tween_property(self, "anchor_right", original_anchor_right, slide_duration)
 
 	# Adjust world boundaries through ScreenUtils
-	# When panel opens, we lose panel_height_pixels at the bottom
-	# So we need to expand upward by the same amount to compensate
+	# Only adjust the bottom boundary to prevent flying behind the panel
+	# Don't restrict the top - let the zoom handle showing the same play area
 	ScreenUtils.adjust_boundaries(
-		-panel_height_pixels,  # top_inset: negative = move UP (in Godot Y coords)
-		panel_height_pixels,   # bottom_inset: move bottom boundary UP by panel height
+		0,                     # top_inset: no change to top boundary
+		panel_height_pixels,   # bottom_inset: move bottom boundary UP to panel edge
 		0, 0,                  # left/right: no change
 		slide_duration
 	)
 
 	# Animate radar component zoom multiplier if available
 	if radar_component:
-		# Increase the multiplier to zoom out (higher multiplier = more zoom out)
+		# DECREASE multiplier to zoom out (show more of the game world)
 		tween.tween_property(radar_component, "zoom_multiplier", zoom_amount, slide_duration)
 
 func slide_out() -> void:
