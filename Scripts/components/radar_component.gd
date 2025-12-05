@@ -37,10 +37,9 @@ func _get_target_zoom() -> float:
 func _apply_base_zoom() -> void:
 	base_zoom = _get_target_zoom()
 	if camera:
-		# Camera zoom is inverse - higher value = more zoomed out
-		# We want radar to zoom OUT, so we divide
-		camera.zoom = Vector2.ONE / base_zoom
-		print("RadarComponent: Set base zoom to ", base_zoom, " (camera.zoom = ", camera.zoom, ")")
+		# TEMPORARILY DISABLED - radar zoom conflicts with graphs panel
+		# camera.zoom = Vector2.ONE / base_zoom
+		print("RadarComponent: Base zoom calculated as ", base_zoom, " (but not applied to camera)")
 
 ## Find the camera in the scene
 func _find_camera() -> void:

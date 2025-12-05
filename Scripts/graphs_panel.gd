@@ -65,21 +65,21 @@ func slide_in() -> void:
 	tween.tween_property(self, "anchor_left", original_anchor_left, slide_duration)
 	tween.tween_property(self, "anchor_right", original_anchor_right, slide_duration)
 
-	# Adjust world boundaries through ScreenUtils
-	# Only adjust the bottom boundary to prevent flying behind the panel
-	# Don't restrict the top - let the zoom handle showing the same play area
-	ScreenUtils.adjust_boundaries(
-		0,                     # top_inset: no change to top boundary
-		panel_height_pixels,   # bottom_inset: move bottom boundary UP to panel edge
-		0, 0,                  # left/right: no change
-		slide_duration
-	)
-
-	# Zoom the camera directly (both X and Y together)
+	# Set exact world boundaries for zoomed out view
+	# At 0.75 zoom, camera sees 2560x1440 pixels
+	# Accounting for 300px panel at bottom:
+	# - Horizontal: -1280 to 1280 (2560 wide)
+	# - Vertical: -180 to 1140 (1320 usable, with 300px panel below)
 	if radar_camera:
-		var zoom_vector = Vector2(zoom_amount, zoom_amount)  # e.g., (0.75, 0.75)
+		tween.tween_property(radar_camera, "limit_left", -1280, slide_duration)
+		tween.tween_property(radar_camera, "limit_right", 1280, slide_duration)
+		tween.tween_property(radar_camera, "limit_top", -180, slide_duration)
+		tween.tween_property(radar_camera, "limit_bottom", 1140, slide_duration)
+
+		# Zoom the camera to 0.75 (25% zoom out)
+		var zoom_vector = Vector2(zoom_amount, zoom_amount)
 		tween.tween_property(radar_camera, "zoom", zoom_vector, slide_duration)
-		print("GraphsPanel: Zooming camera to ", zoom_vector)
+		print("GraphsPanel: Setting boundaries to (-1280, -180) → (1280, 1140) and zooming to ", zoom_vector)
 
 func slide_out() -> void:
 	"""Slides the panel out from right to left"""
