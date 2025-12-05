@@ -13,7 +13,6 @@ var tween: Tween
 
 # Component references
 var radar_camera: Camera2D
-var radar_component: Node  # RadarComponent that controls zoom
 var panel_height_pixels: int = 0  # How many pixels the panel takes up
 
 func _ready() -> void:
@@ -28,14 +27,6 @@ func _ready() -> void:
 	# Initialize ScreenUtils with the camera
 	if radar_camera:
 		ScreenUtils.set_main_camera(radar_camera)
-
-	# Find the RadarComponent (it's attached to the player)
-	var players = get_tree().get_nodes_in_group("player")
-	if players.size() > 0:
-		var player = players[0]
-		radar_component = player.find_child("RadarComponent")
-		if radar_component:
-			print("GraphsPanel: Found RadarComponent")
 
 	# Calculate how much screen space the panel takes when visible
 	if radar_camera:
@@ -84,10 +75,11 @@ func slide_in() -> void:
 		slide_duration
 	)
 
-	# Animate radar component zoom multiplier if available
-	if radar_component:
-		# DECREASE multiplier to zoom out (show more of the game world)
-		tween.tween_property(radar_component, "zoom_multiplier", zoom_amount, slide_duration)
+	# Zoom the camera directly (both X and Y together)
+	if radar_camera:
+		var zoom_vector = Vector2(zoom_amount, zoom_amount)  # e.g., (0.75, 0.75)
+		tween.tween_property(radar_camera, "zoom", zoom_vector, slide_duration)
+		print("GraphsPanel: Zooming camera to ", zoom_vector)
 
 func slide_out() -> void:
 	"""Slides the panel out from right to left"""
@@ -116,10 +108,11 @@ func slide_out() -> void:
 	# Restore world boundaries through ScreenUtils
 	ScreenUtils.restore_boundaries(slide_duration)
 
-	# Restore radar component zoom multiplier if available
-	if radar_component:
-		# Reset multiplier back to 1.0 (normal zoom)
-		tween.tween_property(radar_component, "zoom_multiplier", 1.0, slide_duration)
+	# Restore camera zoom to normal (1.0, 1.0)
+	if radar_camera:
+		var zoom_vector = Vector2(1.0, 1.0)
+		tween.tween_property(radar_camera, "zoom", zoom_vector, slide_duration)
+		print("GraphsPanel: Restoring camera zoom to ", zoom_vector)
 
 func toggle() -> void:
 	"""Toggles the panel visibility with animation"""
