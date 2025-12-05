@@ -1,11 +1,14 @@
 extends PanelContainer
 
+# Signal emitted when camera bounds are changed
+signal camera_bounds_changed()
+
 # Animation settings
 @export var slide_duration: float = 0.5
 @export var start_hidden: bool = true
 @export var zoom_amount: float = 1.15  # How much to zoom out when panel is visible
 
-var is_visible: bool = false
+var panel_visible: bool = false
 var original_anchor_left: float
 var original_anchor_right: float
 var original_anchor_top: float
@@ -18,6 +21,9 @@ var original_camera_limit_bottom: int
 var reduced_camera_limit_bottom: int
 
 func _ready() -> void:
+	# Add to group so player can find us
+	add_to_group("graphs_panel")
+
 	# Store the original anchor positions from the scene
 	original_anchor_left = anchor_left
 	original_anchor_right = anchor_right
@@ -34,13 +40,13 @@ func _ready() -> void:
 		if radar_component:
 			print("GraphsPanel: Found RadarComponent")
 
-	# If we found the camera, store its original values
+	# Store original camera limits and calculate reduced limit
 	if radar_camera:
 		original_camera_limit_bottom = radar_camera.limit_bottom
-
-		# Calculate where the panel will be when visible
-		var viewport_height = get_viewport_rect().size.y
-		reduced_camera_limit_bottom = int(viewport_height * original_anchor_top)
+		# The panel top edge is at this Y position in world space
+		# Since camera shows 0-1080 area and panel is at 72.22% down, it's at Y=780
+		reduced_camera_limit_bottom = int(original_camera_limit_bottom * original_anchor_top)
+		print("GraphsPanel: Will set camera limit_bottom from ", original_camera_limit_bottom, " to ", reduced_camera_limit_bottom)
 
 	# Start hidden if configured (moved off-screen to the left)
 	if start_hidden:
@@ -48,14 +54,14 @@ func _ready() -> void:
 		var offset = anchor_right - anchor_left  # Width in anchor units
 		anchor_left = -offset
 		anchor_right = 0.0
-		is_visible = false
+		panel_visible = false
 
 func slide_in() -> void:
 	"""Slides the panel in from left to right"""
-	if is_visible:
+	if panel_visible:
 		return
 
-	is_visible = true
+	panel_visible = true
 
 	# Cancel any existing tween
 	if tween:
@@ -71,22 +77,25 @@ func slide_in() -> void:
 	tween.tween_property(self, "anchor_left", original_anchor_left, slide_duration)
 	tween.tween_property(self, "anchor_right", original_anchor_right, slide_duration)
 
-	# Animate camera if available
+	# Don't animate camera limits - just set it immediately to avoid zoom/movement confusion
 	if radar_camera:
-		# Reduce the play area by adjusting camera bottom limit
-		tween.tween_property(radar_camera, "limit_bottom", reduced_camera_limit_bottom, slide_duration)
+		radar_camera.limit_bottom = reduced_camera_limit_bottom
+		print("GraphsPanel: Set camera limit_bottom to ", reduced_camera_limit_bottom)
 
 	# Animate radar component zoom multiplier if available
 	if radar_component:
 		# Increase the multiplier to zoom out (higher multiplier = more zoom out)
 		tween.tween_property(radar_component, "zoom_multiplier", zoom_amount, slide_duration)
 
+	# Emit signal when animation finishes
+	tween.finished.connect(func(): camera_bounds_changed.emit())
+
 func slide_out() -> void:
 	"""Slides the panel out from right to left"""
-	if not is_visible:
+	if not panel_visible:
 		return
 
-	is_visible = false
+	panel_visible = false
 
 	# Calculate the hidden position (off-screen to the left)
 	var offset = original_anchor_right - original_anchor_left
@@ -105,19 +114,22 @@ func slide_out() -> void:
 	tween.tween_property(self, "anchor_left", -offset, slide_duration)
 	tween.tween_property(self, "anchor_right", 0.0, slide_duration)
 
-	# Restore camera to original state if available
+	# Restore camera limit immediately
 	if radar_camera:
-		# Restore the full play area
-		tween.tween_property(radar_camera, "limit_bottom", original_camera_limit_bottom, slide_duration)
+		radar_camera.limit_bottom = original_camera_limit_bottom
+		print("GraphsPanel: Restored camera limit_bottom to ", original_camera_limit_bottom)
 
 	# Restore radar component zoom multiplier if available
 	if radar_component:
 		# Reset multiplier back to 1.0 (normal zoom)
 		tween.tween_property(radar_component, "zoom_multiplier", 1.0, slide_duration)
 
+	# Emit signal when animation finishes
+	tween.finished.connect(func(): camera_bounds_changed.emit())
+
 func toggle() -> void:
 	"""Toggles the panel visibility with animation"""
-	if is_visible:
+	if panel_visible:
 		slide_out()
 	else:
 		slide_in()
