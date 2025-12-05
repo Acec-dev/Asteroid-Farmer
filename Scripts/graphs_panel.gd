@@ -1,8 +1,5 @@
 extends PanelContainer
 
-# Signal emitted when camera bounds are changed
-signal camera_bounds_changed()
-
 # Animation settings
 @export var slide_duration: float = 0.5
 @export var start_hidden: bool = true
@@ -21,9 +18,6 @@ var original_camera_limit_bottom: int
 var reduced_camera_limit_bottom: int
 
 func _ready() -> void:
-	# Add to group so player can find us
-	add_to_group("graphs_panel")
-
 	# Store the original anchor positions from the scene
 	original_anchor_left = anchor_left
 	original_anchor_right = anchor_right
@@ -77,18 +71,15 @@ func slide_in() -> void:
 	tween.tween_property(self, "anchor_left", original_anchor_left, slide_duration)
 	tween.tween_property(self, "anchor_right", original_anchor_right, slide_duration)
 
-	# Don't animate camera limits - just set it immediately to avoid zoom/movement confusion
+	# Animate camera limit along with zoom for smooth transition
 	if radar_camera:
-		radar_camera.limit_bottom = reduced_camera_limit_bottom
-		print("GraphsPanel: Set camera limit_bottom to ", reduced_camera_limit_bottom)
+		tween.tween_property(radar_camera, "limit_bottom", reduced_camera_limit_bottom, slide_duration)
+		print("GraphsPanel: Animating camera limit_bottom to ", reduced_camera_limit_bottom)
 
 	# Animate radar component zoom multiplier if available
 	if radar_component:
 		# Increase the multiplier to zoom out (higher multiplier = more zoom out)
 		tween.tween_property(radar_component, "zoom_multiplier", zoom_amount, slide_duration)
-
-	# Emit signal when animation finishes
-	tween.finished.connect(func(): camera_bounds_changed.emit())
 
 func slide_out() -> void:
 	"""Slides the panel out from right to left"""
@@ -114,18 +105,15 @@ func slide_out() -> void:
 	tween.tween_property(self, "anchor_left", -offset, slide_duration)
 	tween.tween_property(self, "anchor_right", 0.0, slide_duration)
 
-	# Restore camera limit immediately
+	# Animate camera limit restoration
 	if radar_camera:
-		radar_camera.limit_bottom = original_camera_limit_bottom
-		print("GraphsPanel: Restored camera limit_bottom to ", original_camera_limit_bottom)
+		tween.tween_property(radar_camera, "limit_bottom", original_camera_limit_bottom, slide_duration)
+		print("GraphsPanel: Animating camera limit_bottom back to ", original_camera_limit_bottom)
 
 	# Restore radar component zoom multiplier if available
 	if radar_component:
 		# Reset multiplier back to 1.0 (normal zoom)
 		tween.tween_property(radar_component, "zoom_multiplier", 1.0, slide_duration)
-
-	# Emit signal when animation finishes
-	tween.finished.connect(func(): camera_bounds_changed.emit())
 
 func toggle() -> void:
 	"""Toggles the panel visibility with animation"""
