@@ -1,5 +1,8 @@
 extends PanelContainer
 
+# Signal emitted when camera bounds are changed
+signal camera_bounds_changed()
+
 # Animation settings
 @export var slide_duration: float = 0.5
 @export var start_hidden: bool = true
@@ -16,6 +19,9 @@ var radar_camera: Camera2D
 var panel_height_pixels: int = 0  # How many pixels the panel takes up
 
 func _ready() -> void:
+	# Add to group so player can find us
+	add_to_group("graphs_panel")
+
 	# Store the original anchor positions from the scene
 	original_anchor_left = anchor_left
 	original_anchor_right = anchor_right
@@ -81,6 +87,9 @@ func slide_in() -> void:
 		tween.tween_property(radar_camera, "zoom", zoom_vector, slide_duration)
 		print("GraphsPanel: Setting boundaries to (-1280, -180) → (1280, 1140) and zooming to ", zoom_vector)
 
+	# Emit signal when animation finishes
+	tween.finished.connect(func(): camera_bounds_changed.emit())
+
 func slide_out() -> void:
 	"""Slides the panel out from right to left"""
 	if not panel_visible:
@@ -113,6 +122,9 @@ func slide_out() -> void:
 		var zoom_vector = Vector2(1.0, 1.0)
 		tween.tween_property(radar_camera, "zoom", zoom_vector, slide_duration)
 		print("GraphsPanel: Restoring camera zoom to ", zoom_vector)
+
+	# Emit signal when animation finishes
+	tween.finished.connect(func(): camera_bounds_changed.emit())
 
 func toggle() -> void:
 	"""Toggles the panel visibility with animation"""
