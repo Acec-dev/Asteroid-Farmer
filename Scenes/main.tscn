@@ -143,12 +143,12 @@ text = "Upgrade Mine"
 
 [node name="GraphButton" type="Button" parent="CanvasLayer/ButtonContainer"]
 layout_mode = 2
-text = "GraphButton"
+text = "MENUS"
 
 [node name="GraphsPanel" parent="CanvasLayer" instance=ExtResource("11_6iyac")]
 
 [node name="Radar" type="Camera2D" parent="."]
-zoom = Vector2(0.75, 0.75)
+zoom = Vector2(1.0, 1.0)
 limit_left = 0
 limit_top = 0
 limit_right = 1920
