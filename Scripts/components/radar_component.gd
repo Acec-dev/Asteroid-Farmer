@@ -10,14 +10,8 @@ var camera: Camera2D = null
 var radar_level: int = 0
 var zoom_values: Array[float] = [1.0, 1.2, 1.5, 2.0, 2.5]  # Zoom levels per upgrade
 
-## Current zoom (inverse of camera.zoom)
-var current_zoom: float = 1.0
-
-## Zoom multiplier for external effects (like UI panels)
-var zoom_multiplier: float = 1.0
-
-## Smooth transition
-@export var zoom_transition_speed: float = 2.0
+## Base zoom level (set when radar upgrades, not updated every frame)
+var base_zoom: float = 1.0
 
 func _ready() -> void:
 	# Find camera in the scene
@@ -31,22 +25,21 @@ func _ready() -> void:
 		GameState.upgrades_changed.connect(_on_upgrades_changed)
 
 	# Apply initial zoom
-	_apply_zoom()
+	_apply_base_zoom()
 
-func _process(delta: float) -> void:
-	if not camera:
-		return
+## Get target zoom based on radar level
+func _get_target_zoom() -> float:
+	if radar_level < zoom_values.size():
+		return zoom_values[radar_level]
+	return zoom_values[-1]  # Max zoom
 
-	# Smoothly transition to target zoom
-	var target_zoom = _get_target_zoom()
-	current_zoom = lerp(current_zoom, target_zoom, zoom_transition_speed * delta)
-
-	# Apply zoom multiplier for external effects (like UI panels)
-	var final_zoom = current_zoom * zoom_multiplier
-
-	# Camera zoom is inverse - higher value = more zoomed out
-	# We want radar to zoom OUT, so we divide by final_zoom
-	camera.zoom = Vector2.ONE / final_zoom
+## Apply the base zoom level to camera (called only when radar upgrades)
+func _apply_base_zoom() -> void:
+	base_zoom = _get_target_zoom()
+	if camera:
+		# TEMPORARILY DISABLED - radar zoom conflicts with graphs panel
+		# camera.zoom = Vector2.ONE / base_zoom
+		print("RadarComponent: Base zoom calculated as ", base_zoom, " (but not applied to camera)")
 
 ## Find the camera in the scene
 func _find_camera() -> void:
@@ -79,11 +72,7 @@ func _find_camera_recursive(node: Node) -> Camera2D:
 			return result
 	return null
 
-## Get target zoom based on radar level
-func _get_target_zoom() -> float:
-	if radar_level < zoom_values.size():
-		return zoom_values[radar_level]
-	return zoom_values[-1]  # Max zoom
+
 
 ## Sync radar level with GameState
 func sync_with_game_state() -> void:
@@ -109,19 +98,18 @@ func sync_with_game_state() -> void:
 
 ## Called when GameState upgrades change
 func _on_upgrades_changed() -> void:
+	var old_level = radar_level
 	sync_with_game_state()
 
-## Apply zoom immediately (no transition)
-func _apply_zoom() -> void:
-	current_zoom = _get_target_zoom()
-	if camera:
-		var final_zoom = current_zoom * zoom_multiplier
-		camera.zoom = Vector2.ONE / final_zoom
+	# Only update zoom if level actually changed
+	if old_level != radar_level:
+		_apply_base_zoom()
 
 ## Manually set radar level (for testing)
 func set_radar_level(level: int) -> void:
 	radar_level = clamp(level, 0, zoom_values.size() - 1)
 	print("RadarComponent: Radar level set to ", radar_level)
+	_apply_base_zoom()  # Apply new zoom when level changes
 
 ## Set custom zoom values
 func set_zoom_values(values: Array[float]) -> void:

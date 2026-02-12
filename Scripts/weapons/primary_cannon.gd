@@ -38,8 +38,8 @@ func _hitscan_shot(spawn_pos: Vector2, direction: Vector2) -> void:
 		spawn_pos + direction * max_range
 	)
 
-	# Try all collision layers to ensure we hit asteroids
-	query.collision_mask = 0xFFFFFFFF
+	# Check all layers except layer 31 (minerals) - let bullets pass through minerals
+	query.collision_mask = 0x7FFFFFFF
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
 
@@ -51,7 +51,8 @@ func _hitscan_shot(spawn_pos: Vector2, direction: Vector2) -> void:
 	# Apply damage if we hit something
 	if result and result.collider:
 		var hit_object = result.collider
-		if hit_object.has_method("hit_by_projectile"):
+		# Only damage objects that are on-screen
+		if hit_object.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(hit_object):
 			# Apply damage multiple times to match damage_per_shot
 			for i in int(current_damage):
 				hit_object.hit_by_projectile(_owner_node)

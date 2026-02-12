@@ -93,7 +93,8 @@ func _explode() -> void:
 	var hit_count = 0
 	for result in results:
 		var obj = result.collider
-		if obj and obj != self and obj.has_method("hit_by_projectile"):
+		# Only damage on-screen targets
+		if obj and obj != self and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
 			print("  Mine explosion hit: ", obj.name)
 			obj.hit_by_projectile(self)
 			hit_count += 1

@@ -148,6 +148,7 @@ text = "GraphButton"
 [node name="GraphsPanel" parent="CanvasLayer" instance=ExtResource("11_6iyac")]
 
 [node name="Radar" type="Camera2D" parent="."]
+zoom = Vector2(0.75, 0.75)
 limit_left = 0
 limit_top = 0
 limit_right = 1920

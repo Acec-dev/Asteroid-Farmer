@@ -57,14 +57,16 @@ func _draw() -> void:
 	draw_line(Vector2(-4, 3), Vector2(-8, 6), Color.WHITE, 1.0)
 
 func _on_body_entered(body: Node) -> void:
-	if body.has_method("hit_by_projectile"):
+	# Only hit on-screen targets
+	if body.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(body):
 		print("Rocket hit body: ", body.name)
 		# Apply damage - asteroid needs multiple hits
 		body.hit_by_projectile(self)
 		_explode()
 
 func _on_area_entered(area: Area2D) -> void:
-	if area.has_method("hit_by_projectile"):
+	# Only hit on-screen targets
+	if area.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(area):
 		print("Rocket hit area: ", area.name)
 		area.hit_by_projectile(self)
 		_explode()
@@ -86,7 +88,8 @@ func _explode() -> void:
 	var results = space_state.intersect_shape(query, 32)
 	for result in results:
 		var obj = result.collider
-		if obj and obj != self and obj.has_method("hit_by_projectile"):
+		# Only damage objects that are on-screen
+		if obj and obj != self and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
 			print("  Explosion hit: ", obj.name)
 			obj.hit_by_projectile(self)
 
@@ -105,14 +108,14 @@ func _find_nearest_asteroid() -> Node:
 
 	var results = space_state.intersect_shape(query, 32)
 
-	# Find the closest asteroid
+	# Find the closest asteroid that is on-screen
 	var nearest: Node = null
 	var nearest_distance: float = INF
 
 	for result in results:
 		var obj = result.collider
-		# Check if it's an asteroid (has hit_by_projectile method)
-		if obj and obj.has_method("hit_by_projectile"):
+		# Check if it's an asteroid (has hit_by_projectile method) and is on screen
+		if obj and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
 			var distance = global_position.distance_to((obj as Node2D).global_position)
 			if distance < nearest_distance:
 				nearest_distance = distance

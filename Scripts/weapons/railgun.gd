@@ -66,6 +66,7 @@ func _fire_piercing_shot(from_position: Vector2, direction: Vector2) -> void:
 		from_position,
 		from_position + direction * max_range
 	)
+	query.collision_mask = 0x7FFFFFFF  # All layers except layer 31 (minerals)
 	query.collide_with_areas = true
 	query.collide_with_bodies = true
 
@@ -117,6 +118,10 @@ func _fire_piercing_shot(from_position: Vector2, direction: Vector2) -> void:
 
 ## Apply damage to a hit object
 func _apply_railgun_damage(hit_object: Object, damage: float) -> void:
+	# Don't damage off-screen targets
+	if hit_object is Node2D and not ScreenUtils.is_node_on_screen(hit_object):
+		return
+
 	# Try railgun-specific damage method first
 	if hit_object.has_method("hit_by_railgun"):
 		hit_object.hit_by_railgun(self, damage)

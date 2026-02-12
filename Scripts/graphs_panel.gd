@@ -6,7 +6,7 @@ signal camera_bounds_changed()
 # Animation settings
 @export var slide_duration: float = 0.5
 @export var start_hidden: bool = true
-@export var zoom_amount: float = 1.15  # How much to zoom out when panel is visible
+@export var zoom_amount: float = 0.75  # Zoom OUT when panel opens (< 1.0 = zoom out)
 
 var panel_visible: bool = false
 var original_anchor_left: float
@@ -14,11 +14,9 @@ var original_anchor_right: float
 var original_anchor_top: float
 var tween: Tween
 
-# Camera and component references
+# Component references
 var radar_camera: Camera2D
-var radar_component: Node  # RadarComponent that controls zoom
-var original_camera_limit_bottom: int
-var reduced_camera_limit_bottom: int
+var panel_height_pixels: int = 0  # How many pixels the panel takes up
 
 func _ready() -> void:
 	# Add to group so player can find us
@@ -29,24 +27,20 @@ func _ready() -> void:
 	original_anchor_right = anchor_right
 	original_anchor_top = anchor_top
 
-	# Get reference to the Radar camera (GraphsPanel is under CanvasLayer, Radar is sibling to CanvasLayer)
+	# Get reference to the Radar camera for ScreenUtils initialization
 	radar_camera = get_node("../../Radar") if has_node("../../Radar") else null
 
-	# Find the RadarComponent (it's attached to the player)
-	var players = get_tree().get_nodes_in_group("player")
-	if players.size() > 0:
-		var player = players[0]
-		radar_component = player.find_child("RadarComponent")
-		if radar_component:
-			print("GraphsPanel: Found RadarComponent")
-
-	# Store original camera limits and calculate reduced limit
+	# Initialize ScreenUtils with the camera
 	if radar_camera:
-		original_camera_limit_bottom = radar_camera.limit_bottom
-		# The panel top edge is at this Y position in world space
-		# Since camera shows 0-1080 area and panel is at 72.22% down, it's at Y=780
-		reduced_camera_limit_bottom = int(original_camera_limit_bottom * original_anchor_top)
-		print("GraphsPanel: Will set camera limit_bottom from ", original_camera_limit_bottom, " to ", reduced_camera_limit_bottom)
+		ScreenUtils.set_main_camera(radar_camera)
+
+	# Calculate how much screen space the panel takes when visible
+	if radar_camera:
+		var viewport_height = get_viewport_rect().size.y
+		# Panel starts at original_anchor_top (e.g., 0.72 = 72% down)
+		# So it takes up the remaining portion (e.g., 28% = 300 pixels if viewport is 1080)
+		panel_height_pixels = int(viewport_height * (1.0 - original_anchor_top))
+		print("GraphsPanel: Panel will take ", panel_height_pixels, " pixels when open")
 
 	# Start hidden if configured (moved off-screen to the left)
 	if start_hidden:
@@ -77,15 +71,21 @@ func slide_in() -> void:
 	tween.tween_property(self, "anchor_left", original_anchor_left, slide_duration)
 	tween.tween_property(self, "anchor_right", original_anchor_right, slide_duration)
 
-	# Don't animate camera limits - just set it immediately to avoid zoom/movement confusion
+	# Set exact world boundaries for zoomed out view
+	# At 0.75 zoom, camera sees 2560x1440 pixels
+	# Accounting for 300px panel at bottom:
+	# - Horizontal: -1280 to 1280 (2560 wide)
+	# - Vertical: -180 to 1140 (1320 usable, with 300px panel below)
 	if radar_camera:
-		radar_camera.limit_bottom = reduced_camera_limit_bottom
-		print("GraphsPanel: Set camera limit_bottom to ", reduced_camera_limit_bottom)
+		tween.tween_property(radar_camera, "limit_left", -1280, slide_duration)
+		tween.tween_property(radar_camera, "limit_right", 1280, slide_duration)
+		tween.tween_property(radar_camera, "limit_top", -180, slide_duration)
+		tween.tween_property(radar_camera, "limit_bottom", 1140, slide_duration)
 
-	# Animate radar component zoom multiplier if available
-	if radar_component:
-		# Increase the multiplier to zoom out (higher multiplier = more zoom out)
-		tween.tween_property(radar_component, "zoom_multiplier", zoom_amount, slide_duration)
+		# Zoom the camera to 0.75 (25% zoom out)
+		var zoom_vector = Vector2(zoom_amount, zoom_amount)
+		tween.tween_property(radar_camera, "zoom", zoom_vector, slide_duration)
+		print("GraphsPanel: Setting boundaries to (-1280, -180) → (1280, 1140) and zooming to ", zoom_vector)
 
 	# Emit signal when animation finishes
 	tween.finished.connect(func(): camera_bounds_changed.emit())
@@ -114,15 +114,14 @@ func slide_out() -> void:
 	tween.tween_property(self, "anchor_left", -offset, slide_duration)
 	tween.tween_property(self, "anchor_right", 0.0, slide_duration)
 
-	# Restore camera limit immediately
-	if radar_camera:
-		radar_camera.limit_bottom = original_camera_limit_bottom
-		print("GraphsPanel: Restored camera limit_bottom to ", original_camera_limit_bottom)
+	# Restore world boundaries through ScreenUtils
+	ScreenUtils.restore_boundaries(slide_duration)
 
-	# Restore radar component zoom multiplier if available
-	if radar_component:
-		# Reset multiplier back to 1.0 (normal zoom)
-		tween.tween_property(radar_component, "zoom_multiplier", 1.0, slide_duration)
+	# Restore camera zoom to normal (1.0, 1.0)
+	if radar_camera:
+		var zoom_vector = Vector2(1.0, 1.0)
+		tween.tween_property(radar_camera, "zoom", zoom_vector, slide_duration)
+		print("GraphsPanel: Restoring camera zoom to ", zoom_vector)
 
 	# Emit signal when animation finishes
 	tween.finished.connect(func(): camera_bounds_changed.emit())
