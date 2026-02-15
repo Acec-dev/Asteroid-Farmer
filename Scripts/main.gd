@@ -5,7 +5,7 @@ extends Node2D
 @export var floating_text: PackedScene
 
 # Mineral deposit box settings
-@export var spawn_deposit_box: bool = true  # Toggle deposit box on/off
+@export var spawn_deposit_box: bool = false  # Toggle deposit box on/off
 @export var deposit_box_position: Vector2 = Vector2(640, 600)  # Bottom center by default
 
 # Menu system settings
