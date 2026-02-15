@@ -14,6 +14,16 @@ var panel_visible: bool = false
 var tween: Tween
 var _scroll_vbox: VBoxContainer
 
+# Inventory UI references
+var _iron_label: Label
+var _nickel_label: Label
+var _silica_label: Label
+var _credit_label: Label
+var _iron_price_label: Label
+var _nickel_price_label: Label
+var _silica_price_label: Label
+var _sell_btn: Button
+
 # Upgrade cost definitions per level
 var upgrade_costs = {
 	"weapons": {
@@ -63,10 +73,20 @@ func _ready() -> void:
 	# Build UI hierarchy
 	_build_ui()
 	_build_upgrade_list()
+	_build_inventory_section()
 
 	# React to upgrade and credit changes
 	GameState.upgrades_changed.connect(_refresh_upgrade_list)
 	GameState.credits_changed.connect(func(_c): _refresh_upgrade_list())
+
+	# React to inventory and price changes
+	GameState.inventory_changed.connect(_refresh_inventory)
+	GameState.credits_changed.connect(_refresh_inventory)
+	GameState.prices_changed.connect(_refresh_prices)
+	_refresh_inventory()
+	_refresh_prices()
+
+var _inventory_vbox: VBoxContainer
 
 func _build_ui() -> void:
 	var margin = MarginContainer.new()
@@ -78,17 +98,30 @@ func _build_ui() -> void:
 	margin.add_theme_constant_override("margin_bottom", 10)
 	add_child(margin)
 
+	# Main vertical split: scrollable upgrades on top, inventory pinned at bottom
+	var outer_vbox = VBoxContainer.new()
+	outer_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	outer_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	outer_vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(outer_vbox)
+
 	var scroll = ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	margin.add_child(scroll)
+	outer_vbox.add_child(scroll)
 
 	_scroll_vbox = VBoxContainer.new()
 	_scroll_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll_vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll_vbox.add_theme_constant_override("separation", 4)
 	scroll.add_child(_scroll_vbox)
+
+	# Inventory container pinned at the bottom
+	_inventory_vbox = VBoxContainer.new()
+	_inventory_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_inventory_vbox.add_theme_constant_override("separation", 4)
+	outer_vbox.add_child(_inventory_vbox)
 
 func slide_in() -> void:
 	if panel_visible:
@@ -283,3 +316,102 @@ func _refresh_upgrade_list() -> void:
 			var system = row.get_meta("system")
 			var upgrade_name = row.get_meta("upgrade_name")
 			_update_row(row, system, upgrade_name)
+
+# === Inventory Section ===
+
+func _build_inventory_section() -> void:
+	var sep = HSeparator.new()
+	_inventory_vbox.add_child(sep)
+
+	_add_section_header_to("INVENTORY", _inventory_vbox)
+
+	# Mineral rows: name on left, price on right
+	var minerals_box = VBoxContainer.new()
+	minerals_box.add_theme_constant_override("separation", 2)
+	_inventory_vbox.add_child(minerals_box)
+
+	var iron_row = _make_inventory_row("Iron", "0", "$0")
+	minerals_box.add_child(iron_row)
+	_iron_label = iron_row.get_node("CountLabel")
+	_iron_price_label = iron_row.get_node("PriceLabel")
+
+	var nickel_row = _make_inventory_row("Nickel", "0", "$0")
+	minerals_box.add_child(nickel_row)
+	_nickel_label = nickel_row.get_node("CountLabel")
+	_nickel_price_label = nickel_row.get_node("PriceLabel")
+
+	var silica_row = _make_inventory_row("Silica", "0", "$0")
+	minerals_box.add_child(silica_row)
+	_silica_label = silica_row.get_node("CountLabel")
+	_silica_price_label = silica_row.get_node("PriceLabel")
+
+	# Credits row
+	_credit_label = Label.new()
+	_credit_label.text = "Credits: 0"
+	_credit_label.add_theme_font_size_override("font_size", 14)
+	_credit_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+	_inventory_vbox.add_child(_credit_label)
+
+	# Sell button
+	_sell_btn = Button.new()
+	_sell_btn.text = "SELL ALL"
+	_sell_btn.add_theme_font_size_override("font_size", 12)
+	_sell_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_sell_btn.pressed.connect(_on_sell_all)
+	_inventory_vbox.add_child(_sell_btn)
+
+func _make_inventory_row(mineral_name: String, count: String, price: String) -> HBoxContainer:
+	var row = HBoxContainer.new()
+
+	var name_label = Label.new()
+	name_label.text = mineral_name
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.add_theme_font_size_override("font_size", 13)
+	row.add_child(name_label)
+
+	var count_label = Label.new()
+	count_label.name = "CountLabel"
+	count_label.text = count
+	count_label.add_theme_font_size_override("font_size", 13)
+	count_label.custom_minimum_size.x = 40
+	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	row.add_child(count_label)
+
+	var price_label = Label.new()
+	price_label.name = "PriceLabel"
+	price_label.text = price
+	price_label.add_theme_font_size_override("font_size", 13)
+	price_label.custom_minimum_size.x = 40
+	price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	price_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	row.add_child(price_label)
+
+	return row
+
+func _add_section_header_to(title: String, parent: Control) -> void:
+	var label = Label.new()
+	label.text = title
+	label.add_theme_font_size_override("font_size", 16)
+	label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	parent.add_child(label)
+
+	var sep = HSeparator.new()
+	parent.add_child(sep)
+
+func _refresh_inventory(_new_credits: int = 0) -> void:
+	if not _iron_label:
+		return
+	_iron_label.text = str(GameState.minerals[GameState.MineralType.IRON])
+	_nickel_label.text = str(GameState.minerals[GameState.MineralType.NICKEL])
+	_silica_label.text = str(GameState.minerals[GameState.MineralType.SILICA])
+	_credit_label.text = "Credits: %d" % GameState.credits
+
+func _refresh_prices() -> void:
+	if not _iron_price_label:
+		return
+	_iron_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.IRON]
+	_nickel_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.NICKEL]
+	_silica_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.SILICA]
+
+func _on_sell_all() -> void:
+	GameState.sell_all()
