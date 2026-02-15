@@ -26,6 +26,11 @@ var _menus_open: bool = false
 var _menu_tween: Tween
 var _upgrade_panel: Node
 
+# Run timer
+var _run_time: float = 0.0
+var _run_timer_label: Label
+var _last_difficulty_level: int = 1  # Track to avoid repeated updates
+
 signal spawn_text
 
 func _ready() -> void:
@@ -48,11 +53,52 @@ func _ready() -> void:
 	# Create upgrade panel
 	_create_upgrade_panel()
 
+	# Create run timer label at top center
+	_create_run_timer_label()
+
+func _process(delta: float) -> void:
+	_run_time += delta
+	# Update timer display
+	if _run_timer_label:
+		var minutes := int(_run_time) / 60
+		var seconds := int(_run_time) % 60
+		_run_timer_label.text = "%d:%02d" % [minutes, seconds]
+
+	# Auto-increase difficulty based on elapsed time
+	# Level 1 (Normal) at start, then escalate every 60 seconds
+	var target_level := clampi(1 + int(_run_time / 60.0), 0, 4)
+	if target_level != _last_difficulty_level:
+		_last_difficulty_level = target_level
+		GameState.set_spawner_difficulty(target_level)
+
+func _create_run_timer_label() -> void:
+	_run_timer_label = Label.new()
+	_run_timer_label.text = "0:00"
+	_run_timer_label.add_theme_font_size_override("font_size", 20)
+	_run_timer_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_run_timer_label.anchors_preset = Control.PRESET_CENTER_TOP
+	_run_timer_label.anchor_left = 0.5
+	_run_timer_label.anchor_right = 0.5
+	_run_timer_label.anchor_top = 0.0
+	_run_timer_label.anchor_bottom = 0.0
+	_run_timer_label.offset_left = -50
+	_run_timer_label.offset_right = 50
+	_run_timer_label.offset_top = 10
+	_run_timer_label.offset_bottom = 40
+	$CanvasLayer.add_child(_run_timer_label)
+
 func _spawn_player() -> void:
 	_player = player_scene.instantiate()
 	_player.global_position = get_viewport_rect().size * 0.5
 	add_child(_player)
 	player_cam = _player.find_child("PlayerCam")
+
+	# Add shield bar as child of player (follows in world space)
+	var shield_bar_script = load("res://Scripts/shield_bar.gd")
+	var shield_bar = Node2D.new()
+	shield_bar.set_script(shield_bar_script)
+	shield_bar.name = "ShieldBar"
+	_player.add_child(shield_bar)
 
 func _setup_asteroid_spawner() -> void:
 	asteroid_spawner = AsteroidSpawner.new()

@@ -1,10 +1,9 @@
-[gd_scene load_steps=12 format=3 uid="uid://c6c6wf1l6nudr"]
+[gd_scene load_steps=11 format=3 uid="uid://c6c6wf1l6nudr"]
 
 [ext_resource type="Script" uid="uid://b78u8tc2qckls" path="res://Scripts/main.gd" id="1_bo1nx"]
 [ext_resource type="PackedScene" uid="uid://cw77j44xrwsi7" path="res://Scenes/player.tscn" id="1_jjgbg"]
 [ext_resource type="PackedScene" uid="uid://c6cbnimduidb3" path="res://Scenes/asteroid.tscn" id="3_8gbba"]
 [ext_resource type="PackedScene" uid="uid://b6yaf544oid0q" path="res://Scenes/floating_text_2d.tscn" id="6_6bp64"]
-[ext_resource type="Script" uid="uid://dao5rg7pc1yop" path="res://Scripts/shield_bar.gd" id="6_344ge"]
 [ext_resource type="PackedScene" uid="uid://n22orxsm6s66" path="res://Scenes/market_menu.tscn" id="7_6bp64"]
 [ext_resource type="Theme" uid="uid://cpptlgmgejiaq" path="res://Assets/upgrade_button.tres" id="8_344ge"]
 [ext_resource type="Texture2D" uid="uid://be2r7jl0nuwkd" path="res://Assets/outline_rocket.png" id="8_ynf5e"]
@@ -22,22 +21,6 @@ floating_text = ExtResource("6_6bp64")
 wait_time = 1.75
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
-
-[node name="ShieldBar" type="Control" parent="CanvasLayer"]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 264.0
-offset_top = 55.0
-offset_right = 464.0
-offset_bottom = 75.0
-script = ExtResource("6_344ge")
-
-[node name="ShieldBarOutlineBox" type="Panel" parent="CanvasLayer/ShieldBar"]
-z_index = -1
-layout_mode = 0
-offset_right = 200.0
-offset_bottom = 20.0
-theme = ExtResource("10_6iyac")
 
 [node name="TabMenu" type="TabContainer" parent="CanvasLayer"]
 visible = false
