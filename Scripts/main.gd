@@ -173,3 +173,9 @@ func _on_mine_button_pressed() -> void:
 
 func _on_graph_button_pressed() -> void:
 	_toggle_menus()
+
+func _on_debug_toggle_pressed() -> void:
+	var container = $CanvasLayer/ButtonContainer/DebugContainer
+	var toggle_btn = $CanvasLayer/ButtonContainer/DebugToggle
+	container.visible = not container.visible
+	toggle_btn.text = "DEBUG v" if container.visible else "DEBUG >"

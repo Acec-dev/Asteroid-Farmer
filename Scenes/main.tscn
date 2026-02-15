@@ -120,27 +120,33 @@ metadata/_edit_use_anchors_ = true
 layout_mode = 2
 text = "EXPLORATION-MODE"
 
-[node name="RadarButton" type="Button" parent="CanvasLayer/ButtonContainer"]
-layout_mode = 2
-text = "RADAR UPGRADE"
-
-[node name="RocketsButton" type="Button" parent="CanvasLayer/ButtonContainer"]
-layout_mode = 2
-text = "Upgrade Rockets
-"
-
-[node name="LaserButton" type="Button" parent="CanvasLayer/ButtonContainer"]
-layout_mode = 2
-text = "Upgrade Laser
-"
-
-[node name="MineButton" type="Button" parent="CanvasLayer/ButtonContainer"]
-layout_mode = 2
-text = "Upgrade Mine"
-
 [node name="GraphButton" type="Button" parent="CanvasLayer/ButtonContainer"]
 layout_mode = 2
 text = "MENUS"
+
+[node name="DebugToggle" type="Button" parent="CanvasLayer/ButtonContainer"]
+layout_mode = 2
+text = "DEBUG >"
+
+[node name="DebugContainer" type="VBoxContainer" parent="CanvasLayer/ButtonContainer"]
+visible = false
+layout_mode = 2
+
+[node name="RadarButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
+layout_mode = 2
+text = "RADAR UPGRADE"
+
+[node name="RocketsButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
+layout_mode = 2
+text = "Upgrade Rockets"
+
+[node name="LaserButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
+layout_mode = 2
+text = "Upgrade Laser"
+
+[node name="MineButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
+layout_mode = 2
+text = "Upgrade Mine"
 
 [node name="GraphsPanel" parent="CanvasLayer" instance=ExtResource("11_6iyac")]
 
@@ -155,8 +161,9 @@ script = ExtResource("13_fdnlq")
 [connection signal="pressed" from="CanvasLayer/TabMenu/Upgrades/HBoxContainer/VBoxContainer/RocketsUpgradeBtn" to="." method="_on_rockets_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/BaseButton" to="." method="_on_base_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/ExploreButton" to="." method="_on_explore_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/RadarButton" to="Radar" method="_on_radar_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/RocketsButton" to="." method="_on_rockets_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/LaserButton" to="." method="_on_laser_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/MineButton" to="." method="_on_mine_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/GraphButton" to="." method="_on_graph_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugToggle" to="." method="_on_debug_toggle_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/RadarButton" to="Radar" method="_on_radar_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/RocketsButton" to="." method="_on_rockets_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/LaserButton" to="." method="_on_laser_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/MineButton" to="." method="_on_mine_button_pressed"]
