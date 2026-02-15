@@ -4,9 +4,9 @@ extends PanelContainer
 
 # Anchor positions when visible (proportional to graphs panel)
 # Graphs panel takes bottom 27.78% of height (anchor_top = 0.7222222)
-# Upgrade panel takes right 27.78% of width, stops above graphs panel
-const ANCHOR_LEFT_VISIBLE = 0.7222222
-const ANCHOR_RIGHT_VISIBLE = 1.0
+# Upgrade panel takes left 27.78% of width, stops above graphs panel
+const ANCHOR_LEFT_VISIBLE = 0.0
+const ANCHOR_RIGHT_VISIBLE = 0.2777778
 const ANCHOR_TOP_VISIBLE = 0.0
 const ANCHOR_BOTTOM_VISIBLE = 0.7222222
 
@@ -55,10 +55,10 @@ func _ready() -> void:
 
 	custom_minimum_size = Vector2(200, 200)
 
-	# Start hidden off-screen to the right
+	# Start hidden off-screen to the left
 	var width = ANCHOR_RIGHT_VISIBLE - ANCHOR_LEFT_VISIBLE
-	anchor_left = 1.0
-	anchor_right = 1.0 + width
+	anchor_left = -width
+	anchor_right = 0.0
 
 	# Build UI hierarchy
 	_build_ui()
@@ -121,8 +121,8 @@ func slide_out() -> void:
 	tween.set_trans(Tween.TRANS_CUBIC)
 	tween.set_parallel(true)
 
-	tween.tween_property(self, "anchor_left", 1.0, slide_duration)
-	tween.tween_property(self, "anchor_right", 1.0 + width, slide_duration)
+	tween.tween_property(self, "anchor_left", -width, slide_duration)
+	tween.tween_property(self, "anchor_right", 0.0, slide_duration)
 
 func toggle() -> void:
 	if panel_visible:
