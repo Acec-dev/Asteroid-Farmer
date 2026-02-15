@@ -32,8 +32,16 @@ signal shield_changed(current: float, maximum: float)
 signal prices_changed()
 signal upgrades_changed()  # Emitted when any upgrade is purchased/modified
 signal cargo_full()  # Emitted when cargo hold is at capacity
+signal drones_changed(new_count: int)
+signal voyage_started()
+signal voyage_completed(results: Dictionary)
+signal voyage_progress_updated(progress: float)
 
 var credits: int = 0
+
+# Drone system
+var drone_count: int = 0
+const DRONE_COST: int = 75
 var minerals = {
 	MineralType.IRON: 0,
 	MineralType.NICKEL: 0,
@@ -333,3 +341,17 @@ func get_spawner_difficulty() -> int:
 	if upgrades.has("spawner") and upgrades.spawner.has("difficulty"):
 		return upgrades.spawner.difficulty.level
 	return 0
+
+# === DRONE SYSTEM ===
+
+func buy_drone() -> bool:
+	if credits < DRONE_COST:
+		return false
+	add_credits(-DRONE_COST)
+	drone_count += 1
+	emit_signal("drones_changed", drone_count)
+	return true
+
+func remove_drones(amount: int) -> void:
+	drone_count = max(0, drone_count - amount)
+	emit_signal("drones_changed", drone_count)

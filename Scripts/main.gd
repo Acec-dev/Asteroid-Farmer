@@ -31,6 +31,12 @@ var _run_time: float = 0.0
 var _run_timer_label: Label
 var _last_difficulty_level: int = 1  # Track to avoid repeated updates
 
+# Voyage progress indicator (shown in graph menu area)
+var _voyage_bar_container: PanelContainer
+var _voyage_bar_fill: ColorRect
+var _voyage_bar_label: Label
+var _voyage_bar_bg: ColorRect
+
 signal spawn_text
 
 func _ready() -> void:
@@ -55,6 +61,12 @@ func _ready() -> void:
 
 	# Create run timer label at top center
 	_create_run_timer_label()
+
+	# Create voyage progress bar for graph menu
+	_create_voyage_progress_bar()
+	GameState.voyage_progress_updated.connect(_on_voyage_progress)
+	GameState.voyage_started.connect(_on_voyage_started)
+	GameState.voyage_completed.connect(_on_voyage_completed)
 
 func _process(delta: float) -> void:
 	_run_time += delta
@@ -137,6 +149,81 @@ func _create_upgrade_panel() -> void:
 		_upgrade_panel.theme = theme
 
 	$CanvasLayer.add_child(_upgrade_panel)
+
+# === Voyage Progress Bar (in graph menu area) ===
+
+func _create_voyage_progress_bar() -> void:
+	_voyage_bar_container = PanelContainer.new()
+	_voyage_bar_container.name = "VoyageProgressBar"
+
+	# Position it at the bottom of the screen, above the graphs panel area
+	# Anchored to bottom-right, sits just above where graphs panel appears
+	_voyage_bar_container.anchor_left = 0.28
+	_voyage_bar_container.anchor_right = 0.72
+	_voyage_bar_container.anchor_top = 0.68
+	_voyage_bar_container.anchor_bottom = 0.72
+	_voyage_bar_container.offset_left = 0
+	_voyage_bar_container.offset_right = 0
+	_voyage_bar_container.offset_top = 0
+	_voyage_bar_container.offset_bottom = 0
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0.08, 0.08, 0.12, 0.85)
+	stylebox.border_color = Color(0.3, 0.5, 0.8, 0.6)
+	stylebox.set_border_width_all(1)
+	stylebox.set_corner_radius_all(3)
+	stylebox.set_content_margin_all(6)
+	_voyage_bar_container.add_theme_stylebox_override("panel", stylebox)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 2)
+	_voyage_bar_container.add_child(vbox)
+
+	_voyage_bar_label = Label.new()
+	_voyage_bar_label.text = "Drone Voyage: 0%"
+	_voyage_bar_label.add_theme_font_size_override("font_size", 12)
+	_voyage_bar_label.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
+	_voyage_bar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(_voyage_bar_label)
+
+	# Bar background
+	var bar_holder = Control.new()
+	bar_holder.custom_minimum_size = Vector2(0, 10)
+	vbox.add_child(bar_holder)
+
+	_voyage_bar_bg = ColorRect.new()
+	_voyage_bar_bg.color = Color(0.15, 0.15, 0.2)
+	_voyage_bar_bg.anchor_right = 1.0
+	_voyage_bar_bg.anchor_bottom = 1.0
+	bar_holder.add_child(_voyage_bar_bg)
+
+	_voyage_bar_fill = ColorRect.new()
+	_voyage_bar_fill.color = Color(0.3, 0.7, 1.0)
+	_voyage_bar_fill.anchor_right = 0.0  # Will be updated via progress
+	_voyage_bar_fill.anchor_bottom = 1.0
+	bar_holder.add_child(_voyage_bar_fill)
+
+	_voyage_bar_container.visible = VoyageManager.voyage_active
+	$CanvasLayer.add_child(_voyage_bar_container)
+
+func _on_voyage_progress(progress: float) -> void:
+	if _voyage_bar_container:
+		_voyage_bar_container.visible = true
+	if _voyage_bar_fill:
+		_voyage_bar_fill.anchor_right = progress
+	if _voyage_bar_label:
+		var remaining = VoyageManager.voyage_duration - VoyageManager.voyage_elapsed
+		_voyage_bar_label.text = "Drone Voyage: %d%% (%ds left)" % [int(progress * 100), ceili(remaining)]
+
+func _on_voyage_started() -> void:
+	if _voyage_bar_container:
+		_voyage_bar_container.visible = true
+	if _voyage_bar_fill:
+		_voyage_bar_fill.anchor_right = 0.0
+
+func _on_voyage_completed(_results: Dictionary) -> void:
+	if _voyage_bar_container:
+		_voyage_bar_container.visible = false
 
 # === Menu Toggle System ===
 
