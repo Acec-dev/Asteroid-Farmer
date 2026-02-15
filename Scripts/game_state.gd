@@ -55,7 +55,7 @@ var move_follow_strength: float = 12.0 # higher -> snappier cursor follow
 var projectile_speed: float = 800.0
 
 # Cargo hold system
-var cargo_capacity: int = 20  # max total minerals player can carry (upgradeable)
+var cargo_capacity: int = 40  # max total minerals player can carry (upgradeable)
 
 #Shield/Armor upgrade system
 var max_shield: float = 100.0 # maximum shield capacity (upgradeable)
@@ -120,7 +120,7 @@ var upgrades = {
 	"cargo": {
 		"capacity": {
 			"level": 0,
-			"values": [20, 40, 60, 100, 150]
+			"values": [40, 60, 80, 120, 170]
 		}
 	},
 	"spawner": {
