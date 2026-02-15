@@ -5,7 +5,7 @@ extends WeaponBase
 
 @export var muzzle_separation: float = 16.0
 @export var max_range: float = 2000.0
-@export var visual_projectile_speed: float = 2500.0
+@export var visual_projectile_speed: float = 10000.0
 
 var projectile_scene: PackedScene = preload("res://Scenes/projectile.tscn")
 

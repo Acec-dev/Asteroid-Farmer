@@ -1,10 +1,9 @@
-[gd_scene load_steps=13 format=3 uid="uid://c6c6wf1l6nudr"]
+[gd_scene load_steps=12 format=3 uid="uid://c6c6wf1l6nudr"]
 
 [ext_resource type="Script" uid="uid://b78u8tc2qckls" path="res://Scripts/main.gd" id="1_bo1nx"]
 [ext_resource type="PackedScene" uid="uid://cw77j44xrwsi7" path="res://Scenes/player.tscn" id="1_jjgbg"]
 [ext_resource type="PackedScene" uid="uid://c6cbnimduidb3" path="res://Scenes/asteroid.tscn" id="3_8gbba"]
 [ext_resource type="PackedScene" uid="uid://b6yaf544oid0q" path="res://Scenes/floating_text_2d.tscn" id="6_6bp64"]
-[ext_resource type="PackedScene" uid="uid://btat7s0ech64f" path="res://Scenes/inventory_menu.tscn" id="6_21xkr"]
 [ext_resource type="Script" uid="uid://dao5rg7pc1yop" path="res://Scripts/shield_bar.gd" id="6_344ge"]
 [ext_resource type="PackedScene" uid="uid://n22orxsm6s66" path="res://Scenes/market_menu.tscn" id="7_6bp64"]
 [ext_resource type="Theme" uid="uid://cpptlgmgejiaq" path="res://Assets/upgrade_button.tres" id="8_344ge"]
@@ -23,8 +22,6 @@ floating_text = ExtResource("6_6bp64")
 wait_time = 1.75
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
-
-[node name="InventoryMenu" parent="CanvasLayer" instance=ExtResource("6_21xkr")]
 
 [node name="ShieldBar" type="Control" parent="CanvasLayer"]
 layout_mode = 3
@@ -123,32 +120,38 @@ metadata/_edit_use_anchors_ = true
 layout_mode = 2
 text = "EXPLORATION-MODE"
 
-[node name="RadarButton" type="Button" parent="CanvasLayer/ButtonContainer"]
+[node name="GraphButton" type="Button" parent="CanvasLayer/ButtonContainer"]
+layout_mode = 2
+text = "MENUS"
+
+[node name="DebugToggle" type="Button" parent="CanvasLayer/ButtonContainer"]
+layout_mode = 2
+text = "DEBUG >"
+
+[node name="DebugContainer" type="VBoxContainer" parent="CanvasLayer/ButtonContainer"]
+visible = false
+layout_mode = 2
+
+[node name="RadarButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
 layout_mode = 2
 text = "RADAR UPGRADE"
 
-[node name="RocketsButton" type="Button" parent="CanvasLayer/ButtonContainer"]
+[node name="RocketsButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
 layout_mode = 2
-text = "Upgrade Rockets
-"
+text = "Upgrade Rockets"
 
-[node name="LaserButton" type="Button" parent="CanvasLayer/ButtonContainer"]
+[node name="LaserButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
 layout_mode = 2
-text = "Upgrade Laser
-"
+text = "Upgrade Laser"
 
-[node name="MineButton" type="Button" parent="CanvasLayer/ButtonContainer"]
+[node name="MineButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
 layout_mode = 2
 text = "Upgrade Mine"
-
-[node name="GraphButton" type="Button" parent="CanvasLayer/ButtonContainer"]
-layout_mode = 2
-text = "GraphButton"
 
 [node name="GraphsPanel" parent="CanvasLayer" instance=ExtResource("11_6iyac")]
 
 [node name="Radar" type="Camera2D" parent="."]
-zoom = Vector2(0.75, 0.75)
+zoom = Vector2(1.0, 1.0)
 limit_left = 0
 limit_top = 0
 limit_right = 1920
@@ -158,8 +161,9 @@ script = ExtResource("13_fdnlq")
 [connection signal="pressed" from="CanvasLayer/TabMenu/Upgrades/HBoxContainer/VBoxContainer/RocketsUpgradeBtn" to="." method="_on_rockets_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/BaseButton" to="." method="_on_base_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/ExploreButton" to="." method="_on_explore_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/RadarButton" to="Radar" method="_on_radar_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/RocketsButton" to="." method="_on_rockets_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/LaserButton" to="." method="_on_laser_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/MineButton" to="." method="_on_mine_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/GraphButton" to="." method="_on_graph_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugToggle" to="." method="_on_debug_toggle_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/RadarButton" to="Radar" method="_on_radar_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/RocketsButton" to="." method="_on_rockets_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/LaserButton" to="." method="_on_laser_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/MineButton" to="." method="_on_mine_button_pressed"]
