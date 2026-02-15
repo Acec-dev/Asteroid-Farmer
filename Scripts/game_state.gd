@@ -4,20 +4,23 @@ extends Node
 enum MineralType {
 	IRON,
 	NICKEL,
-	SILICA
+	SILICA,
+	PLATINUM
 }
 
 # Helper dictionaries for enum/string conversion
 const MINERAL_NAMES = {
 	MineralType.IRON: "iron",
 	MineralType.NICKEL: "nickel",
-	MineralType.SILICA: "silica"
+	MineralType.SILICA: "silica",
+	MineralType.PLATINUM: "platinum"
 }
 
 const STRING_TO_MINERAL = {
 	"iron": MineralType.IRON,
 	"nickel": MineralType.NICKEL,
-	"silica": MineralType.SILICA
+	"silica": MineralType.SILICA,
+	"platinum": MineralType.PLATINUM
 }
 
 # Global, super-lightweight state. Autoload this as "GameState".
@@ -34,13 +37,15 @@ var minerals = {
 	MineralType.IRON: 0,
 	MineralType.NICKEL: 0,
 	MineralType.SILICA: 0,
+	MineralType.PLATINUM: 0,
 }
 
 # Market price system (updated by Market singleton)
 var market_prices = {
 	MineralType.IRON: 1,
 	MineralType.NICKEL: 2,
-	MineralType.SILICA: 3
+	MineralType.SILICA: 3,
+	MineralType.PLATINUM: 5
 }
 
 # Upgrade hooks (read by Player/Spawner/etc.)

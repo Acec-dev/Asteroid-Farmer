@@ -13,6 +13,7 @@ var deposited_minerals := {
 	GameState.MineralType.IRON: 0,
 	GameState.MineralType.NICKEL: 0,
 	GameState.MineralType.SILICA: 0,
+	GameState.MineralType.PLATINUM: 0,
 }
 
 # Visual positions of minerals in the box (for drawing)
@@ -23,6 +24,7 @@ const MINERAL_COLORS = {
 	GameState.MineralType.IRON: Color(0.7, 0.7, 0.7),      # Gray
 	GameState.MineralType.NICKEL: Color(0.9, 0.9, 0.6),    # Yellowish
 	GameState.MineralType.SILICA: Color(0.6, 0.8, 1.0),    # Light blue
+	GameState.MineralType.PLATINUM: Color(0.9, 0.9, 1.0),  # Silver-white
 }
 
 var _player_in_range: bool = false
@@ -94,6 +96,7 @@ func withdraw_all() -> Dictionary:
 		GameState.MineralType.IRON: 0,
 		GameState.MineralType.NICKEL: 0,
 		GameState.MineralType.SILICA: 0,
+		GameState.MineralType.PLATINUM: 0,
 	}
 	_visual_minerals.clear()
 	queue_redraw()

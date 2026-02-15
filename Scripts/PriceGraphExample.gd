@@ -52,6 +52,13 @@ func _ready() -> void:
 	silica_graph.custom_minimum_size = Vector2(350, 250)
 	graph_container.add_child(silica_graph)
 
+	# Create Platinum graph
+	var platinum_graph = preload("res://Scripts/MineralPriceGraph.gd").new()
+	platinum_graph.mineral_type = GameState.MineralType.PLATINUM
+	platinum_graph.line_color = Color.SILVER
+	platinum_graph.custom_minimum_size = Vector2(350, 250)
+	graph_container.add_child(platinum_graph)
+
 	# Add info label
 	var spacer2 = Control.new()
 	spacer2.custom_minimum_size = Vector2(0, 20)
