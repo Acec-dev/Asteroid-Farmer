@@ -192,6 +192,13 @@ func popup_mineral(mineral_name: String) -> void:
 	var start := global_position
 	ft.show_text(mineral_name, start)
 
+func popup_cargo_full() -> void:
+	var ft := FloatingText2D.instantiate()
+	var scene_root = owner if owner else get_tree().current_scene
+	scene_root.add_child(ft)
+	var start := global_position
+	ft.show_custom_text("CARGO FULL", start)
+
 # === Mineral Deposit System ===
 
 func _handle_mineral_deposit() -> void:
