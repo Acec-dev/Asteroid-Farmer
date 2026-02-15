@@ -15,8 +15,39 @@ const BOB_AMPLITUDE := 4.0  # pixels up/down
 const BOB_SPEED := 1.5  # cycles per second
 const FLY_IN_DURATION := 1.2  # seconds
 
+# Drone visuals
+var _drone_container: Node2D
+var _drone_nodes: Array[Node2D] = []
+const DRONE_AREA_CENTER := Vector2(550, -280)  # Top-right quadrant
+const DRONE_SPACING := 50.0
+const DRONE_BOB_AMPLITUDE := 3.0
+const DRONE_BOB_SPEED := 1.2
+const DRONE_SCALE := 0.4
+
+# Voyage UI
+var _voyage_panel: PanelContainer
+var _voyage_progress_bar: Node2D
+var _voyage_progress_label: Label
+var _drone_count_label: Label
+var _buy_drone_btn: Button
+var _voyage_results_label: Label
+var _results_timer: float = 0.0
+const RESULTS_DISPLAY_TIME := 5.0
+
 func _ready() -> void:
 	_spawn_docked_ship()
+	_spawn_drone_visuals()
+	_build_drone_ui()
+	_build_voyage_ui()
+
+	GameState.drones_changed.connect(_on_drones_changed)
+	GameState.credits_changed.connect(_on_credits_changed)
+	GameState.voyage_started.connect(_on_voyage_started)
+	GameState.voyage_completed.connect(_on_voyage_completed)
+	GameState.voyage_progress_updated.connect(_on_voyage_progress)
+
+	_refresh_drone_visuals()
+	_refresh_ui()
 
 func _spawn_docked_ship() -> void:
 	var viewport_size = get_viewport_rect().size
@@ -46,6 +77,240 @@ func _process(delta: float) -> void:
 	if _ship_node:
 		_bob_time += delta
 		_ship_node.position.y = _ship_rest_pos.y + sin(_bob_time * BOB_SPEED * TAU) * BOB_AMPLITUDE
+
+	# Bob drone visuals
+	for i in range(_drone_nodes.size()):
+		var drone = _drone_nodes[i]
+		if drone and is_instance_valid(drone):
+			var base_pos: Vector2 = drone.get_meta("base_pos")
+			var phase: float = drone.get_meta("phase")
+			drone.position.y = base_pos.y + sin((_bob_time * DRONE_BOB_SPEED + phase) * TAU) * DRONE_BOB_AMPLITUDE
+
+	# Voyage results display timer
+	if _results_timer > 0.0:
+		_results_timer -= delta
+		if _results_timer <= 0.0 and _voyage_results_label:
+			_voyage_results_label.text = ""
+
+# === DRONE VISUALS ===
+
+func _spawn_drone_visuals() -> void:
+	_drone_container = Node2D.new()
+	_drone_container.name = "DroneContainer"
+	_drone_container.position = DRONE_AREA_CENTER
+	add_child(_drone_container)
+
+func _refresh_drone_visuals() -> void:
+	# Clear existing drones
+	for drone in _drone_nodes:
+		if is_instance_valid(drone):
+			drone.queue_free()
+	_drone_nodes.clear()
+
+	# Don't show drones when voyage is active (progress bar takes their place)
+	if VoyageManager.voyage_active:
+		_drone_container.visible = false
+		return
+
+	_drone_container.visible = true
+
+	# Arrange drones in a grid
+	var count = GameState.drone_count
+	var cols = ceili(sqrt(float(count))) if count > 0 else 1
+	for i in range(count):
+		var col = i % cols
+		var row = i / cols
+		var pos = Vector2(col * DRONE_SPACING - (cols - 1) * DRONE_SPACING * 0.5, row * DRONE_SPACING)
+
+		var drone_node = Node2D.new()
+		drone_node.position = pos
+		drone_node.scale = Vector2(DRONE_SCALE, DRONE_SCALE)
+		drone_node.set_meta("base_pos", pos)
+		drone_node.set_meta("phase", randf() * TAU)
+
+		var drawer = _DroneDrawer.new()
+		drone_node.add_child(drawer)
+		_drone_container.add_child(drone_node)
+		_drone_nodes.append(drone_node)
+
+# === UI BUILDING ===
+
+func _build_drone_ui() -> void:
+	var viewport_size = get_viewport_rect().size
+
+	# Drone count label (above the drone area)
+	_drone_count_label = Label.new()
+	_drone_count_label.text = "Drones: 0"
+	_drone_count_label.add_theme_font_size_override("font_size", 18)
+	_drone_count_label.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
+	_drone_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_drone_count_label.position = Vector2(DRONE_AREA_CENTER.x - 60, DRONE_AREA_CENTER.y - 50)
+	add_child(_drone_count_label)
+
+	# Voyage results label (below the drone area, for showing completion results)
+	_voyage_results_label = Label.new()
+	_voyage_results_label.text = ""
+	_voyage_results_label.add_theme_font_size_override("font_size", 14)
+	_voyage_results_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	_voyage_results_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_voyage_results_label.position = Vector2(DRONE_AREA_CENTER.x - 120, DRONE_AREA_CENTER.y + 120)
+	_voyage_results_label.custom_minimum_size.x = 240
+	add_child(_voyage_results_label)
+
+func _build_voyage_ui() -> void:
+	# Panel in the lower-right area for voyage controls
+	_voyage_panel = PanelContainer.new()
+	_voyage_panel.name = "VoyagePanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0.1, 0.1, 0.15, 0.9)
+	stylebox.border_color = Color(0.4, 0.4, 0.5)
+	stylebox.set_border_width_all(1)
+	stylebox.set_corner_radius_all(4)
+	stylebox.set_content_margin_all(12)
+	_voyage_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_voyage_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "DRONE BAY"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var sep = HSeparator.new()
+	vbox.add_child(sep)
+
+	# Buy drone button
+	_buy_drone_btn = Button.new()
+	_buy_drone_btn.text = "Buy Drone (%dcr)" % GameState.DRONE_COST
+	_buy_drone_btn.add_theme_font_size_override("font_size", 14)
+	_buy_drone_btn.pressed.connect(_on_buy_drone_pressed)
+	vbox.add_child(_buy_drone_btn)
+
+	# Voyage section header
+	var voyage_header = Label.new()
+	voyage_header.text = "SEND ON VOYAGE"
+	voyage_header.add_theme_font_size_override("font_size", 14)
+	voyage_header.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	voyage_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(voyage_header)
+
+	# Voyage buttons with risk info
+	for tier in VoyageManager.VoyageTier.values():
+		var data = VoyageManager.get_tier_data(tier)
+		var btn = Button.new()
+		var duration_str = "%ds" % int(data.duration)
+		var risk_str = "%d%% risk" % int(data.break_chance * 100)
+		var reward_str = "%d-%d minerals" % [data.min_minerals, data.max_minerals]
+		btn.text = "%s (%s, %s)" % [duration_str, risk_str, reward_str]
+		btn.add_theme_font_size_override("font_size", 12)
+		btn.name = "VoyageBtn_" + str(tier)
+		btn.pressed.connect(_on_voyage_pressed.bind(tier))
+		vbox.add_child(btn)
+
+	# Progress bar area (hidden until voyage starts)
+	_voyage_progress_bar = _VoyageProgressBar.new()
+	_voyage_progress_bar.visible = false
+	vbox.add_child(_voyage_progress_bar)
+
+	_voyage_progress_label = Label.new()
+	_voyage_progress_label.text = ""
+	_voyage_progress_label.add_theme_font_size_override("font_size", 12)
+	_voyage_progress_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	_voyage_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(_voyage_progress_label)
+
+	# Position the panel in the bottom-right
+	_voyage_panel.position = Vector2(500, 180)
+	_voyage_panel.size = Vector2(260, 0)
+	add_child(_voyage_panel)
+
+func _refresh_ui() -> void:
+	if _drone_count_label:
+		_drone_count_label.text = "Drones: %d" % GameState.drone_count
+
+	if _buy_drone_btn:
+		_buy_drone_btn.disabled = GameState.credits < GameState.DRONE_COST
+
+	# Update voyage buttons
+	var can_voyage = GameState.drone_count > 0 and not VoyageManager.voyage_active
+	for tier in VoyageManager.VoyageTier.values():
+		var btn_name = "VoyageBtn_" + str(tier)
+		var btn = _voyage_panel.find_child(btn_name, true, false)
+		if btn:
+			btn.disabled = not can_voyage
+			btn.visible = not VoyageManager.voyage_active
+
+	# Show/hide progress bar
+	if _voyage_progress_bar:
+		_voyage_progress_bar.visible = VoyageManager.voyage_active
+	if _voyage_progress_label:
+		if VoyageManager.voyage_active:
+			var remaining = VoyageManager.voyage_duration - VoyageManager.voyage_elapsed
+			_voyage_progress_label.text = "Voyage in progress... %ds remaining" % ceili(remaining)
+		elif _results_timer <= 0.0:
+			_voyage_progress_label.text = ""
+
+# === CALLBACKS ===
+
+func _on_buy_drone_pressed() -> void:
+	GameState.buy_drone()
+	_refresh_drone_visuals()
+	_refresh_ui()
+
+func _on_voyage_pressed(tier: int) -> void:
+	if VoyageManager.start_voyage(tier):
+		_refresh_drone_visuals()
+		_refresh_ui()
+
+func _on_drones_changed(_count: int) -> void:
+	_refresh_drone_visuals()
+	_refresh_ui()
+
+func _on_credits_changed(_credits: int) -> void:
+	_refresh_ui()
+
+func _on_voyage_started() -> void:
+	_refresh_drone_visuals()
+	_refresh_ui()
+
+func _on_voyage_progress(progress: float) -> void:
+	if _voyage_progress_bar and _voyage_progress_bar is _VoyageProgressBar:
+		_voyage_progress_bar.progress = progress
+		_voyage_progress_bar.queue_redraw()
+	if _voyage_progress_label and VoyageManager.voyage_active:
+		var remaining = VoyageManager.voyage_duration - VoyageManager.voyage_elapsed
+		_voyage_progress_label.text = "Voyage in progress... %ds remaining" % ceili(remaining)
+
+func _on_voyage_completed(results: Dictionary) -> void:
+	_refresh_drone_visuals()
+	_refresh_ui()
+
+	# Show results
+	var total_minerals := 0
+	for type in results.minerals_gained:
+		total_minerals += results.minerals_gained[type]
+
+	var result_text = "Voyage complete!\n"
+	result_text += "%d/%d drones returned\n" % [results.drones_survived, results.drones_sent]
+	if results.drones_lost > 0:
+		result_text += "%d drones lost!\n" % results.drones_lost
+	result_text += "+%d minerals collected" % total_minerals
+
+	if _voyage_results_label:
+		_voyage_results_label.text = result_text
+		_results_timer = RESULTS_DISPLAY_TIME
+
+	if _voyage_progress_label:
+		_voyage_progress_label.text = ""
 
 func _on_silo_button_pressed() -> void:
 	if purchased_drill == true:
@@ -84,3 +349,44 @@ class _ShipDrawer extends Node2D:
 			Vector2(60, 0)
 		])
 		draw_polyline(points, Color.WHITE, 2.0)
+
+
+# Inner class that draws a small drone triangle
+class _DroneDrawer extends Node2D:
+	func _draw() -> void:
+		var points = PackedVector2Array([
+			Vector2(30, 0),
+			Vector2(-10, -8),
+			Vector2(-10, 8),
+			Vector2(30, 0)
+		])
+		draw_polyline(points, Color(0.6, 0.8, 1.0), 1.5)
+
+
+# Inner class for voyage progress bar (drawn via _draw for consistency with game style)
+class _VoyageProgressBar extends Control:
+	var progress: float = 0.0
+	const BAR_WIDTH := 230.0
+	const BAR_HEIGHT := 16.0
+
+	func _get_minimum_size() -> Vector2:
+		return Vector2(BAR_WIDTH + 4, BAR_HEIGHT + 4)
+
+	func _draw() -> void:
+		var x_start := 2.0
+		var y_start := 2.0
+
+		# Background
+		draw_rect(Rect2(x_start, y_start, BAR_WIDTH, BAR_HEIGHT), Color(0.15, 0.15, 0.2), true)
+
+		# Fill
+		var fill_width = BAR_WIDTH * progress
+		if fill_width > 0:
+			draw_rect(Rect2(x_start, y_start, fill_width, BAR_HEIGHT), Color(0.3, 0.7, 1.0), true)
+
+		# Border
+		draw_rect(Rect2(x_start, y_start, BAR_WIDTH, BAR_HEIGHT), Color(0.5, 0.5, 0.6), false, 1.0)
+
+		# Percentage text
+		var pct_text = "%d%%" % int(progress * 100)
+		draw_string(ThemeDB.fallback_font, Vector2(x_start + BAR_WIDTH * 0.5 - 12, y_start + BAR_HEIGHT - 3), pct_text, HORIZONTAL_ALIGNMENT_CENTER, -1, 11, Color.WHITE)
