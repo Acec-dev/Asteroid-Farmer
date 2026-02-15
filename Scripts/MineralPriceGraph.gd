@@ -26,7 +26,7 @@ extends Control
 
 ## Price range for the graph
 const MIN_PRICE := 0
-const MAX_PRICE := 8
+@export var max_price: int = 8
 
 # Cached price history for this mineral
 var _price_history: Array = []
@@ -75,8 +75,8 @@ func _draw() -> void:
 
 func _draw_grid(origin: Vector2, width: float, height: float) -> void:
 	# Horizontal grid lines (price levels)
-	for i in range(MIN_PRICE, MAX_PRICE + 1):
-		var y := origin.y - (float(i) / MAX_PRICE) * height
+	for i in range(MIN_PRICE, max_price + 1):
+		var y := origin.y - (float(i) / max_price) * height
 		draw_line(
 			Vector2(origin.x, y),
 			Vector2(origin.x + width, y),
@@ -112,8 +112,8 @@ func _draw_labels(origin: Vector2, width: float, height: float) -> void:
 	)
 
 	# Y-axis labels (prices)
-	for i in range(0, MAX_PRICE + 1, 2):
-		var y := origin.y - (float(i) / MAX_PRICE) * height
+	for i in range(0, max_price + 1, 2):
+		var y := origin.y - (float(i) / max_price) * height
 		var label := "$%d" % i
 		draw_string(
 			ThemeDB.fallback_font,
@@ -143,7 +143,7 @@ func _draw_price_line(origin: Vector2, width: float, height: float) -> void:
 		# Just draw a single point if we only have one price
 		if num_points == 1:
 			var price: float = _price_history[0]
-			var y := origin.y - (price / MAX_PRICE) * height
+			var y := origin.y - (price / max_price) * height
 			draw_circle(Vector2(origin.x, y), point_radius, line_color)
 		return
 
@@ -155,8 +155,8 @@ func _draw_price_line(origin: Vector2, width: float, height: float) -> void:
 		# Calculate positions (spread evenly across width)
 		var x1 := origin.x + (float(i) / (num_points - 1)) * width
 		var x2 := origin.x + (float(i + 1) / (num_points - 1)) * width
-		var y1 := origin.y - (price1 / MAX_PRICE) * height
-		var y2 := origin.y - (price2 / MAX_PRICE) * height
+		var y1 := origin.y - (price1 / max_price) * height
+		var y2 := origin.y - (price2 / max_price) * height
 
 		# Draw line segment
 		draw_line(Vector2(x1, y1), Vector2(x2, y2), line_color, line_width)
@@ -165,7 +165,7 @@ func _draw_price_line(origin: Vector2, width: float, height: float) -> void:
 	for i in range(num_points):
 		var price: float = _price_history[i]
 		var x := origin.x + (float(i) / (num_points - 1)) * width
-		var y := origin.y - (price / MAX_PRICE) * height
+		var y := origin.y - (price / max_price) * height
 
 		# Draw point
 		draw_circle(Vector2(x, y), point_radius, line_color)
