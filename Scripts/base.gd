@@ -26,7 +26,7 @@ const DRONE_SCALE := 0.4
 
 # Voyage UI
 var _voyage_panel: PanelContainer
-var _voyage_progress_bar: Node2D
+var _voyage_progress_bar: Control
 var _voyage_progress_label: Label
 var _drone_count_label: Label
 var _buy_drone_btn: Button
@@ -283,7 +283,7 @@ func _on_voyage_started() -> void:
 	_refresh_ui()
 
 func _on_voyage_progress(progress: float) -> void:
-	if _voyage_progress_bar and _voyage_progress_bar is _VoyageProgressBar:
+	if _voyage_progress_bar:
 		_voyage_progress_bar.progress = progress
 		_voyage_progress_bar.queue_redraw()
 	if _voyage_progress_label and VoyageManager.voyage_active:
