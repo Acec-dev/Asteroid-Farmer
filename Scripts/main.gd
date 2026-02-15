@@ -312,3 +312,7 @@ func _on_debug_toggle_pressed() -> void:
 	var toggle_btn = $CanvasLayer/ButtonContainer/DebugToggle
 	container.visible = not container.visible
 	toggle_btn.text = "DEBUG v" if container.visible else "DEBUG >"
+
+
+func _on_give_money_pressed() -> void:
+	GameState.add_credits(100)
