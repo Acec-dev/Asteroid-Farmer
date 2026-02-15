@@ -18,10 +18,13 @@ var _scroll_vbox: VBoxContainer
 var _iron_label: Label
 var _nickel_label: Label
 var _silica_label: Label
+var _platinum_label: Label
+var _cargo_label: Label
 var _credit_label: Label
 var _iron_price_label: Label
 var _nickel_price_label: Label
 var _silica_price_label: Label
+var _platinum_price_label: Label
 var _sell_btn: Button
 
 # Upgrade cost definitions per level
@@ -40,6 +43,9 @@ var upgrade_costs = {
 	},
 	"radar": {
 		"zoom_level": [50, 100, 200, 400, 800],
+	},
+	"cargo": {
+		"capacity": [75, 150, 300, 600, 1200],
 	}
 }
 
@@ -48,6 +54,7 @@ var display_names = {
 	"regen_rate": "Regen Rate",
 	"regen_delay": "Regen Delay",
 	"zoom_level": "Zoom Level",
+	"capacity": "Cargo Hold",
 }
 
 func _ready() -> void:
@@ -82,6 +89,7 @@ func _ready() -> void:
 	# React to inventory and price changes
 	GameState.inventory_changed.connect(_refresh_inventory)
 	GameState.credits_changed.connect(_refresh_inventory)
+	GameState.upgrades_changed.connect(_refresh_inventory)
 	GameState.prices_changed.connect(_refresh_prices)
 	_refresh_inventory()
 	_refresh_prices()
@@ -180,6 +188,10 @@ func _build_upgrade_list() -> void:
 	_add_section_header("RADAR")
 	for upgrade_name in GameState.upgrades.radar:
 		_add_upgrade_row("radar", upgrade_name)
+
+	_add_section_header("CARGO")
+	for upgrade_name in GameState.upgrades.cargo:
+		_add_upgrade_row("cargo", upgrade_name)
 
 func _add_section_header(title: String) -> void:
 	var label = Label.new()
@@ -345,6 +357,18 @@ func _build_inventory_section() -> void:
 	_silica_label = silica_row.get_node("CountLabel")
 	_silica_price_label = silica_row.get_node("PriceLabel")
 
+	var platinum_row = _make_inventory_row("Platinum", "0", "$0")
+	minerals_box.add_child(platinum_row)
+	_platinum_label = platinum_row.get_node("CountLabel")
+	_platinum_price_label = platinum_row.get_node("PriceLabel")
+
+	# Cargo capacity display
+	_cargo_label = Label.new()
+	_cargo_label.text = "Cargo: 0/%d" % GameState.cargo_capacity
+	_cargo_label.add_theme_font_size_override("font_size", 13)
+	_cargo_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	_inventory_vbox.add_child(_cargo_label)
+
 	# Credits row
 	_credit_label = Label.new()
 	_credit_label.text = "Credits: 0"
@@ -404,6 +428,8 @@ func _refresh_inventory(_new_credits: int = 0) -> void:
 	_iron_label.text = str(GameState.minerals[GameState.MineralType.IRON])
 	_nickel_label.text = str(GameState.minerals[GameState.MineralType.NICKEL])
 	_silica_label.text = str(GameState.minerals[GameState.MineralType.SILICA])
+	_platinum_label.text = str(GameState.minerals[GameState.MineralType.PLATINUM])
+	_cargo_label.text = "Cargo: %d/%d" % [GameState.get_total_minerals(), GameState.cargo_capacity]
 	_credit_label.text = "Credits: %d" % GameState.credits
 
 func _refresh_prices() -> void:
@@ -412,6 +438,7 @@ func _refresh_prices() -> void:
 	_iron_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.IRON]
 	_nickel_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.NICKEL]
 	_silica_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.SILICA]
+	_platinum_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.PLATINUM]
 
 func _on_sell_all() -> void:
 	GameState.sell_all()

@@ -50,11 +50,12 @@ func _create_price_graphs() -> void:
 	vbox.add_child(graph_container)
 
 	# Create a graph for each mineral
-	var minerals = [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA]
+	var minerals = [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM]
 	var colors = {
 		GameState.MineralType.IRON: Color.STEEL_BLUE,
 		GameState.MineralType.NICKEL: Color.DARK_SEA_GREEN,
-		GameState.MineralType.SILICA: Color.LIGHT_CORAL
+		GameState.MineralType.SILICA: Color.LIGHT_CORAL,
+		GameState.MineralType.PLATINUM: Color.SILVER
 	}
 
 	for mineral in minerals:

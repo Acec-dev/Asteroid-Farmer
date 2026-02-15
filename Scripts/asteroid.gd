@@ -139,7 +139,7 @@ func _break_safe() -> void:
 	for i in mineral_drop_count:
 		if mineral_drop_scene:
 			var m = mineral_drop_scene.instantiate()
-			m.kind = GameState.MineralType.values()[randi() % 3]  # Randomly assign mineral type
+			m.kind = GameState.MineralType.values()[randi() % GameState.MineralType.size()]  # Randomly assign mineral type
 			m.global_position = global_position + Vector2(randf_range(-8,8), randf_range(-8,8))
 			# Add to owner's scene root (works with SubViewport)
 			var scene_root = owner if owner else get_tree().current_scene

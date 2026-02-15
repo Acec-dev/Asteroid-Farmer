@@ -4,20 +4,23 @@ extends Node
 enum MineralType {
 	IRON,
 	NICKEL,
-	SILICA
+	SILICA,
+	PLATINUM
 }
 
 # Helper dictionaries for enum/string conversion
 const MINERAL_NAMES = {
 	MineralType.IRON: "iron",
 	MineralType.NICKEL: "nickel",
-	MineralType.SILICA: "silica"
+	MineralType.SILICA: "silica",
+	MineralType.PLATINUM: "platinum"
 }
 
 const STRING_TO_MINERAL = {
 	"iron": MineralType.IRON,
 	"nickel": MineralType.NICKEL,
-	"silica": MineralType.SILICA
+	"silica": MineralType.SILICA,
+	"platinum": MineralType.PLATINUM
 }
 
 # Global, super-lightweight state. Autoload this as "GameState".
@@ -28,25 +31,31 @@ signal new_pickup
 signal shield_changed(current: float, maximum: float)
 signal prices_changed()
 signal upgrades_changed()  # Emitted when any upgrade is purchased/modified
+signal cargo_full()  # Emitted when cargo hold is at capacity
 
 var credits: int = 0
 var minerals = {
 	MineralType.IRON: 0,
 	MineralType.NICKEL: 0,
 	MineralType.SILICA: 0,
+	MineralType.PLATINUM: 0,
 }
 
 # Market price system (updated by Market singleton)
 var market_prices = {
 	MineralType.IRON: 1,
 	MineralType.NICKEL: 2,
-	MineralType.SILICA: 3
+	MineralType.SILICA: 3,
+	MineralType.PLATINUM: 5
 }
 
 # Upgrade hooks (read by Player/Spawner/etc.)
 var fire_rate: float = 4.0 # shots per second (pairs)
 var move_follow_strength: float = 12.0 # higher -> snappier cursor follow
 var projectile_speed: float = 800.0
+
+# Cargo hold system
+var cargo_capacity: int = 20  # max total minerals player can carry (upgradeable)
 
 #Shield/Armor upgrade system
 var max_shield: float = 100.0 # maximum shield capacity (upgradeable)
@@ -108,6 +117,12 @@ var upgrades = {
 			"values": [1.0, 1.2, 1.5, 2.0, 2.5]
 		}
 	},
+	"cargo": {
+		"capacity": {
+			"level": 0,
+			"values": [20, 40, 60, 100, 150]
+		}
+	},
 	"spawner": {
 		"difficulty": {
 			"level": 1,  # Start at normal difficulty (level 1)
@@ -143,12 +158,25 @@ func add_credits(amount: int) -> void:
 	credits = max(0, credits + amount)
 	emit_signal("credits_changed", credits)
 
+func get_total_minerals() -> int:
+	var total := 0
+	for count in minerals.values():
+		total += count
+	return total
+
 func add_mineral(kind: MineralType, amount: int = 1) -> void:
 	if not minerals.has(kind):
 		minerals[kind] = 0
-	minerals[kind] += amount
+	var space_left := cargo_capacity - get_total_minerals()
+	if space_left <= 0:
+		emit_signal("cargo_full")
+		return
+	var to_add := mini(amount, space_left)
+	minerals[kind] += to_add
 	emit_signal("new_pickup")
 	emit_signal("inventory_changed")
+	if get_total_minerals() >= cargo_capacity:
+		emit_signal("cargo_full")
 
 func sell_all() -> void:
 	var total := 0
@@ -248,6 +276,12 @@ func _sync_legacy_variables() -> void:
 
 	if upgrades.shield.regen_delay.level < upgrades.shield.regen_delay.values.size():
 		shield_regen_delay = upgrades.shield.regen_delay.values[upgrades.shield.regen_delay.level]
+
+	# Sync cargo capacity
+	if upgrades.has("cargo") and upgrades.cargo.has("capacity"):
+		var cargo_data = upgrades.cargo.capacity
+		if cargo_data.level < cargo_data.values.size():
+			cargo_capacity = cargo_data.values[cargo_data.level]
 
 ## Get current value of a system upgrade
 func get_upgrade_value(system_name: String, upgrade_name: String) -> Variant:
