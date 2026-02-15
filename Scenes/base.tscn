@@ -18,6 +18,28 @@ offset_right = -843.0
 offset_bottom = -490.0
 text = "BACK"
 
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="DrillTimer" type="Timer" parent="."]
+wait_time = 6.0
+
+[node name="Control2" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_top = 196.0
+offset_right = 40.0
+offset_bottom = 228.89883
+scale = Vector2(24.2, 10.279997)
+
+[node name="SiloMenu" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -965.0
+offset_top = 206.99998
+offset_right = -925.0
+offset_bottom = 239.89882
+scale = Vector2(24.2, 10.279997)
+
 [node name="Control" type="Control" parent="."]
 layout_mode = 3
 anchors_preset = 12
@@ -49,29 +71,7 @@ layout_mode = 2
 layout_mode = 2
 text = "Buy Drill"
 
-[node name="Camera2D" type="Camera2D" parent="."]
-
-[node name="DrillTimer" type="Timer" parent="."]
-wait_time = 6.0
-
-[node name="Control2" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 0
-offset_top = 196.0
-offset_right = 40.0
-offset_bottom = 228.89883
-scale = Vector2(24.2, 10.279997)
-
-[node name="SiloMenu" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 0
-offset_left = -965.0
-offset_top = 206.99998
-offset_right = -925.0
-offset_bottom = 239.89882
-scale = Vector2(24.2, 10.279997)
-
 [connection signal="pressed" from="BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="timeout" from="DrillTimer" to="." method="_on_drill_timer_timeout"]
 [connection signal="pressed" from="Control/HBoxContainer/VBoxContainer/SiloButton" to="." method="_on_silo_button_pressed"]
 [connection signal="pressed" from="Control/HBoxContainer/VBoxContainer2/DrillButton" to="." method="_on_drill_button_pressed"]
-[connection signal="timeout" from="DrillTimer" to="." method="_on_drill_timer_timeout"]
