@@ -50,6 +50,7 @@ func _ready() -> void:
 		_spawn_deposit_box()
 
 	GameState.new_pickup.connect(Callable(self, "_spawn_text"))
+	GameState.cargo_full.connect(_on_cargo_full)
 
 	# Initialize camera boundary system
 	var radar_cam = $Radar
@@ -136,6 +137,10 @@ func _spawn_text():
 	_player.popup_mineral(GameState.MINERAL_NAMES[GameState.current_mat])
 	emit_signal("spawn_text")
 
+func _on_cargo_full() -> void:
+	if _player and _player.has_method("popup_cargo_full"):
+		_player.popup_cargo_full()
+
 func _get_player_pos():
 	return Vector2(_player.global_position)
 
@@ -153,14 +158,14 @@ func _create_upgrade_panel() -> void:
 # === Voyage Progress Bar (in graph menu area) ===
 
 func _create_voyage_progress_bar() -> void:
+	# Small black & white bar attached to the top edge of the graphs panel
 	_voyage_bar_container = PanelContainer.new()
 	_voyage_bar_container.name = "VoyageProgressBar"
 
-	# Position it at the bottom of the screen, above the graphs panel area
-	# Anchored to bottom-right, sits just above where graphs panel appears
-	_voyage_bar_container.anchor_left = 0.28
-	_voyage_bar_container.anchor_right = 0.72
-	_voyage_bar_container.anchor_top = 0.68
+	# Sit just above the graphs panel (which starts at anchor_top 0.7222)
+	_voyage_bar_container.anchor_left = 0.35
+	_voyage_bar_container.anchor_right = 0.65
+	_voyage_bar_container.anchor_top = 0.695
 	_voyage_bar_container.anchor_bottom = 0.72
 	_voyage_bar_container.offset_left = 0
 	_voyage_bar_container.offset_right = 0
@@ -168,38 +173,38 @@ func _create_voyage_progress_bar() -> void:
 	_voyage_bar_container.offset_bottom = 0
 
 	var stylebox = StyleBoxFlat.new()
-	stylebox.bg_color = Color(0.08, 0.08, 0.12, 0.85)
-	stylebox.border_color = Color(0.3, 0.5, 0.8, 0.6)
+	stylebox.bg_color = Color(0.0, 0.0, 0.0, 0.8)
+	stylebox.border_color = Color(0.6, 0.6, 0.6)
 	stylebox.set_border_width_all(1)
-	stylebox.set_corner_radius_all(3)
-	stylebox.set_content_margin_all(6)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(3)
 	_voyage_bar_container.add_theme_stylebox_override("panel", stylebox)
 
-	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 2)
-	_voyage_bar_container.add_child(vbox)
+	var hbox = HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 6)
+	_voyage_bar_container.add_child(hbox)
 
 	_voyage_bar_label = Label.new()
-	_voyage_bar_label.text = "Drone Voyage: 0%"
-	_voyage_bar_label.add_theme_font_size_override("font_size", 12)
-	_voyage_bar_label.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
-	_voyage_bar_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vbox.add_child(_voyage_bar_label)
+	_voyage_bar_label.text = "VOYAGE 0%"
+	_voyage_bar_label.add_theme_font_size_override("font_size", 10)
+	_voyage_bar_label.add_theme_color_override("font_color", Color.WHITE)
+	hbox.add_child(_voyage_bar_label)
 
 	# Bar background
 	var bar_holder = Control.new()
-	bar_holder.custom_minimum_size = Vector2(0, 10)
-	vbox.add_child(bar_holder)
+	bar_holder.custom_minimum_size = Vector2(0, 8)
+	bar_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.add_child(bar_holder)
 
 	_voyage_bar_bg = ColorRect.new()
-	_voyage_bar_bg.color = Color(0.15, 0.15, 0.2)
+	_voyage_bar_bg.color = Color(0.15, 0.15, 0.15)
 	_voyage_bar_bg.anchor_right = 1.0
 	_voyage_bar_bg.anchor_bottom = 1.0
 	bar_holder.add_child(_voyage_bar_bg)
 
 	_voyage_bar_fill = ColorRect.new()
-	_voyage_bar_fill.color = Color(0.3, 0.7, 1.0)
-	_voyage_bar_fill.anchor_right = 0.0  # Will be updated via progress
+	_voyage_bar_fill.color = Color.WHITE
+	_voyage_bar_fill.anchor_right = 0.0
 	_voyage_bar_fill.anchor_bottom = 1.0
 	bar_holder.add_child(_voyage_bar_fill)
 
@@ -213,7 +218,7 @@ func _on_voyage_progress(progress: float) -> void:
 		_voyage_bar_fill.anchor_right = progress
 	if _voyage_bar_label:
 		var remaining = VoyageManager.voyage_duration - VoyageManager.voyage_elapsed
-		_voyage_bar_label.text = "Drone Voyage: %d%% (%ds left)" % [int(progress * 100), ceili(remaining)]
+		_voyage_bar_label.text = "VOYAGE %d%% (%ds)" % [int(progress * 100), ceili(remaining)]
 
 func _on_voyage_started() -> void:
 	if _voyage_bar_container:

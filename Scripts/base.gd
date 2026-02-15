@@ -142,7 +142,7 @@ func _build_drone_ui() -> void:
 	_drone_count_label = Label.new()
 	_drone_count_label.text = "Drones: 0"
 	_drone_count_label.add_theme_font_size_override("font_size", 18)
-	_drone_count_label.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
+	_drone_count_label.add_theme_color_override("font_color", Color.WHITE)
 	_drone_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_drone_count_label.position = Vector2(DRONE_AREA_CENTER.x - 60, DRONE_AREA_CENTER.y - 50)
 	add_child(_drone_count_label)
@@ -151,7 +151,7 @@ func _build_drone_ui() -> void:
 	_voyage_results_label = Label.new()
 	_voyage_results_label.text = ""
 	_voyage_results_label.add_theme_font_size_override("font_size", 14)
-	_voyage_results_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	_voyage_results_label.add_theme_color_override("font_color", Color.WHITE)
 	_voyage_results_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_voyage_results_label.position = Vector2(DRONE_AREA_CENTER.x - 120, DRONE_AREA_CENTER.y + 120)
 	_voyage_results_label.custom_minimum_size.x = 240
@@ -224,7 +224,7 @@ func _build_voyage_ui() -> void:
 	_voyage_progress_label = Label.new()
 	_voyage_progress_label.text = ""
 	_voyage_progress_label.add_theme_font_size_override("font_size", 12)
-	_voyage_progress_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	_voyage_progress_label.add_theme_color_override("font_color", Color.WHITE)
 	_voyage_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_voyage_progress_label)
 
@@ -360,7 +360,7 @@ class _DroneDrawer extends Node2D:
 			Vector2(-10, 8),
 			Vector2(30, 0)
 		])
-		draw_polyline(points, Color(0.6, 0.8, 1.0), 1.5)
+		draw_polyline(points, Color.WHITE, 1.5)
 
 
 # Inner class for voyage progress bar (drawn via _draw for consistency with game style)
@@ -377,15 +377,15 @@ class _VoyageProgressBar extends Control:
 		var y_start := 2.0
 
 		# Background
-		draw_rect(Rect2(x_start, y_start, BAR_WIDTH, BAR_HEIGHT), Color(0.15, 0.15, 0.2), true)
+		draw_rect(Rect2(x_start, y_start, BAR_WIDTH, BAR_HEIGHT), Color(0.1, 0.1, 0.1), true)
 
 		# Fill
 		var fill_width = BAR_WIDTH * progress
 		if fill_width > 0:
-			draw_rect(Rect2(x_start, y_start, fill_width, BAR_HEIGHT), Color(0.3, 0.7, 1.0), true)
+			draw_rect(Rect2(x_start, y_start, fill_width, BAR_HEIGHT), Color.WHITE, true)
 
 		# Border
-		draw_rect(Rect2(x_start, y_start, BAR_WIDTH, BAR_HEIGHT), Color(0.5, 0.5, 0.6), false, 1.0)
+		draw_rect(Rect2(x_start, y_start, BAR_WIDTH, BAR_HEIGHT), Color(0.6, 0.6, 0.6), false, 1.0)
 
 		# Percentage text
 		var pct_text = "%d%%" % int(progress * 100)
