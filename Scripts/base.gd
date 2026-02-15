@@ -52,8 +52,8 @@ func _ready() -> void:
 func _spawn_docked_ship() -> void:
 	var viewport_size = get_viewport_rect().size
 
-	# Rest position: upper-right quadrant
-	_ship_rest_pos = Vector2(viewport_size.x * 0.35, viewport_size.y * -0.22)
+	# Rest position: upper-left quadrant
+	_ship_rest_pos = Vector2(viewport_size.x * -0.35, viewport_size.y * -0.18)
 
 	# Start off-screen to the left
 	var start_pos = Vector2(-viewport_size.x * 0.6, _ship_rest_pos.y + 40)
