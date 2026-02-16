@@ -43,6 +43,13 @@ var _voyage_results_label: Label
 var _voyage_results_timer: float = 0.0
 const VOYAGE_RESULTS_DISPLAY_TIME := 6.0
 
+# Expedition progress indicator (shown in graph menu area)
+var _expedition_bar_container: PanelContainer
+var _expedition_bar_fill: ColorRect
+var _expedition_bar_label: Label
+var _expedition_bar_bg: ColorRect
+var _expedition_bar_tween: Tween
+
 # Go to Base button
 var _base_panel: PanelContainer
 var _base_btn: Button
@@ -83,6 +90,12 @@ func _ready() -> void:
 	GameState.voyage_progress_updated.connect(_on_voyage_progress)
 	GameState.voyage_started.connect(_on_voyage_started)
 	GameState.voyage_completed.connect(_on_voyage_completed)
+
+	# Create expedition progress bar for graph menu
+	_create_expedition_progress_bar()
+	GameState.expedition_progress_updated.connect(_on_expedition_progress)
+	GameState.expedition_started.connect(_on_expedition_started)
+	GameState.expedition_completed.connect(_on_expedition_completed)
 
 	# Create styled "Go to Base!" button
 	_create_base_button()
@@ -391,6 +404,95 @@ func _on_voyage_completed(results: Dictionary) -> void:
 		_voyage_results_label.visible = true
 		_voyage_results_timer = VOYAGE_RESULTS_DISPLAY_TIME
 
+# === Expedition Progress Bar (in graph menu area) ===
+
+func _create_expedition_progress_bar() -> void:
+	_expedition_bar_container = PanelContainer.new()
+	_expedition_bar_container.name = "ExpeditionProgressBar"
+
+	# Positioned just above the voyage bar
+	_expedition_bar_container.anchor_left = -0.65
+	_expedition_bar_container.anchor_right = -0.35
+	_expedition_bar_container.anchor_top = 0.665
+	_expedition_bar_container.anchor_bottom = 0.69
+	_expedition_bar_container.offset_left = 0
+	_expedition_bar_container.offset_right = 0
+	_expedition_bar_container.offset_top = 0
+	_expedition_bar_container.offset_bottom = 0
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0.0, 0.0, 0.0, 0.8)
+	stylebox.border_color = Color(0.4, 0.6, 0.8)
+	stylebox.set_border_width_all(1)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(3)
+	_expedition_bar_container.add_theme_stylebox_override("panel", stylebox)
+
+	var hbox = HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 6)
+	_expedition_bar_container.add_child(hbox)
+
+	_expedition_bar_label = Label.new()
+	_expedition_bar_label.text = "EXPEDITION 0%"
+	_expedition_bar_label.add_theme_font_size_override("font_size", 10)
+	_expedition_bar_label.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+	hbox.add_child(_expedition_bar_label)
+
+	var bar_holder = Control.new()
+	bar_holder.custom_minimum_size = Vector2(0, 8)
+	bar_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hbox.add_child(bar_holder)
+
+	_expedition_bar_bg = ColorRect.new()
+	_expedition_bar_bg.color = Color(0.15, 0.15, 0.15)
+	_expedition_bar_bg.anchor_right = 1.0
+	_expedition_bar_bg.anchor_bottom = 1.0
+	bar_holder.add_child(_expedition_bar_bg)
+
+	_expedition_bar_fill = ColorRect.new()
+	_expedition_bar_fill.color = Color(0.4, 0.7, 1.0)
+	_expedition_bar_fill.anchor_right = 0.0
+	_expedition_bar_fill.anchor_bottom = 1.0
+	bar_holder.add_child(_expedition_bar_fill)
+
+	_expedition_bar_container.visible = ExpeditionManager.expedition_active
+	$CanvasLayer.add_child(_expedition_bar_container)
+
+func _on_expedition_progress(progress: float) -> void:
+	if _expedition_bar_container:
+		_expedition_bar_container.visible = true
+	if _expedition_bar_fill:
+		_expedition_bar_fill.anchor_right = progress
+	if _expedition_bar_label:
+		var remaining = ExpeditionManager.expedition_duration - ExpeditionManager.expedition_elapsed
+		_expedition_bar_label.text = "EXPEDITION %d%% (%ds)" % [int(progress * 100), ceili(remaining)]
+
+func _on_expedition_started() -> void:
+	if _expedition_bar_container:
+		_expedition_bar_container.visible = true
+	if _expedition_bar_fill:
+		_expedition_bar_fill.anchor_right = 0.0
+
+func _on_expedition_completed(results: Dictionary) -> void:
+	if _expedition_bar_container:
+		_expedition_bar_container.visible = false
+
+	# Show results message on main scene
+	var total_minerals := 0
+	for type in results.minerals_gained:
+		total_minerals += results.minerals_gained[type]
+
+	var result_text = "Expedition complete! "
+	result_text += "%d/%d drones returned" % [results.drones_survived, results.drones_sent]
+	if results.drones_lost > 0:
+		result_text += " | %d lost" % results.drones_lost
+	result_text += " | +%d exotic minerals" % total_minerals
+
+	if _voyage_results_label:
+		_voyage_results_label.text = result_text
+		_voyage_results_label.visible = true
+		_voyage_results_timer = VOYAGE_RESULTS_DISPLAY_TIME
+
 # === Menu Toggle System ===
 
 func _input(event: InputEvent) -> void:
@@ -407,12 +509,14 @@ func _toggle_menus() -> void:
 		graphs_panel.slide_in()
 		_upgrade_panel.slide_in()
 		_slide_voyage_bar_in()
+		_slide_expedition_bar_in()
 		_slide_base_btn_in()
 		_zoom_camera_out()
 	else:
 		graphs_panel.slide_out()
 		_upgrade_panel.slide_out()
 		_slide_voyage_bar_out()
+		_slide_expedition_bar_out()
 		_slide_base_btn_out()
 		_zoom_camera_in()
 
@@ -439,6 +543,30 @@ func _slide_voyage_bar_out() -> void:
 	_voyage_bar_tween.set_parallel(true)
 	_voyage_bar_tween.tween_property(_voyage_bar_container, "anchor_left", -0.65, menu_slide_duration)
 	_voyage_bar_tween.tween_property(_voyage_bar_container, "anchor_right", -0.35, menu_slide_duration)
+
+func _slide_expedition_bar_in() -> void:
+	if not _expedition_bar_container:
+		return
+	if _expedition_bar_tween:
+		_expedition_bar_tween.kill()
+	_expedition_bar_tween = create_tween()
+	_expedition_bar_tween.set_ease(Tween.EASE_OUT)
+	_expedition_bar_tween.set_trans(Tween.TRANS_CUBIC)
+	_expedition_bar_tween.set_parallel(true)
+	_expedition_bar_tween.tween_property(_expedition_bar_container, "anchor_left", 0.35, menu_slide_duration)
+	_expedition_bar_tween.tween_property(_expedition_bar_container, "anchor_right", 0.65, menu_slide_duration)
+
+func _slide_expedition_bar_out() -> void:
+	if not _expedition_bar_container:
+		return
+	if _expedition_bar_tween:
+		_expedition_bar_tween.kill()
+	_expedition_bar_tween = create_tween()
+	_expedition_bar_tween.set_ease(Tween.EASE_IN)
+	_expedition_bar_tween.set_trans(Tween.TRANS_CUBIC)
+	_expedition_bar_tween.set_parallel(true)
+	_expedition_bar_tween.tween_property(_expedition_bar_container, "anchor_left", -0.65, menu_slide_duration)
+	_expedition_bar_tween.tween_property(_expedition_bar_container, "anchor_right", -0.35, menu_slide_duration)
 
 func _slide_base_btn_in() -> void:
 	if not _base_panel:
