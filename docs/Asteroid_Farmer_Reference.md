@@ -158,7 +158,7 @@ Rockets and mines fire automatically once unlocked — no manual input required.
 
 ## Target Platforms
 
-Windows (x86_64), macOS (x86_64 + ARM64), Linux (x86_64), Web (HTML5), Mobile (Android, iOS).
+Windows (x86_64), macOS (x86_64 + ARM64).
 
 ---
 

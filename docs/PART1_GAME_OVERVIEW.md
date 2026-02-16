@@ -85,9 +85,6 @@ Export presets are configured for:
 
 - Windows (x86_64)
 - macOS (x86_64 + ARM64)
-- Linux (x86_64)
-- Web (HTML5)
-- Mobile (Android, iOS)
 
 ---
 
