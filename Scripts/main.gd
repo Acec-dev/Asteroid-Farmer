@@ -662,3 +662,7 @@ func _on_debug_toggle_pressed() -> void:
 
 func _on_give_money_pressed() -> void:
 	GameState.add_credits(100)
+
+
+func _on_bank_button_pressed() -> void:
+	get_tree().change_scene_to_file("res://Scenes/bank.tscn")

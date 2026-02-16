@@ -93,12 +93,6 @@ offset_left = -47.0
 offset_bottom = 40.0
 grow_horizontal = 0
 
-[node name="BaseButton" type="Button" parent="CanvasLayer/ButtonContainer"]
-layout_mode = 2
-text = "BASE
-"
-metadata/_edit_use_anchors_ = true
-
 [node name="ExploreButton" type="Button" parent="CanvasLayer/ButtonContainer"]
 layout_mode = 2
 text = "EXPLORATION-MODE"
@@ -135,6 +129,18 @@ text = "Upgrade Mine"
 layout_mode = 2
 text = "Give Money"
 
+[node name="BaseButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
+layout_mode = 2
+text = "BASE
+"
+metadata/_edit_use_anchors_ = true
+
+[node name="BankButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
+layout_mode = 2
+text = "Bank
+"
+metadata/_edit_use_anchors_ = true
+
 [node name="GraphsPanel" parent="CanvasLayer" instance=ExtResource("11_6iyac")]
 
 [node name="Label" type="Label" parent="CanvasLayer"]
@@ -153,7 +159,6 @@ limit_bottom = 1080
 script = ExtResource("13_fdnlq")
 
 [connection signal="pressed" from="CanvasLayer/TabMenu/Upgrades/HBoxContainer/VBoxContainer/RocketsUpgradeBtn" to="." method="_on_rockets_button_pressed"]
-[connection signal="pressed" from="CanvasLayer/ButtonContainer/BaseButton" to="." method="_on_base_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/ExploreButton" to="." method="_on_explore_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/GraphButton" to="." method="_on_graph_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/GraphButton" to="CanvasLayer/Label" method="_on_graph_button_pressed"]
@@ -163,3 +168,5 @@ script = ExtResource("13_fdnlq")
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/LaserButton" to="." method="_on_laser_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/MineButton" to="." method="_on_mine_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/GiveMoney" to="." method="_on_give_money_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/BaseButton" to="." method="_on_base_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/BankButton" to="." method="_on_bank_button_pressed"]
