@@ -28,6 +28,12 @@ var _platinum_price_label: Label
 var _sell_btn: Button
 var _mono_font: Font
 
+# Exotic mineral UI references
+var _cobalt_label: Label
+var _titanium_label: Label
+var _xenocryst_label: Label
+var _iridium_label: Label
+
 # Upgrade cost definitions per level
 var upgrade_costs = {
 	"weapons": {
@@ -101,8 +107,10 @@ func _ready() -> void:
 	GameState.credits_changed.connect(_refresh_inventory)
 	GameState.upgrades_changed.connect(_refresh_inventory)
 	GameState.prices_changed.connect(_refresh_prices)
+	GameState.exotic_minerals_changed.connect(_refresh_exotic_inventory)
 	_refresh_inventory()
 	_refresh_prices()
+	_refresh_exotic_inventory()
 
 var _inventory_vbox: VBoxContainer
 
@@ -407,6 +415,33 @@ func _build_inventory_section() -> void:
 	_sell_btn.pressed.connect(_on_sell_all)
 	_inventory_vbox.add_child(_sell_btn)
 
+	# Exotic minerals section
+	var exotic_sep = HSeparator.new()
+	_style_separator(exotic_sep)
+	_inventory_vbox.add_child(exotic_sep)
+
+	_add_section_header_to("EXOTIC MINERALS", _inventory_vbox)
+
+	var exotic_box = VBoxContainer.new()
+	exotic_box.add_theme_constant_override("separation", 2)
+	_inventory_vbox.add_child(exotic_box)
+
+	var cobalt_row = _make_exotic_row("Cobalt", "0")
+	exotic_box.add_child(cobalt_row)
+	_cobalt_label = cobalt_row.get_node("CountLabel")
+
+	var titanium_row = _make_exotic_row("Titanium", "0")
+	exotic_box.add_child(titanium_row)
+	_titanium_label = titanium_row.get_node("CountLabel")
+
+	var xenocryst_row = _make_exotic_row("Xenocryst", "0")
+	exotic_box.add_child(xenocryst_row)
+	_xenocryst_label = xenocryst_row.get_node("CountLabel")
+
+	var iridium_row = _make_exotic_row("Iridium", "0")
+	exotic_box.add_child(iridium_row)
+	_iridium_label = iridium_row.get_node("CountLabel")
+
 func _make_inventory_row(mineral_name: String, count: String, price: String) -> HBoxContainer:
 	var row = HBoxContainer.new()
 
@@ -483,6 +518,39 @@ func _refresh_prices() -> void:
 	_nickel_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.NICKEL]
 	_silica_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.SILICA]
 	_platinum_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.PLATINUM]
+
+func _make_exotic_row(mineral_name: String, count: String) -> HBoxContainer:
+	var row = HBoxContainer.new()
+
+	var name_label = Label.new()
+	name_label.text = mineral_name
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.add_theme_font_size_override("font_size", 13)
+	name_label.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+	if _mono_font:
+		name_label.add_theme_font_override("font", _mono_font)
+	row.add_child(name_label)
+
+	var count_label = Label.new()
+	count_label.name = "CountLabel"
+	count_label.text = count
+	count_label.add_theme_font_size_override("font_size", 13)
+	count_label.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+	count_label.custom_minimum_size.x = 40
+	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	if _mono_font:
+		count_label.add_theme_font_override("font", _mono_font)
+	row.add_child(count_label)
+
+	return row
+
+func _refresh_exotic_inventory() -> void:
+	if not _cobalt_label:
+		return
+	_cobalt_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.COBALT])
+	_titanium_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.TITANIUM])
+	_xenocryst_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.XENOCRYST])
+	_iridium_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.IRIDIUM])
 
 func _style_separator(sep: HSeparator) -> void:
 	var sep_style = StyleBoxFlat.new()

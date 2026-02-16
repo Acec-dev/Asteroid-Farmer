@@ -8,6 +8,14 @@ enum MineralType {
 	PLATINUM
 }
 
+# Exotic mineral types (from expeditions)
+enum ExoticMineralType {
+	COBALT,
+	TITANIUM,
+	XENOCRYST,
+	IRIDIUM
+}
+
 # Helper dictionaries for enum/string conversion
 const MINERAL_NAMES = {
 	MineralType.IRON: "iron",
@@ -16,11 +24,25 @@ const MINERAL_NAMES = {
 	MineralType.PLATINUM: "platinum"
 }
 
+const EXOTIC_MINERAL_NAMES = {
+	ExoticMineralType.COBALT: "cobalt",
+	ExoticMineralType.TITANIUM: "titanium",
+	ExoticMineralType.XENOCRYST: "xenocryst",
+	ExoticMineralType.IRIDIUM: "iridium"
+}
+
 const STRING_TO_MINERAL = {
 	"iron": MineralType.IRON,
 	"nickel": MineralType.NICKEL,
 	"silica": MineralType.SILICA,
 	"platinum": MineralType.PLATINUM
+}
+
+const STRING_TO_EXOTIC = {
+	"cobalt": ExoticMineralType.COBALT,
+	"titanium": ExoticMineralType.TITANIUM,
+	"xenocryst": ExoticMineralType.XENOCRYST,
+	"iridium": ExoticMineralType.IRIDIUM
 }
 
 # Global, super-lightweight state. Autoload this as "GameState".
@@ -37,6 +59,11 @@ signal drones_changed(new_count: int)
 signal voyage_started()
 signal voyage_completed(results: Dictionary)
 signal voyage_progress_updated(progress: float)
+signal expedition_started()
+signal expedition_completed(results: Dictionary)
+signal expedition_progress_updated(progress: float)
+signal exotic_minerals_changed()
+signal drone_upgrades_changed()
 
 var credits: int = 0
 
@@ -48,6 +75,62 @@ var minerals = {
 	MineralType.NICKEL: 0,
 	MineralType.SILICA: 0,
 	MineralType.PLATINUM: 0,
+}
+
+# Exotic minerals (earned from expeditions, spent on drone upgrades)
+var exotic_minerals = {
+	ExoticMineralType.COBALT: 0,
+	ExoticMineralType.TITANIUM: 0,
+	ExoticMineralType.XENOCRYST: 0,
+	ExoticMineralType.IRIDIUM: 0,
+}
+
+# Drone upgrades (purchased with exotic minerals)
+var drone_upgrades = {
+	"drone_armor": {
+		"level": 0,
+		"max_level": 3,
+		"description": "Reduces drone break chance",
+		"values": [0.0, 0.25, 0.50, 0.75],  # Break chance reduction multiplier
+		"costs": [
+			{ExoticMineralType.COBALT: 5},
+			{ExoticMineralType.COBALT: 10},
+			{ExoticMineralType.COBALT: 20},
+		],
+	},
+	"mineral_scanners": {
+		"level": 0,
+		"max_level": 3,
+		"description": "Bonus minerals per surviving drone",
+		"values": [0, 1, 2, 3],  # Bonus minerals per drone
+		"costs": [
+			{ExoticMineralType.TITANIUM: 5},
+			{ExoticMineralType.TITANIUM: 10},
+			{ExoticMineralType.TITANIUM: 20},
+		],
+	},
+	"warp_drive": {
+		"level": 0,
+		"max_level": 3,
+		"description": "Faster voyages and expeditions",
+		"values": [1.0, 0.85, 0.70, 0.55],  # Duration multiplier
+		"costs": [
+			{ExoticMineralType.XENOCRYST: 3},
+			{ExoticMineralType.XENOCRYST: 8},
+			{ExoticMineralType.XENOCRYST: 15},
+		],
+	},
+	"deep_probes": {
+		"level": 0,
+		"max_level": 3,
+		"description": "Better exotic mineral yields",
+		"values": [1.0, 1.5, 2.0, 2.5],  # Exotic yield multiplier
+		"costs": [
+			{ExoticMineralType.IRIDIUM: 2},
+			{ExoticMineralType.IRIDIUM: 5},
+			{ExoticMineralType.IRIDIUM: 10},
+		],
+	},
 }
 
 # Market price system (updated by Market singleton)
@@ -373,3 +456,70 @@ func buy_drone() -> bool:
 func remove_drones(amount: int) -> void:
 	drone_count = max(0, drone_count - amount)
 	emit_signal("drones_changed", drone_count)
+
+# === EXOTIC MINERAL SYSTEM ===
+
+func add_exotic_mineral(kind: ExoticMineralType, amount: int = 1) -> void:
+	if not exotic_minerals.has(kind):
+		exotic_minerals[kind] = 0
+	exotic_minerals[kind] += amount
+	emit_signal("exotic_minerals_changed")
+
+func get_total_exotic_minerals() -> int:
+	var total := 0
+	for count in exotic_minerals.values():
+		total += count
+	return total
+
+# === DRONE UPGRADE SYSTEM ===
+
+func get_drone_upgrade_level(upgrade_name: String) -> int:
+	if drone_upgrades.has(upgrade_name):
+		return drone_upgrades[upgrade_name].level
+	return 0
+
+func get_drone_upgrade_value(upgrade_name: String) -> Variant:
+	if not drone_upgrades.has(upgrade_name):
+		return null
+	var data = drone_upgrades[upgrade_name]
+	if data.level < data.values.size():
+		return data.values[data.level]
+	return data.values[-1]
+
+func get_break_chance_reduction() -> float:
+	return get_drone_upgrade_value("drone_armor") if get_drone_upgrade_value("drone_armor") != null else 0.0
+
+func get_mineral_bonus() -> int:
+	return get_drone_upgrade_value("mineral_scanners") if get_drone_upgrade_value("mineral_scanners") != null else 0
+
+func get_duration_multiplier() -> float:
+	return get_drone_upgrade_value("warp_drive") if get_drone_upgrade_value("warp_drive") != null else 1.0
+
+func get_exotic_yield_multiplier() -> float:
+	return get_drone_upgrade_value("deep_probes") if get_drone_upgrade_value("deep_probes") != null else 1.0
+
+func can_afford_drone_upgrade(upgrade_name: String) -> bool:
+	if not drone_upgrades.has(upgrade_name):
+		return false
+	var data = drone_upgrades[upgrade_name]
+	if data.level >= data.max_level:
+		return false
+	var cost = data.costs[data.level]
+	for mineral_type in cost:
+		if exotic_minerals.get(mineral_type, 0) < cost[mineral_type]:
+			return false
+	return true
+
+func buy_drone_upgrade(upgrade_name: String) -> bool:
+	if not can_afford_drone_upgrade(upgrade_name):
+		return false
+	var data = drone_upgrades[upgrade_name]
+	var cost = data.costs[data.level]
+	# Deduct exotic minerals
+	for mineral_type in cost:
+		exotic_minerals[mineral_type] -= cost[mineral_type]
+	data.level += 1
+	emit_signal("drone_upgrades_changed")
+	emit_signal("exotic_minerals_changed")
+	print("Drone upgrade purchased: %s to level %d" % [upgrade_name, data.level])
+	return true

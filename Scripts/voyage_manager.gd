@@ -48,13 +48,17 @@ func start_voyage(tier: VoyageTier) -> bool:
 		return false
 	if GameState.drone_count <= 0:
 		return false
+	# Can't start voyage while expedition is active (shared drone pool)
+	if ExpeditionManager and ExpeditionManager.expedition_active:
+		return false
 
 	var data = VOYAGE_DATA[tier]
 	voyage_active = true
 	voyage_tier = tier
 	voyage_drones_sent = GameState.drone_count
 	voyage_elapsed = 0.0
-	voyage_duration = data.duration
+	# Apply warp drive upgrade to duration
+	voyage_duration = data.duration * GameState.get_duration_multiplier()
 
 	GameState.emit_signal("voyage_started")
 	return true
@@ -70,9 +74,14 @@ func get_tier_data(tier: VoyageTier) -> Dictionary:
 func _complete_voyage() -> void:
 	voyage_active = false
 	var data = VOYAGE_DATA[voyage_tier]
-	var break_chance: float = data.break_chance
+	var base_break_chance: float = data.break_chance
+	# Apply drone armor upgrade
+	var break_reduction = GameState.get_break_chance_reduction()
+	var break_chance = base_break_chance * (1.0 - break_reduction)
 	var min_minerals: int = data.min_minerals
 	var max_minerals: int = data.max_minerals
+	# Apply mineral scanners bonus
+	var mineral_bonus: int = GameState.get_mineral_bonus()
 
 	var drones_lost := 0
 	var drones_survived := 0
@@ -86,8 +95,8 @@ func _complete_voyage() -> void:
 			drones_lost += 1
 		else:
 			drones_survived += 1
-			# Each surviving drone brings back random minerals
-			var mineral_count = randi_range(min_minerals, max_minerals)
+			# Each surviving drone brings back random minerals (+ scanner bonus)
+			var mineral_count = randi_range(min_minerals, max_minerals) + mineral_bonus
 			for _j in range(mineral_count):
 				var mineral_type = _random_mineral()
 				minerals_gained[mineral_type] += 1

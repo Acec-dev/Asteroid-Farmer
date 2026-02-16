@@ -34,17 +34,35 @@ var _voyage_results_label: Label
 var _results_timer: float = 0.0
 const RESULTS_DISPLAY_TIME := 5.0
 
+# Expedition UI
+var _expedition_panel: PanelContainer
+var _expedition_progress_bar: Control
+var _expedition_progress_label: Label
+var _expedition_results_timer: float = 0.0
+
+# Drone upgrades UI
+var _upgrades_panel: PanelContainer
+var _exotic_labels: Dictionary = {}
+var _upgrade_btns: Dictionary = {}
+
 func _ready() -> void:
 	_spawn_docked_ship()
 	_spawn_drone_visuals()
 	_build_drone_ui()
 	_build_voyage_ui()
+	_build_expedition_ui()
+	_build_drone_upgrades_ui()
 
 	GameState.drones_changed.connect(_on_drones_changed)
 	GameState.credits_changed.connect(_on_credits_changed)
 	GameState.voyage_started.connect(_on_voyage_started)
 	GameState.voyage_completed.connect(_on_voyage_completed)
 	GameState.voyage_progress_updated.connect(_on_voyage_progress)
+	GameState.expedition_started.connect(_on_expedition_started)
+	GameState.expedition_completed.connect(_on_expedition_completed)
+	GameState.expedition_progress_updated.connect(_on_expedition_progress)
+	GameState.exotic_minerals_changed.connect(_on_exotic_minerals_changed)
+	GameState.drone_upgrades_changed.connect(_on_drone_upgrades_changed)
 
 	_refresh_drone_visuals()
 	_refresh_ui()
@@ -107,8 +125,8 @@ func _refresh_drone_visuals() -> void:
 			drone.queue_free()
 	_drone_nodes.clear()
 
-	# Don't show drones when voyage is active (progress bar takes their place)
-	if VoyageManager.voyage_active:
+	# Don't show drones when voyage or expedition is active
+	if VoyageManager.voyage_active or ExpeditionManager.expedition_active:
 		_drone_container.visible = false
 		return
 
@@ -311,6 +329,257 @@ func _apply_button_style(btn: Button, font: Font, font_size: int) -> void:
 	var focus = StyleBoxEmpty.new()
 	btn.add_theme_stylebox_override("focus", focus)
 
+func _build_expedition_ui() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	_expedition_panel = PanelContainer.new()
+	_expedition_panel.name = "ExpeditionPanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.4, 0.6, 0.8)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_expedition_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_expedition_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "EXPEDITIONS"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var sep = HSeparator.new()
+	_style_separator(sep)
+	vbox.add_child(sep)
+
+	# Info label
+	var info = Label.new()
+	info.text = "Send drones to find exotic minerals"
+	info.add_theme_font_size_override("font_size", 11)
+	info.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	if mono_font:
+		info.add_theme_font_override("font", mono_font)
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD
+	vbox.add_child(info)
+
+	# Expedition tier buttons
+	for tier in ExpeditionManager.ExpeditionTier.values():
+		var data = ExpeditionManager.get_tier_data(tier)
+		var btn = Button.new()
+		var duration_str = "%ds" % int(data.duration)
+		var risk_str = "%d%% risk" % int(data.break_chance * 100)
+		var reward_str = "%d-%d exotic" % [data.min_minerals, data.max_minerals]
+		btn.text = "%s (%s, %s)" % [duration_str, risk_str, reward_str]
+		_apply_button_style(btn, mono_font, 12)
+		btn.name = "ExpeditionBtn_" + str(tier)
+		btn.pressed.connect(_on_expedition_pressed.bind(tier))
+		vbox.add_child(btn)
+
+	# Progress bar (hidden until expedition starts)
+	_expedition_progress_bar = _VoyageProgressBar.new()
+	_expedition_progress_bar.visible = false
+	vbox.add_child(_expedition_progress_bar)
+
+	_expedition_progress_label = Label.new()
+	_expedition_progress_label.text = ""
+	_expedition_progress_label.add_theme_font_size_override("font_size", 12)
+	_expedition_progress_label.add_theme_color_override("font_color", Color.WHITE)
+	if mono_font:
+		_expedition_progress_label.add_theme_font_override("font", mono_font)
+	_expedition_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(_expedition_progress_label)
+
+	# Position below the voyage panel
+	_expedition_panel.position = Vector2(200, 180)
+	_expedition_panel.size = Vector2(280, 0)
+	add_child(_expedition_panel)
+
+func _build_drone_upgrades_ui() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	_upgrades_panel = PanelContainer.new()
+	_upgrades_panel.name = "DroneUpgradesPanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.6, 0.5, 0.8)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_upgrades_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_upgrades_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "DRONE UPGRADES"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.7, 0.5, 1.0))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var sep = HSeparator.new()
+	_style_separator(sep)
+	vbox.add_child(sep)
+
+	# Exotic mineral inventory display
+	var inv_header = Label.new()
+	inv_header.text = "EXOTIC MINERALS"
+	inv_header.add_theme_font_size_override("font_size", 12)
+	inv_header.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+	if mono_font:
+		inv_header.add_theme_font_override("font", mono_font)
+	vbox.add_child(inv_header)
+
+	for mineral_type in GameState.ExoticMineralType.values():
+		var row = HBoxContainer.new()
+		var name_label = Label.new()
+		name_label.text = GameState.EXOTIC_MINERAL_NAMES[mineral_type].capitalize()
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_label.add_theme_font_size_override("font_size", 12)
+		name_label.add_theme_color_override("font_color", Color.WHITE)
+		if mono_font:
+			name_label.add_theme_font_override("font", mono_font)
+		row.add_child(name_label)
+
+		var count_label = Label.new()
+		count_label.name = "ExoticCount_" + str(mineral_type)
+		count_label.text = "0"
+		count_label.add_theme_font_size_override("font_size", 12)
+		count_label.add_theme_color_override("font_color", Color.WHITE)
+		count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		count_label.custom_minimum_size.x = 40
+		if mono_font:
+			count_label.add_theme_font_override("font", mono_font)
+		row.add_child(count_label)
+		_exotic_labels[mineral_type] = count_label
+
+		vbox.add_child(row)
+
+	var sep2 = HSeparator.new()
+	_style_separator(sep2)
+	vbox.add_child(sep2)
+
+	# Upgrade buttons
+	var upgrade_display = {
+		"drone_armor": "Drone Armor",
+		"mineral_scanners": "Mineral Scanners",
+		"warp_drive": "Warp Drive",
+		"deep_probes": "Deep Probes",
+	}
+
+	for upgrade_name in GameState.drone_upgrades:
+		var data = GameState.drone_upgrades[upgrade_name]
+		var row = VBoxContainer.new()
+		row.add_theme_constant_override("separation", 2)
+
+		# Name + level
+		var header_row = HBoxContainer.new()
+		var name_label = Label.new()
+		name_label.text = upgrade_display.get(upgrade_name, upgrade_name)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_label.add_theme_font_size_override("font_size", 12)
+		name_label.add_theme_color_override("font_color", Color.WHITE)
+		if mono_font:
+			name_label.add_theme_font_override("font", mono_font)
+		header_row.add_child(name_label)
+
+		var level_label = Label.new()
+		level_label.name = "UpgradeLevel_" + upgrade_name
+		level_label.add_theme_font_size_override("font_size", 12)
+		if mono_font:
+			level_label.add_theme_font_override("font", mono_font)
+		header_row.add_child(level_label)
+		row.add_child(header_row)
+
+		# Description
+		var desc_label = Label.new()
+		desc_label.text = data.description
+		desc_label.add_theme_font_size_override("font_size", 10)
+		desc_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		if mono_font:
+			desc_label.add_theme_font_override("font", mono_font)
+		row.add_child(desc_label)
+
+		# Buy button
+		var btn = Button.new()
+		btn.name = "UpgradeBtn_" + upgrade_name
+		_apply_button_style(btn, mono_font, 11)
+		btn.pressed.connect(_on_drone_upgrade_pressed.bind(upgrade_name))
+		row.add_child(btn)
+		_upgrade_btns[upgrade_name] = btn
+
+		vbox.add_child(row)
+
+	# Position to the left of expedition panel
+	_upgrades_panel.position = Vector2(-150, 180)
+	_upgrades_panel.size = Vector2(320, 0)
+	add_child(_upgrades_panel)
+
+	_refresh_drone_upgrades_ui()
+
+func _style_separator(sep: HSeparator) -> void:
+	var sep_style = StyleBoxFlat.new()
+	sep_style.bg_color = Color(0.6, 0.6, 0.6)
+	sep_style.set_content_margin_all(0)
+	sep_style.content_margin_top = 1
+	sep_style.content_margin_bottom = 1
+	sep.add_theme_stylebox_override("separator", sep_style)
+
+func _refresh_drone_upgrades_ui() -> void:
+	# Update exotic mineral counts
+	for mineral_type in GameState.ExoticMineralType.values():
+		if _exotic_labels.has(mineral_type):
+			_exotic_labels[mineral_type].text = str(GameState.exotic_minerals.get(mineral_type, 0))
+
+	# Update upgrade buttons
+	for upgrade_name in GameState.drone_upgrades:
+		var data = GameState.drone_upgrades[upgrade_name]
+		var btn = _upgrade_btns.get(upgrade_name)
+		if not btn:
+			continue
+
+		var level_label = _upgrades_panel.find_child("UpgradeLevel_" + upgrade_name, true, false)
+		if level_label:
+			if data.level >= data.max_level:
+				level_label.text = "MAX"
+				level_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+			else:
+				level_label.text = "Lv.%d" % data.level
+				level_label.add_theme_color_override("font_color", Color.WHITE)
+
+		if data.level >= data.max_level:
+			btn.text = "MAXED"
+			btn.disabled = true
+		else:
+			var cost = data.costs[data.level]
+			var cost_parts := []
+			for mineral_type in cost:
+				var mineral_name = GameState.EXOTIC_MINERAL_NAMES[mineral_type].capitalize()
+				cost_parts.append("%d %s" % [cost[mineral_type], mineral_name])
+			btn.text = "Upgrade: " + ", ".join(cost_parts)
+			btn.disabled = not GameState.can_afford_drone_upgrade(upgrade_name)
+
 func _refresh_ui() -> void:
 	if _drone_count_label:
 		_drone_count_label.text = "Drones: %d" % GameState.drone_count
@@ -319,7 +588,7 @@ func _refresh_ui() -> void:
 		_buy_drone_btn.disabled = GameState.credits < GameState.DRONE_COST
 
 	# Update voyage buttons
-	var can_voyage = GameState.drone_count > 0 and not VoyageManager.voyage_active
+	var can_voyage = GameState.drone_count > 0 and not VoyageManager.voyage_active and not ExpeditionManager.expedition_active
 	for tier in VoyageManager.VoyageTier.values():
 		var btn_name = "VoyageBtn_" + str(tier)
 		var btn = _voyage_panel.find_child(btn_name, true, false)
@@ -327,7 +596,7 @@ func _refresh_ui() -> void:
 			btn.disabled = not can_voyage
 			btn.visible = not VoyageManager.voyage_active
 
-	# Show/hide progress bar
+	# Show/hide voyage progress bar
 	if _voyage_progress_bar:
 		_voyage_progress_bar.visible = VoyageManager.voyage_active
 	if _voyage_progress_label:
@@ -336,6 +605,28 @@ func _refresh_ui() -> void:
 			_voyage_progress_label.text = "Voyage in progress... %ds remaining" % ceili(remaining)
 		elif _results_timer <= 0.0:
 			_voyage_progress_label.text = ""
+
+	# Update expedition buttons
+	var can_expedition = GameState.drone_count > 0 and not ExpeditionManager.expedition_active and not VoyageManager.voyage_active
+	if _expedition_panel:
+		for tier in ExpeditionManager.ExpeditionTier.values():
+			var btn_name = "ExpeditionBtn_" + str(tier)
+			var btn = _expedition_panel.find_child(btn_name, true, false)
+			if btn:
+				btn.disabled = not can_expedition
+				btn.visible = not ExpeditionManager.expedition_active
+
+	# Show/hide expedition progress bar
+	if _expedition_progress_bar:
+		_expedition_progress_bar.visible = ExpeditionManager.expedition_active
+	if _expedition_progress_label:
+		if ExpeditionManager.expedition_active:
+			var remaining = ExpeditionManager.expedition_duration - ExpeditionManager.expedition_elapsed
+			_expedition_progress_label.text = "Expedition in progress... %ds remaining" % ceili(remaining)
+		elif _expedition_results_timer <= 0.0:
+			_expedition_progress_label.text = ""
+
+	_refresh_drone_upgrades_ui()
 
 # === CALLBACKS ===
 
@@ -389,6 +680,56 @@ func _on_voyage_completed(results: Dictionary) -> void:
 
 	if _voyage_progress_label:
 		_voyage_progress_label.text = ""
+
+# === EXPEDITION CALLBACKS ===
+
+func _on_expedition_pressed(tier: int) -> void:
+	if ExpeditionManager.start_expedition(tier):
+		_refresh_drone_visuals()
+		_refresh_ui()
+
+func _on_expedition_started() -> void:
+	_refresh_drone_visuals()
+	_refresh_ui()
+
+func _on_expedition_progress(progress: float) -> void:
+	if _expedition_progress_bar:
+		_expedition_progress_bar.progress = progress
+		_expedition_progress_bar.queue_redraw()
+	if _expedition_progress_label and ExpeditionManager.expedition_active:
+		var remaining = ExpeditionManager.expedition_duration - ExpeditionManager.expedition_elapsed
+		_expedition_progress_label.text = "Expedition in progress... %ds remaining" % ceili(remaining)
+
+func _on_expedition_completed(results: Dictionary) -> void:
+	_refresh_drone_visuals()
+	_refresh_ui()
+
+	# Show results
+	var total_minerals := 0
+	for type in results.minerals_gained:
+		total_minerals += results.minerals_gained[type]
+
+	var result_text = "Expedition complete!\n"
+	result_text += "%d/%d drones returned\n" % [results.drones_survived, results.drones_sent]
+	if results.drones_lost > 0:
+		result_text += "%d drones lost!\n" % results.drones_lost
+	result_text += "+%d exotic minerals collected" % total_minerals
+
+	if _voyage_results_label:
+		_voyage_results_label.text = result_text
+		_results_timer = RESULTS_DISPLAY_TIME
+
+	if _expedition_progress_label:
+		_expedition_progress_label.text = ""
+
+func _on_exotic_minerals_changed() -> void:
+	_refresh_drone_upgrades_ui()
+
+func _on_drone_upgrades_changed() -> void:
+	_refresh_drone_upgrades_ui()
+
+func _on_drone_upgrade_pressed(upgrade_name: String) -> void:
+	GameState.buy_drone_upgrade(upgrade_name)
 
 func _on_silo_button_pressed() -> void:
 	if purchased_drill == true:
