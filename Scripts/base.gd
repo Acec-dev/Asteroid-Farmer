@@ -25,12 +25,15 @@ const DRONE_BOB_SPEED := 1.2
 const DRONE_SCALE := 0.4
 
 # Panel layout — tweak these to reposition the menus
-const VOYAGE_PANEL_POS := Vector2(500, 180)
-const VOYAGE_PANEL_WIDTH := 260.0
-const EXPEDITION_PANEL_POS := Vector2(200, 180)
-const EXPEDITION_PANEL_WIDTH := 280.0
+const RIGHT_MENU_WIDTH := 280.0
+const RIGHT_MENU_PADDING := 20.0
+const RIGHT_MENU_TOP_OFFSET := 60.0
+const RIGHT_MENU_SPACING := 12
 const UPGRADES_PANEL_POS := Vector2(-150, 180)
 const UPGRADES_PANEL_WIDTH := 320.0
+
+# Right-side menu container
+var _right_menu: VBoxContainer
 
 # Voyage UI
 var _voyage_panel: PanelContainer
@@ -64,6 +67,7 @@ func _ready() -> void:
 	_spawn_drone_visuals()
 	_build_wallet_display()
 	_build_drone_ui()
+	_build_right_side_menu()
 	_build_voyage_ui()
 	_build_expedition_ui()
 	_build_drone_upgrades_ui()
@@ -267,6 +271,19 @@ func _build_drone_ui() -> void:
 	_voyage_results_label.position = Vector2(-label_width * 0.5, -viewport_size.y * 0.5 + 30)
 	add_child(_voyage_results_label)
 
+func _build_right_side_menu() -> void:
+	var viewport_size = get_viewport_rect().size
+	_right_menu = VBoxContainer.new()
+	_right_menu.name = "RightSideMenu"
+	_right_menu.add_theme_constant_override("separation", RIGHT_MENU_SPACING)
+	_right_menu.custom_minimum_size.x = RIGHT_MENU_WIDTH
+	# Position at the right edge of the viewport with padding
+	_right_menu.position = Vector2(
+		viewport_size.x * 0.5 - RIGHT_MENU_WIDTH - RIGHT_MENU_PADDING,
+		-viewport_size.y * 0.5 + RIGHT_MENU_TOP_OFFSET
+	)
+	add_child(_right_menu)
+
 func _build_voyage_ui() -> void:
 	var mono_font = load("res://Assets/DMMono-Regular.ttf")
 
@@ -361,10 +378,9 @@ func _build_voyage_ui() -> void:
 	_voyage_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_voyage_progress_label)
 
-	# Position the panel in the bottom-right
-	_voyage_panel.position = VOYAGE_PANEL_POS
-	_voyage_panel.size = Vector2(VOYAGE_PANEL_WIDTH, 0)
-	add_child(_voyage_panel)
+	# Add to the right-side menu (stacked with expedition below)
+	_voyage_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_right_menu.add_child(_voyage_panel)
 
 func _apply_button_style(btn: Button, font: Font, font_size: int) -> void:
 	btn.add_theme_font_size_override("font_size", font_size)
@@ -499,10 +515,9 @@ func _build_expedition_ui() -> void:
 	_expedition_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_expedition_progress_label)
 
-	# Position below the voyage panel
-	_expedition_panel.position = EXPEDITION_PANEL_POS
-	_expedition_panel.size = Vector2(EXPEDITION_PANEL_WIDTH, 0)
-	add_child(_expedition_panel)
+	# Add to the right-side menu (stacked below voyage panel)
+	_expedition_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_right_menu.add_child(_expedition_panel)
 
 func _build_drone_upgrades_ui() -> void:
 	var mono_font = load("res://Assets/DMMono-Regular.ttf")
