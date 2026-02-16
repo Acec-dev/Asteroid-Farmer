@@ -36,6 +36,12 @@ var _voyage_bar_container: PanelContainer
 var _voyage_bar_fill: ColorRect
 var _voyage_bar_label: Label
 var _voyage_bar_bg: ColorRect
+var _voyage_bar_tween: Tween
+
+# Voyage results display (visible on main scene)
+var _voyage_results_label: Label
+var _voyage_results_timer: float = 0.0
+const VOYAGE_RESULTS_DISPLAY_TIME := 6.0
 
 signal spawn_text
 
@@ -83,6 +89,13 @@ func _process(delta: float) -> void:
 	if target_level != _last_difficulty_level:
 		_last_difficulty_level = target_level
 		GameState.set_spawner_difficulty(target_level)
+
+	# Voyage results display timer
+	if _voyage_results_timer > 0.0:
+		_voyage_results_timer -= delta
+		if _voyage_results_timer <= 0.0 and _voyage_results_label:
+			_voyage_results_label.text = ""
+			_voyage_results_label.visible = false
 
 func _create_run_timer_label() -> void:
 	_run_timer_label = Label.new()
@@ -162,9 +175,10 @@ func _create_voyage_progress_bar() -> void:
 	_voyage_bar_container = PanelContainer.new()
 	_voyage_bar_container.name = "VoyageProgressBar"
 
-	# Sit just above the graphs panel (which starts at anchor_top 0.7222)
-	_voyage_bar_container.anchor_left = 0.35
-	_voyage_bar_container.anchor_right = 0.65
+	# Anchored just above the graphs panel (which starts at anchor_top 0.7222)
+	# Start off-screen to the left (matching graphs panel hidden state)
+	_voyage_bar_container.anchor_left = -0.65
+	_voyage_bar_container.anchor_right = -0.35
 	_voyage_bar_container.anchor_top = 0.695
 	_voyage_bar_container.anchor_bottom = 0.72
 	_voyage_bar_container.offset_left = 0
@@ -211,6 +225,24 @@ func _create_voyage_progress_bar() -> void:
 	_voyage_bar_container.visible = VoyageManager.voyage_active
 	$CanvasLayer.add_child(_voyage_bar_container)
 
+	# Voyage results label (shown at top-center when a voyage completes)
+	_voyage_results_label = Label.new()
+	_voyage_results_label.name = "VoyageResultsLabel"
+	_voyage_results_label.text = ""
+	_voyage_results_label.visible = false
+	_voyage_results_label.add_theme_font_size_override("font_size", 16)
+	_voyage_results_label.add_theme_color_override("font_color", Color.WHITE)
+	_voyage_results_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_voyage_results_label.anchor_left = 0.25
+	_voyage_results_label.anchor_right = 0.75
+	_voyage_results_label.anchor_top = 0.05
+	_voyage_results_label.anchor_bottom = 0.15
+	_voyage_results_label.offset_left = 0
+	_voyage_results_label.offset_right = 0
+	_voyage_results_label.offset_top = 0
+	_voyage_results_label.offset_bottom = 0
+	$CanvasLayer.add_child(_voyage_results_label)
+
 func _on_voyage_progress(progress: float) -> void:
 	if _voyage_bar_container:
 		_voyage_bar_container.visible = true
@@ -226,9 +258,25 @@ func _on_voyage_started() -> void:
 	if _voyage_bar_fill:
 		_voyage_bar_fill.anchor_right = 0.0
 
-func _on_voyage_completed(_results: Dictionary) -> void:
+func _on_voyage_completed(results: Dictionary) -> void:
 	if _voyage_bar_container:
 		_voyage_bar_container.visible = false
+
+	# Show results message on main scene
+	var total_minerals := 0
+	for type in results.minerals_gained:
+		total_minerals += results.minerals_gained[type]
+
+	var result_text = "Voyage complete! "
+	result_text += "%d/%d drones returned" % [results.drones_survived, results.drones_sent]
+	if results.drones_lost > 0:
+		result_text += " | %d lost" % results.drones_lost
+	result_text += " | +%d minerals" % total_minerals
+
+	if _voyage_results_label:
+		_voyage_results_label.text = result_text
+		_voyage_results_label.visible = true
+		_voyage_results_timer = VOYAGE_RESULTS_DISPLAY_TIME
 
 # === Menu Toggle System ===
 
@@ -245,11 +293,37 @@ func _toggle_menus() -> void:
 	if _menus_open:
 		graphs_panel.slide_in()
 		_upgrade_panel.slide_in()
+		_slide_voyage_bar_in()
 		_zoom_camera_out()
 	else:
 		graphs_panel.slide_out()
 		_upgrade_panel.slide_out()
+		_slide_voyage_bar_out()
 		_zoom_camera_in()
+
+func _slide_voyage_bar_in() -> void:
+	if not _voyage_bar_container:
+		return
+	if _voyage_bar_tween:
+		_voyage_bar_tween.kill()
+	_voyage_bar_tween = create_tween()
+	_voyage_bar_tween.set_ease(Tween.EASE_OUT)
+	_voyage_bar_tween.set_trans(Tween.TRANS_CUBIC)
+	_voyage_bar_tween.set_parallel(true)
+	_voyage_bar_tween.tween_property(_voyage_bar_container, "anchor_left", 0.35, menu_slide_duration)
+	_voyage_bar_tween.tween_property(_voyage_bar_container, "anchor_right", 0.65, menu_slide_duration)
+
+func _slide_voyage_bar_out() -> void:
+	if not _voyage_bar_container:
+		return
+	if _voyage_bar_tween:
+		_voyage_bar_tween.kill()
+	_voyage_bar_tween = create_tween()
+	_voyage_bar_tween.set_ease(Tween.EASE_IN)
+	_voyage_bar_tween.set_trans(Tween.TRANS_CUBIC)
+	_voyage_bar_tween.set_parallel(true)
+	_voyage_bar_tween.tween_property(_voyage_bar_container, "anchor_left", -0.65, menu_slide_duration)
+	_voyage_bar_tween.tween_property(_voyage_bar_container, "anchor_right", -0.35, menu_slide_duration)
 
 func _zoom_camera_out() -> void:
 	var radar = $Radar
