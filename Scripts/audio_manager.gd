@@ -33,6 +33,10 @@ const _SOUND_REGISTRY := {
 		"path": "res://Assets/explode-2.wav",
 		"volume_db": -10.0,
 	},
+	"hit_asteroid": {
+		"path": "res://Assets/hit-7.wav",
+		"volume_db": -10.0,
+	},
 	"collect": {
 		"path": "res://Assets/collect-5.wav",
 		"volume_db": -12.0,

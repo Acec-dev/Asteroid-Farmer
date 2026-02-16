@@ -72,6 +72,7 @@ func hit_by_projectile(_p: Node) -> void:
 		# Defer the break; don't modify the tree/collision right now
 		call_deferred("_break_safe")
 	else:
+		AudioManager.play_sfx("hit_asteroid")
 		# Just nudge it a bit
 		apply_central_impulse(Vector2(randf_range(-80, 80), randf_range(-80, 80)))
 
