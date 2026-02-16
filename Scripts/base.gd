@@ -24,6 +24,14 @@ const DRONE_BOB_AMPLITUDE := 3.0
 const DRONE_BOB_SPEED := 1.2
 const DRONE_SCALE := 0.4
 
+# Panel layout — tweak these to reposition the menus
+const VOYAGE_PANEL_POS := Vector2(500, 180)
+const VOYAGE_PANEL_WIDTH := 260.0
+const EXPEDITION_PANEL_POS := Vector2(200, 180)
+const EXPEDITION_PANEL_WIDTH := 280.0
+const UPGRADES_PANEL_POS := Vector2(-150, 180)
+const UPGRADES_PANEL_WIDTH := 320.0
+
 # Voyage UI
 var _voyage_panel: PanelContainer
 var _voyage_progress_bar: Control
@@ -308,8 +316,8 @@ func _build_voyage_ui() -> void:
 	vbox.add_child(_voyage_progress_label)
 
 	# Position the panel in the bottom-right
-	_voyage_panel.position = Vector2(500, 180)
-	_voyage_panel.size = Vector2(260, 0)
+	_voyage_panel.position = VOYAGE_PANEL_POS
+	_voyage_panel.size = Vector2(VOYAGE_PANEL_WIDTH, 0)
 	add_child(_voyage_panel)
 
 func _apply_button_style(btn: Button, font: Font, font_size: int) -> void:
@@ -446,8 +454,8 @@ func _build_expedition_ui() -> void:
 	vbox.add_child(_expedition_progress_label)
 
 	# Position below the voyage panel
-	_expedition_panel.position = Vector2(200, 180)
-	_expedition_panel.size = Vector2(280, 0)
+	_expedition_panel.position = EXPEDITION_PANEL_POS
+	_expedition_panel.size = Vector2(EXPEDITION_PANEL_WIDTH, 0)
 	add_child(_expedition_panel)
 
 func _build_drone_upgrades_ui() -> void:
@@ -575,8 +583,8 @@ func _build_drone_upgrades_ui() -> void:
 		vbox.add_child(row)
 
 	# Position to the left of expedition panel
-	_upgrades_panel.position = Vector2(-150, 180)
-	_upgrades_panel.size = Vector2(320, 0)
+	_upgrades_panel.position = UPGRADES_PANEL_POS
+	_upgrades_panel.size = Vector2(UPGRADES_PANEL_WIDTH, 0)
 	add_child(_upgrades_panel)
 
 	_refresh_drone_upgrades_ui()
