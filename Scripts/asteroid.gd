@@ -127,14 +127,14 @@ func _spawn_particles() -> void:
 	scene_root.add_child(fx)
 
 func _break_safe() -> void:
-	_spawn_particles()
-	
-	# Calculate child radius
 	var child_radius = radius * split_radius_factor
-	
-	# Check if this asteroid will split
-	var will_split = child_radius >= min_split_radius
-	
+	var is_big = child_radius >= min_split_radius
+	if is_big:
+		AudioManager.play_sfx("explode_big")
+	else:
+		AudioManager.play_sfx("explode_small")
+	_spawn_particles()
+
 	# Drop minerals (always drops, whether splitting or not)
 	for i in mineral_drop_count:
 		if mineral_drop_scene:
@@ -144,9 +144,9 @@ func _break_safe() -> void:
 			# Add to owner's scene root (works with SubViewport)
 			var scene_root = owner if owner else get_tree().current_scene
 			scene_root.add_child(m)
-	
+
 	# Only split if child would be large enough
-	if will_split:
+	if is_big:
 		# Split into 2 smaller versions of itself
 		for i in 2:
 			# Create a copy of this asteroid scene

@@ -72,7 +72,7 @@ func _on_area_entered(area: Area2D) -> void:
 		_explode()
 
 func _explode() -> void:
-	# TODO: Add explosion visual/particles here
+	AudioManager.play_sfx("explode_rocket")
 	print("Rocket exploded!")
 	
 	# Damage nearby asteroids in explosion radius
