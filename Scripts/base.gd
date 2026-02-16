@@ -29,8 +29,6 @@ const RIGHT_MENU_WIDTH := 280.0
 const RIGHT_MENU_PADDING := 20.0
 const RIGHT_MENU_TOP_OFFSET := 60.0
 const RIGHT_MENU_SPACING := 12
-const UPGRADES_PANEL_POS := Vector2(-150, 180)
-const UPGRADES_PANEL_WIDTH := 320.0
 
 # Right-side menu container
 var _right_menu: VBoxContainer
@@ -643,10 +641,9 @@ func _build_drone_upgrades_ui() -> void:
 
 		vbox.add_child(row)
 
-	# Position to the left of expedition panel
-	_upgrades_panel.position = UPGRADES_PANEL_POS
-	_upgrades_panel.size = Vector2(UPGRADES_PANEL_WIDTH, 0)
-	add_child(_upgrades_panel)
+	# Add to the right-side menu (stacked below expedition panel)
+	_upgrades_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_right_menu.add_child(_upgrades_panel)
 
 	_refresh_drone_upgrades_ui()
 
