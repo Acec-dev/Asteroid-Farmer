@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://c6c6wf1l6nudr"]
+[gd_scene load_steps=11 format=3 uid="uid://c6c6wf1l6nudr"]
 
 [ext_resource type="Script" uid="uid://b78u8tc2qckls" path="res://Scripts/main.gd" id="1_bo1nx"]
 [ext_resource type="PackedScene" uid="uid://cw77j44xrwsi7" path="res://Scenes/player.tscn" id="1_jjgbg"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://n22orxsm6s66" path="res://Scenes/market_menu.tscn" id="7_6bp64"]
 [ext_resource type="Theme" uid="uid://cpptlgmgejiaq" path="res://Assets/upgrade_button.tres" id="8_344ge"]
 [ext_resource type="Texture2D" uid="uid://be2r7jl0nuwkd" path="res://Assets/outline_rocket.png" id="8_ynf5e"]
+[ext_resource type="Script" uid="uid://bycnc3xsnxpn1" path="res://Scenes/guide.gd" id="9_hptm8"]
 [ext_resource type="PackedScene" uid="uid://bnfwgnvak2ixs" path="res://Scenes/graphs_panel_ui.tscn" id="11_6iyac"]
 [ext_resource type="Script" uid="uid://ptyb63ehn5yg" path="res://Scripts/radar.gd" id="13_fdnlq"]
 
@@ -136,6 +137,14 @@ text = "Give Money"
 
 [node name="GraphsPanel" parent="CanvasLayer" instance=ExtResource("11_6iyac")]
 
+[node name="Label" type="Label" parent="CanvasLayer"]
+offset_left = 1629.0
+offset_top = 71.0
+offset_right = 1746.0
+offset_bottom = 94.0
+text = "CLICK THIS ---->"
+script = ExtResource("9_hptm8")
+
 [node name="Radar" type="Camera2D" parent="."]
 limit_left = 0
 limit_top = 0
@@ -147,6 +156,7 @@ script = ExtResource("13_fdnlq")
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/BaseButton" to="." method="_on_base_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/ExploreButton" to="." method="_on_explore_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/GraphButton" to="." method="_on_graph_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/GraphButton" to="CanvasLayer/Label" method="_on_graph_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugToggle" to="." method="_on_debug_toggle_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/RadarButton" to="Radar" method="_on_radar_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/RocketsButton" to="." method="_on_rockets_button_pressed"]
