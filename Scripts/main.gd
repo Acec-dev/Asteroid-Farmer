@@ -195,15 +195,17 @@ func _create_base_button() -> void:
 	var container = PanelContainer.new()
 	container.name = "BaseButtonPanel"
 
-	# Anchor to bottom-right
-	container.anchor_left = 0.85
-	container.anchor_right = 0.98
-	container.anchor_top = 0.92
-	container.anchor_bottom = 0.98
-	container.offset_left = 0
-	container.offset_right = 0
-	container.offset_top = 0
-	container.offset_bottom = 0
+	# Anchor to bottom-right, sized to fit content
+	container.anchor_left = 1.0
+	container.anchor_right = 1.0
+	container.anchor_top = 1.0
+	container.anchor_bottom = 1.0
+	container.offset_left = -150
+	container.offset_right = -10
+	container.offset_top = -50
+	container.offset_bottom = -10
+	container.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	container.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
 	var panel_style = StyleBoxFlat.new()
 	panel_style.bg_color = Color(0, 0, 0, 1)
@@ -226,6 +228,7 @@ func _create_base_button() -> void:
 
 	_base_countdown_label = Label.new()
 	_base_countdown_label.text = ""
+	_base_countdown_label.visible = false
 	_base_countdown_label.add_theme_font_size_override("font_size", 11)
 	_base_countdown_label.add_theme_color_override("font_color", Color.WHITE)
 	if mono_font:
@@ -240,6 +243,7 @@ func _on_go_to_base_pressed() -> void:
 	_base_countdown_time = BASE_COUNTDOWN_DURATION
 	_base_btn.visible = false
 	if _base_countdown_label:
+		_base_countdown_label.visible = true
 		_base_countdown_label.text = "Traveling to base... %ds" % ceili(_base_countdown_time)
 
 func _apply_base_button_style(btn: Button, font: Font, font_size: int) -> void:
