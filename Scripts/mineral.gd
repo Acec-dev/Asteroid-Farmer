@@ -63,7 +63,7 @@ func _draw() -> void:
 	draw_polyline(pts, Color.WHITE, 1.5)
 
 func _collect() -> void:
-	AudioManager.play_sfx_queued("collect")
+	AudioManager.play_sfx("collect")
 	GameState.add_mat(kind)
 	GameState.add_mineral(kind, value)
 	queue_free()
