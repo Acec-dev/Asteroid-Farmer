@@ -34,6 +34,20 @@ var price_history := {
 ## Maximum number of historical prices to track
 const MAX_HISTORY_LENGTH := 10
 
+# === FUEL PRICE SYSTEM ===
+# Fuel uses a mean-reverting model with occasional volatility spikes
+const FUEL_BASE_PRICE := 50
+const FUEL_MIN_PRICE := 15
+const FUEL_MAX_PRICE := 95
+const FUEL_MEAN_REVERSION := 0.08  # How strongly price pulls back toward base
+const FUEL_VOLATILITY := 4.0       # Normal price change magnitude
+const FUEL_SPIKE_CHANCE := 0.12    # Chance of a volatility spike per tick
+const FUEL_SPIKE_MAGNITUDE := 12.0 # Extra change during a spike
+
+var fuel_price: int = FUEL_BASE_PRICE
+var _fuel_drift: float = 0.0  # Accumulated fractional drift
+var fuel_price_history: Array = []
+
 # Nickel pricing state (supply/demand model with time appreciation)
 const NICKEL_SALES_DECAY_RATE := 0.15
 const NICKEL_APPRECIATION_RATE := 0.2  # How fast price rises when not selling
@@ -55,6 +69,7 @@ func _ready() -> void:
 	# Initialize price history with starting prices
 	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM]:
 		price_history[mineral].append(market_prices[mineral])
+	fuel_price_history.append(fuel_price)
 
 	# Create and configure timer
 	_timer = Timer.new()
@@ -76,12 +91,17 @@ func _update_market_prices() -> void:
 	_update_nickel_price()
 	_update_silica_price()
 	_update_platinum_price()
+	_update_fuel_price()
 
 	# Add current prices to history (limited to MAX_HISTORY_LENGTH)
 	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM]:
 		price_history[mineral].append(market_prices[mineral])
 		if price_history[mineral].size() > MAX_HISTORY_LENGTH:
 			price_history[mineral].pop_front()
+
+	fuel_price_history.append(fuel_price)
+	if fuel_price_history.size() > MAX_HISTORY_LENGTH:
+		fuel_price_history.pop_front()
 
 	# Notify listeners
 	prices_changed.emit(market_prices)
@@ -135,6 +155,34 @@ func _update_platinum_price() -> void:
 	market_prices[GameState.MineralType.PLATINUM] = clampi(5 + bonus, 2, 10)
 
 
+## Fuel uses a mean-reverting random walk with occasional volatility spikes
+func _update_fuel_price() -> void:
+	# Mean reversion: pull price toward base
+	var reversion = (FUEL_BASE_PRICE - fuel_price) * FUEL_MEAN_REVERSION
+
+	# Random walk component
+	var noise = randf_range(-FUEL_VOLATILITY, FUEL_VOLATILITY)
+
+	# Occasional volatility spike
+	if randf() < FUEL_SPIKE_CHANCE:
+		noise += randf_range(-FUEL_SPIKE_MAGNITUDE, FUEL_SPIKE_MAGNITUDE)
+
+	_fuel_drift += reversion + noise
+	var change = int(_fuel_drift)
+	_fuel_drift -= change
+	fuel_price = clampi(fuel_price + change, FUEL_MIN_PRICE, FUEL_MAX_PRICE)
+
+
+## Get current fuel price
+func get_fuel_price() -> int:
+	return fuel_price
+
+
+## Get fuel price history
+func get_fuel_price_history() -> Array:
+	return fuel_price_history
+
+
 ## Called when player sells nickel - affects future prices and resets appreciation
 func record_nickel_sale(amount: int) -> void:
 	_nickel_recent_sales += amount
@@ -170,4 +218,7 @@ func reset_market() -> void:
 	_nickel_appreciation = 0.0
 	_market_cycle = 0
 	_platinum_pressure = 0.0
+	fuel_price = FUEL_BASE_PRICE
+	_fuel_drift = 0.0
+	fuel_price_history = [FUEL_BASE_PRICE]
 	prices_changed.emit(market_prices)

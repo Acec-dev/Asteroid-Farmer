@@ -68,6 +68,7 @@ signal drone_upgrades_changed()
 signal bank_balance_changed(new_balance: int)
 signal bank_bond_changed()
 signal bank_upgraded()
+signal fuel_futures_changed()
 
 var credits: int = 0
 
@@ -119,6 +120,31 @@ const BOND_TIERS = {
 		"duration": 360.0,
 		"rate": 0.40,
 		"min_investment": 300,
+	},
+}
+
+# === FUEL FUTURES SYSTEM ===
+var fuel_futures: Array[Dictionary] = []  # Active futures contracts
+const MAX_FUEL_FUTURES := 6  # Max simultaneous contracts
+
+const FUEL_FUTURES_TIERS = {
+	"spot": {
+		"name": "Spot",
+		"duration": 30.0,
+		"leverage": 1.0,
+		"cost": 25,
+	},
+	"standard": {
+		"name": "Standard",
+		"duration": 90.0,
+		"leverage": 2.0,
+		"cost": 75,
+	},
+	"volatile": {
+		"name": "Volatile",
+		"duration": 180.0,
+		"leverage": 3.0,
+		"cost": 150,
 	},
 }
 
@@ -294,6 +320,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_bank_tick(delta)
 	_bond_tick(delta)
+	_fuel_futures_tick(delta)
 
 
 func _on_market_prices_changed(new_prices: Dictionary) -> void:
@@ -712,3 +739,62 @@ func _bond_tick(delta: float) -> void:
 			_add_transaction("bond_mature", bond.payout)
 			bank_bonds.remove_at(i)
 		emit_signal("bank_bond_changed")
+
+# === FUEL FUTURES SYSTEM ===
+
+func get_fuel_price() -> int:
+	if Market:
+		return Market.get_fuel_price()
+	return 50
+
+func buy_fuel_future(tier_key: String, is_long: bool) -> bool:
+	if not FUEL_FUTURES_TIERS.has(tier_key):
+		return false
+	if fuel_futures.size() >= MAX_FUEL_FUTURES:
+		return false
+	var tier = FUEL_FUTURES_TIERS[tier_key]
+	if credits < tier.cost:
+		return false
+	var strike = get_fuel_price()
+	add_credits(-tier.cost)
+	var future = {
+		"tier": tier_key,
+		"is_long": is_long,
+		"cost": tier.cost,
+		"strike_price": strike,
+		"leverage": tier.leverage,
+		"duration": tier.duration,
+		"elapsed": 0.0,
+	}
+	fuel_futures.append(future)
+	_add_transaction("future_buy", tier.cost)
+	emit_signal("fuel_futures_changed")
+	return true
+
+func _settle_fuel_future(future: Dictionary) -> int:
+	var settle_price = get_fuel_price()
+	var price_change: float
+	if future.is_long:
+		price_change = float(settle_price - future.strike_price) / float(future.strike_price)
+	else:
+		price_change = float(future.strike_price - settle_price) / float(future.strike_price)
+	var payout = int(floor(future.cost * (1.0 + price_change * future.leverage)))
+	return maxi(payout, 0)  # Can lose entire investment, but never go negative
+
+func _fuel_futures_tick(delta: float) -> void:
+	var settled_indices := []
+	for i in range(fuel_futures.size()):
+		fuel_futures[i].elapsed += delta
+		if fuel_futures[i].elapsed >= fuel_futures[i].duration:
+			settled_indices.append(i)
+
+	if settled_indices.size() > 0:
+		settled_indices.reverse()
+		for i in settled_indices:
+			var future = fuel_futures[i]
+			var payout = _settle_fuel_future(future)
+			if payout > 0:
+				add_credits(payout)
+			_add_transaction("future_settle", payout)
+			fuel_futures.remove_at(i)
+		emit_signal("fuel_futures_changed")
