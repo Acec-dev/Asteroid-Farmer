@@ -36,7 +36,7 @@ const MAX_HISTORY_LENGTH := 10
 
 # Nickel pricing state (supply/demand model with time appreciation)
 const NICKEL_SALES_DECAY_RATE := 0.15
-const NICKEL_APPRECIATION_RATE := 0.12  # How fast price rises when not selling
+const NICKEL_APPRECIATION_RATE := 0.2  # How fast price rises when not selling
 const NICKEL_MAX_APPRECIATION := 3.0    # Max bonus above base price from holding
 var _nickel_recent_sales: float = 0.0
 var _nickel_appreciation: float = 0.0   # Accumulated price bonus from not selling
