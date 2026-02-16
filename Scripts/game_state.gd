@@ -300,6 +300,11 @@ var upgrades = {
 			"values": [40, 60, 80, 120, 170]
 		}
 	},
+	"tractor_beam": {
+		"power": {
+			"level": 0,
+		}
+	},
 	"spawner": {
 		"difficulty": {
 			"level": 1,  # Start at normal difficulty (level 1)
@@ -622,6 +627,32 @@ func upgrade_mine_stat(upgrade_type: String) -> bool:
 		_:
 			push_error("Unknown mine upgrade type: " + upgrade_type)
 			return false
+	emit_signal("upgrades_changed")
+	return true
+
+# === TRACTOR BEAM SYSTEM (infinite) ===
+
+const TRACTOR_BEAM_BASE_COST := 75
+const TRACTOR_BEAM_COST_MULTIPLIER := 1.4
+
+## Get current tractor beam magnet range (150 base, +20% per level)
+func get_tractor_beam_range() -> float:
+	var level: int = upgrades.tractor_beam.power.level
+	return 150.0 * (1.0 + 0.20 * level)
+
+## Get current tractor beam magnet strength (80 base, +25% per level)
+func get_tractor_beam_strength() -> float:
+	var level: int = upgrades.tractor_beam.power.level
+	return 80.0 * (1.0 + 0.25 * level)
+
+## Get cost for the next tractor beam upgrade
+func get_tractor_beam_cost() -> int:
+	var level: int = upgrades.tractor_beam.power.level
+	return int(ceil(TRACTOR_BEAM_BASE_COST * pow(TRACTOR_BEAM_COST_MULTIPLIER, level)))
+
+## Purchase a tractor beam upgrade
+func upgrade_tractor_beam() -> bool:
+	upgrades.tractor_beam.power.level += 1
 	emit_signal("upgrades_changed")
 	return true
 

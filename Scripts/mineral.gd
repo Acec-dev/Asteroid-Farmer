@@ -17,11 +17,15 @@ func _get_kind():
 
 func _ready() -> void:
 	add_to_group("mineral")
-	
+
+	# Apply tractor beam upgrades
+	magnet_range = GameState.get_tractor_beam_range()
+	magnet_strength = GameState.get_tractor_beam_strength()
+
 	area_entered.connect(_on_area)
 	body_entered.connect(_on_body)
 	queue_redraw()
-	
+
 	# Find the player
 	_find_player()
 
