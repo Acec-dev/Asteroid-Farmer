@@ -151,7 +151,6 @@ func _build_drone_ui() -> void:
 	add_child(_drone_count_label)
 
 	# Voyage results label (center-top of screen)
-	var viewport_size = get_viewport_rect().size
 	_voyage_results_label = Label.new()
 	_voyage_results_label.text = ""
 	_voyage_results_label.add_theme_font_size_override("font_size", 18)
