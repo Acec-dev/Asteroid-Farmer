@@ -46,16 +46,13 @@ func _process(delta: float) -> void:
 func start_expedition(tier: ExpeditionTier) -> bool:
 	if expedition_active:
 		return false
-	if GameState.drone_count <= 0:
-		return false
-	# Can't start expedition while voyage is active (shared drone pool)
-	if VoyageManager and VoyageManager.voyage_active:
+	if GameState.expedition_drone_count <= 0:
 		return false
 
 	var data = EXPEDITION_DATA[tier]
 	expedition_active = true
 	expedition_tier = tier
-	expedition_drones_sent = GameState.drone_count
+	expedition_drones_sent = GameState.expedition_drone_count
 	expedition_elapsed = 0.0
 	# Apply warp drive upgrade to duration
 	expedition_duration = data.duration * GameState.get_duration_multiplier()
@@ -104,7 +101,7 @@ func _complete_expedition() -> void:
 
 	# Remove lost drones
 	if drones_lost > 0:
-		GameState.remove_drones(drones_lost)
+		GameState.remove_expedition_drones(drones_lost)
 
 	# Add exotic minerals to inventory
 	for type in minerals_gained:
