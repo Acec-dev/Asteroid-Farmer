@@ -224,6 +224,9 @@ func _build_upgrade_list() -> void:
 	for upgrade_name in GameState.upgrades.cargo:
 		_add_upgrade_row("cargo", upgrade_name)
 
+	_add_section_header("TRACTOR BEAM")
+	_add_tractor_beam_row()
+
 func _add_section_header(title: String) -> void:
 	var label = Label.new()
 	label.text = title
@@ -394,6 +397,61 @@ func _on_mine_sub_buy(upgrade_type: String) -> void:
 	GameState.add_credits(-cost)
 	GameState.upgrade_mine_stat(upgrade_type)
 
+## Add the Tractor Beam infinite upgrade row
+func _add_tractor_beam_row() -> void:
+	var row = HBoxContainer.new()
+	row.name = "tractor_beam_power"
+	row.set_meta("system", "tractor_beam")
+	row.set_meta("upgrade_name", "power")
+
+	var name_label = Label.new()
+	name_label.text = "Magnetism"
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.add_theme_font_size_override("font_size", 14)
+	name_label.add_theme_color_override("font_color", Color.WHITE)
+	if _mono_font:
+		name_label.add_theme_font_override("font", _mono_font)
+	row.add_child(name_label)
+
+	var level_label = Label.new()
+	level_label.name = "LevelLabel"
+	level_label.add_theme_font_size_override("font_size", 14)
+	level_label.custom_minimum_size.x = 40
+	if _mono_font:
+		level_label.add_theme_font_override("font", _mono_font)
+	row.add_child(level_label)
+
+	var buy_btn = Button.new()
+	buy_btn.name = "BuyButton"
+	buy_btn.custom_minimum_size.x = 100
+	_apply_button_style(buy_btn, 12)
+	buy_btn.pressed.connect(_on_tractor_beam_buy)
+	row.add_child(buy_btn)
+
+	_scroll_vbox.add_child(row)
+	_update_tractor_beam_row(row)
+
+## Update the Tractor Beam row
+func _update_tractor_beam_row(row: HBoxContainer) -> void:
+	var level_label = row.get_node("LevelLabel")
+	var buy_btn = row.get_node("BuyButton")
+	var level: int = GameState.upgrades.tractor_beam.power.level
+
+	level_label.text = "Lv." + str(level)
+	level_label.add_theme_color_override("font_color", Color.WHITE)
+
+	var cost = GameState.get_tractor_beam_cost()
+	buy_btn.text = str(cost) + "cr"
+	buy_btn.disabled = GameState.credits < cost
+
+## Purchase a tractor beam upgrade
+func _on_tractor_beam_buy() -> void:
+	var cost = GameState.get_tractor_beam_cost()
+	if GameState.credits < cost:
+		return
+	GameState.add_credits(-cost)
+	GameState.upgrade_tractor_beam()
+
 # === Row Update ===
 
 func _update_row(row: HBoxContainer, system: String, upgrade_name: String) -> void:
@@ -405,6 +463,11 @@ func _update_row(row: HBoxContainer, system: String, upgrade_name: String) -> vo
 	# Mine sub-upgrade rows are handled separately
 	if system == "mine_sub":
 		_update_mine_sub_row(row, upgrade_name)
+		return
+
+	# Tractor beam row is handled separately
+	if system == "tractor_beam":
+		_update_tractor_beam_row(row)
 		return
 
 	var level_label = row.get_node("LevelLabel")
