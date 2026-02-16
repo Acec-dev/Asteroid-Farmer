@@ -16,6 +16,10 @@ func show_text(kind, start):
 	label.text = "+1 " + kind.to_lower()
 	global_position = start
 
+func show_custom_text(text: String, start: Vector2):
+	label.text = text
+	global_position = start
+
 
 func _on_timer_timeout() -> void:
 	queue_free()
