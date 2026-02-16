@@ -23,6 +23,8 @@ func _execute_fire() -> void:
 	if not _owner_node:
 		return
 
+	AudioManager.play_sfx("gun_1")
+
 	var forward := Vector2.RIGHT.rotated(_owner_node.rotation)
 	var left_offset := Vector2(0, -muzzle_separation).rotated(_owner_node.rotation)
 	var right_offset := Vector2(0, muzzle_separation).rotated(_owner_node.rotation)
