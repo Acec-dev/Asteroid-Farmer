@@ -244,7 +244,7 @@ var upgrades = {
 	"weapons": {
 		"Primary Cannon": {
 			"unlocked": true,  # Primary weapon is always unlocked
-			"level": 0,
+			"level": 1,
 			"damage_values": [1.0, 1.0, 2.0, 2.0],
 			"cooldown_values": [0.5, 0.35, 0.35, 0.2]
 		},
@@ -417,6 +417,7 @@ func unlock_weapon(weapon_name: String) -> bool:
 		return false
 
 	upgrades.weapons[weapon_name].unlocked = true
+	upgrades.weapons[weapon_name].level = 1
 	emit_signal("upgrades_changed")
 	print("Weapon unlocked: " + weapon_name)
 	return true
