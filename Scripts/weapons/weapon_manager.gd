@@ -119,6 +119,12 @@ func _get_weapon_stats(weapon_name: String, upgrade_data: Dictionary) -> Diction
 		stats["speed"] = GameState.get_rocket_speed()
 		return stats
 
+	# Mine Layer uses formula-based infinite upgrades
+	if weapon_name == "Mine Layer":
+		stats["cooldown"] = GameState.get_mine_cooldown()
+		stats["explosion_radius"] = GameState.get_mine_blast_radius()
+		return stats
+
 	var level = upgrade_data.get("level", 0)
 
 	# Generic handler for all "*_values" arrays

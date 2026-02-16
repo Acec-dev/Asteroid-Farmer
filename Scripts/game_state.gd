@@ -263,8 +263,8 @@ var upgrades = {
 		"Mine Layer": {
 			"unlocked": false,
 			"level": 0,
-			"damage_values": [1.0, 2.0, 3.0, 5.0],
-			"cooldown_values": [3.0, 2.5, 2.0, 1.5]  # Auto-placement interval (seconds)
+			"mine_place_speed_level": 0,
+			"mine_blast_radius_level": 0,
 		},
 		"Railgun": {
 			"unlocked": false,
@@ -578,6 +578,48 @@ func upgrade_rocket_stat(upgrade_type: String) -> bool:
 			data.rocket_fire_rate_level += 1
 		_:
 			push_error("Unknown rocket upgrade type: " + upgrade_type)
+			return false
+	emit_signal("upgrades_changed")
+	return true
+
+# === MINE UPGRADE SYSTEM (infinite, escalating, alternating) ===
+
+const MINE_UPGRADE_BASE_COST := 100
+const MINE_UPGRADE_COST_MULTIPLIER := 1.5
+
+## Get current mine placement cooldown (3.0 base, decreases with level)
+func get_mine_cooldown() -> float:
+	var level: int = upgrades.weapons["Mine Layer"].mine_place_speed_level
+	return 3.0 / (1.0 + 0.25 * level)
+
+## Get current mine blast radius (350 base, +15% per level)
+func get_mine_blast_radius() -> float:
+	var level: int = upgrades.weapons["Mine Layer"].mine_blast_radius_level
+	return 350.0 * (1.0 + 0.15 * level)
+
+## Get cost for a specific mine upgrade at its current level
+func get_mine_upgrade_cost(upgrade_type: String) -> int:
+	var level: int = 0
+	var data = upgrades.weapons["Mine Layer"]
+	match upgrade_type:
+		"mine_place_speed":
+			level = data.mine_place_speed_level
+		"mine_blast_radius":
+			level = data.mine_blast_radius_level
+	return int(ceil(MINE_UPGRADE_BASE_COST * pow(MINE_UPGRADE_COST_MULTIPLIER, level)))
+
+## Purchase a mine upgrade
+func upgrade_mine_stat(upgrade_type: String) -> bool:
+	var data = upgrades.weapons["Mine Layer"]
+	if not data.unlocked:
+		return false
+	match upgrade_type:
+		"mine_place_speed":
+			data.mine_place_speed_level += 1
+		"mine_blast_radius":
+			data.mine_blast_radius_level += 1
+		_:
+			push_error("Unknown mine upgrade type: " + upgrade_type)
 			return false
 	emit_signal("upgrades_changed")
 	return true

@@ -4,6 +4,7 @@ class_name MineLayer
 extends WeaponBase
 
 var mine_scene: PackedScene
+var _mine_explosion_radius: float = 350.0
 
 func _init() -> void:
 	weapon_name = "Mine Layer"
@@ -35,17 +36,14 @@ func _place_mine() -> void:
 	var mine = mine_scene.instantiate()
 	mine.global_position = _owner_node.global_position
 
-	# Apply damage upgrade to mine if it has the property
-	if "damage" in mine:
-		mine.damage = int(current_damage)
+	# Apply explosion radius upgrade to mine
+	if "explosion_radius" in mine:
+		mine.explosion_radius = _mine_explosion_radius
 
 	# Add to owner's scene root (works with SubViewport)
 	var scene_root = _owner_node.owner if _owner_node.owner else _owner_node.get_tree().current_scene
 	scene_root.add_child(mine)
-	print("Mine placed at: ", mine.global_position)
 
 func _apply_custom_upgrade(stats: Dictionary) -> void:
-	# Apply mine-specific upgrades
 	if stats.has("explosion_radius"):
-		# We could store this and pass it to mines when spawned
-		pass
+		_mine_explosion_radius = stats.explosion_radius
