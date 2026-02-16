@@ -167,11 +167,17 @@ func _handle_weapon_input() -> void:
 
 func _handle_move(delta: float) -> void:
 	# WASD movement - completely independent of aiming
+	var speed_mult := GameState.get_speed_multiplier()
+	var effective_max_speed := max_speed * speed_mult
+	var effective_accel := acceleration * speed_mult
 	var move_input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if move_input != Vector2.ZERO:
-		_vel = _vel.move_toward(move_input.normalized() * max_speed, acceleration * delta)
+		_vel = _vel.move_toward(move_input.normalized() * effective_max_speed, effective_accel * delta)
 	else:
 		_vel = _vel.move_toward(Vector2.ZERO, friction * delta)
+	# Clamp velocity if encumbrance reduced max speed below current velocity
+	if _vel.length() > effective_max_speed:
+		_vel = _vel.normalized() * effective_max_speed
 	global_position += _vel * delta
 
 	# Clamp player position to camera bounds
@@ -197,7 +203,10 @@ func popup_cargo_full() -> void:
 	var scene_root = owner if owner else get_tree().current_scene
 	scene_root.add_child(ft)
 	var start := global_position
-	ft.show_custom_text("CARGO FULL", start)
+	if GameState.is_over_encumbered():
+		ft.show_custom_text("OVER-ENCUMBERED", start)
+	else:
+		ft.show_custom_text("CARGO FULL", start)
 
 # === Mineral Deposit System ===
 

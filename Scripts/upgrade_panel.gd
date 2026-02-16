@@ -429,7 +429,17 @@ func _refresh_inventory(_new_credits: int = 0) -> void:
 	_nickel_label.text = str(GameState.minerals[GameState.MineralType.NICKEL])
 	_silica_label.text = str(GameState.minerals[GameState.MineralType.SILICA])
 	_platinum_label.text = str(GameState.minerals[GameState.MineralType.PLATINUM])
-	_cargo_label.text = "Cargo: %d/%d" % [GameState.get_total_minerals(), GameState.cargo_capacity]
+	var total := GameState.get_total_minerals()
+	if GameState.is_over_encumbered():
+		var speed_pct := int(GameState.get_speed_multiplier() * 100)
+		_cargo_label.text = "Cargo: %d/%d SLOW (%d%%)" % [total, GameState.cargo_capacity, speed_pct]
+		_cargo_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+	elif total >= GameState.cargo_capacity:
+		_cargo_label.text = "Cargo: %d/%d FULL" % [total, GameState.cargo_capacity]
+		_cargo_label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	else:
+		_cargo_label.text = "Cargo: %d/%d" % [total, GameState.cargo_capacity]
+		_cargo_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	_credit_label.text = "Credits: %d" % GameState.credits
 
 func _refresh_prices() -> void:
