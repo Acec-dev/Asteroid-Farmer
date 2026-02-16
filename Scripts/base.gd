@@ -18,7 +18,7 @@ const FLY_IN_DURATION := 1.2  # seconds
 # Drone visuals
 var _drone_container: Node2D
 var _drone_nodes: Array[Node2D] = []
-const DRONE_AREA_CENTER := Vector2(550, -280)  # Top-right quadrant
+const DRONE_AREA_CENTER := Vector2(480, -330)  # Top-right quadrant
 const DRONE_SPACING := 50.0
 const DRONE_BOB_AMPLITUDE := 3.0
 const DRONE_BOB_SPEED := 1.2

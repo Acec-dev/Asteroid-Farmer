@@ -37,7 +37,7 @@ var _iridium_label: Label
 # Upgrade cost definitions per level
 var upgrade_costs = {
 	"weapons": {
-		"Primary Cannon": [50, 150, 400],
+		"Primary Cannon": [0, 50, 150, 400],
 		"Laser Beam": [100, 200, 400, 800],
 		"Rocket Launcher": [100, 200, 400, 800],
 		"Mine Layer": [100, 200, 400, 800],
@@ -429,7 +429,7 @@ func _update_row(row: HBoxContainer, system: String, upgrade_name: String) -> vo
 		elif data.has("damage_values"):
 			max_level = data.damage_values.size() - 1
 		elif data.has("max_damage_values"):
-			max_level = data.max_damage_values.size() - 1
+			max_level = data.max_damage_values.size()
 		else:
 			max_level = 3
 	else:
