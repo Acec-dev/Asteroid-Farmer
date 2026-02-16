@@ -136,6 +136,7 @@ func _refresh_drone_visuals() -> void:
 # === UI BUILDING ===
 
 func _build_drone_ui() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
 	var viewport_size = get_viewport_rect().size
 
 	# Drone count label (above the drone area)
@@ -143,6 +144,8 @@ func _build_drone_ui() -> void:
 	_drone_count_label.text = "Drones: 0"
 	_drone_count_label.add_theme_font_size_override("font_size", 18)
 	_drone_count_label.add_theme_color_override("font_color", Color.WHITE)
+	if mono_font:
+		_drone_count_label.add_theme_font_override("font", mono_font)
 	_drone_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_drone_count_label.position = Vector2(DRONE_AREA_CENTER.x - 60, DRONE_AREA_CENTER.y - 50)
 	add_child(_drone_count_label)
@@ -152,21 +155,25 @@ func _build_drone_ui() -> void:
 	_voyage_results_label.text = ""
 	_voyage_results_label.add_theme_font_size_override("font_size", 14)
 	_voyage_results_label.add_theme_color_override("font_color", Color.WHITE)
+	if mono_font:
+		_voyage_results_label.add_theme_font_override("font", mono_font)
 	_voyage_results_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_voyage_results_label.position = Vector2(DRONE_AREA_CENTER.x - 120, DRONE_AREA_CENTER.y + 120)
 	_voyage_results_label.custom_minimum_size.x = 240
 	add_child(_voyage_results_label)
 
 func _build_voyage_ui() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
 	# Panel in the lower-right area for voyage controls
 	_voyage_panel = PanelContainer.new()
 	_voyage_panel.name = "VoyagePanel"
 
 	var stylebox = StyleBoxFlat.new()
-	stylebox.bg_color = Color(0.1, 0.1, 0.15, 0.9)
-	stylebox.border_color = Color(0.4, 0.4, 0.5)
-	stylebox.set_border_width_all(1)
-	stylebox.set_corner_radius_all(4)
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.6, 0.6, 0.6)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
 	stylebox.set_content_margin_all(12)
 	_voyage_panel.add_theme_stylebox_override("panel", stylebox)
 
@@ -182,16 +189,24 @@ func _build_voyage_ui() -> void:
 	title.text = "DRONE BAY"
 	title.add_theme_font_size_override("font_size", 16)
 	title.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 
 	var sep = HSeparator.new()
+	var sep_style = StyleBoxFlat.new()
+	sep_style.bg_color = Color(0.6, 0.6, 0.6)
+	sep_style.set_content_margin_all(0)
+	sep_style.content_margin_top = 1
+	sep_style.content_margin_bottom = 1
+	sep.add_theme_stylebox_override("separator", sep_style)
 	vbox.add_child(sep)
 
 	# Buy drone button
 	_buy_drone_btn = Button.new()
 	_buy_drone_btn.text = "Buy Drone (%dcr)" % GameState.DRONE_COST
-	_buy_drone_btn.add_theme_font_size_override("font_size", 14)
+	_apply_button_style(_buy_drone_btn, mono_font, 14)
 	_buy_drone_btn.pressed.connect(_on_buy_drone_pressed)
 	vbox.add_child(_buy_drone_btn)
 
@@ -200,8 +215,19 @@ func _build_voyage_ui() -> void:
 	voyage_header.text = "SEND ON VOYAGE"
 	voyage_header.add_theme_font_size_override("font_size", 14)
 	voyage_header.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	if mono_font:
+		voyage_header.add_theme_font_override("font", mono_font)
 	voyage_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(voyage_header)
+
+	var sep2 = HSeparator.new()
+	var sep2_style = StyleBoxFlat.new()
+	sep2_style.bg_color = Color(0.6, 0.6, 0.6)
+	sep2_style.set_content_margin_all(0)
+	sep2_style.content_margin_top = 1
+	sep2_style.content_margin_bottom = 1
+	sep2.add_theme_stylebox_override("separator", sep2_style)
+	vbox.add_child(sep2)
 
 	# Voyage buttons with risk info
 	for tier in VoyageManager.VoyageTier.values():
@@ -211,7 +237,7 @@ func _build_voyage_ui() -> void:
 		var risk_str = "%d%% risk" % int(data.break_chance * 100)
 		var reward_str = "%d-%d minerals" % [data.min_minerals, data.max_minerals]
 		btn.text = "%s (%s, %s)" % [duration_str, risk_str, reward_str]
-		btn.add_theme_font_size_override("font_size", 12)
+		_apply_button_style(btn, mono_font, 12)
 		btn.name = "VoyageBtn_" + str(tier)
 		btn.pressed.connect(_on_voyage_pressed.bind(tier))
 		vbox.add_child(btn)
@@ -225,6 +251,8 @@ func _build_voyage_ui() -> void:
 	_voyage_progress_label.text = ""
 	_voyage_progress_label.add_theme_font_size_override("font_size", 12)
 	_voyage_progress_label.add_theme_color_override("font_color", Color.WHITE)
+	if mono_font:
+		_voyage_progress_label.add_theme_font_override("font", mono_font)
 	_voyage_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_voyage_progress_label)
 
@@ -232,6 +260,55 @@ func _build_voyage_ui() -> void:
 	_voyage_panel.position = Vector2(500, 180)
 	_voyage_panel.size = Vector2(260, 0)
 	add_child(_voyage_panel)
+
+func _apply_button_style(btn: Button, font: Font, font_size: int) -> void:
+	btn.add_theme_font_size_override("font_size", font_size)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7))
+	btn.add_theme_color_override("font_disabled_color", Color(0.35, 0.35, 0.35))
+	if font:
+		btn.add_theme_font_override("font", font)
+
+	# Normal state: black bg, white border
+	var normal = StyleBoxFlat.new()
+	normal.bg_color = Color(0, 0, 0, 1)
+	normal.border_color = Color(0.6, 0.6, 0.6)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(0)
+	normal.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("normal", normal)
+
+	# Hover state: slightly lighter border
+	var hover = StyleBoxFlat.new()
+	hover.bg_color = Color(0.1, 0.1, 0.1, 1)
+	hover.border_color = Color.WHITE
+	hover.set_border_width_all(1)
+	hover.set_corner_radius_all(0)
+	hover.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("hover", hover)
+
+	# Pressed state: inverted — white bg, black text
+	var pressed = StyleBoxFlat.new()
+	pressed.bg_color = Color(0.2, 0.2, 0.2, 1)
+	pressed.border_color = Color.WHITE
+	pressed.set_border_width_all(1)
+	pressed.set_corner_radius_all(0)
+	pressed.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("pressed", pressed)
+
+	# Disabled state: dim
+	var disabled = StyleBoxFlat.new()
+	disabled.bg_color = Color(0.05, 0.05, 0.05, 1)
+	disabled.border_color = Color(0.25, 0.25, 0.25)
+	disabled.set_border_width_all(1)
+	disabled.set_corner_radius_all(0)
+	disabled.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("disabled", disabled)
+
+	# No focus outline
+	var focus = StyleBoxEmpty.new()
+	btn.add_theme_stylebox_override("focus", focus)
 
 func _refresh_ui() -> void:
 	if _drone_count_label:
