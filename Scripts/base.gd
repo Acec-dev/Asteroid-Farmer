@@ -150,16 +150,18 @@ func _build_drone_ui() -> void:
 	_drone_count_label.position = Vector2(DRONE_AREA_CENTER.x - 60, DRONE_AREA_CENTER.y - 50)
 	add_child(_drone_count_label)
 
-	# Voyage results label (below the drone area, for showing completion results)
+	# Voyage results label (center-top of screen)
+	var viewport_size = get_viewport_rect().size
 	_voyage_results_label = Label.new()
 	_voyage_results_label.text = ""
-	_voyage_results_label.add_theme_font_size_override("font_size", 14)
+	_voyage_results_label.add_theme_font_size_override("font_size", 18)
 	_voyage_results_label.add_theme_color_override("font_color", Color.WHITE)
 	if mono_font:
 		_voyage_results_label.add_theme_font_override("font", mono_font)
 	_voyage_results_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_voyage_results_label.position = Vector2(DRONE_AREA_CENTER.x - 120, DRONE_AREA_CENTER.y + 120)
-	_voyage_results_label.custom_minimum_size.x = 240
+	var label_width := 500.0
+	_voyage_results_label.custom_minimum_size.x = label_width
+	_voyage_results_label.position = Vector2(-label_width * 0.5, -viewport_size.y * 0.5 + 30)
 	add_child(_voyage_results_label)
 
 func _build_voyage_ui() -> void:
