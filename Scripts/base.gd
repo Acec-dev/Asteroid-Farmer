@@ -45,9 +45,14 @@ var _upgrades_panel: PanelContainer
 var _exotic_labels: Dictionary = {}
 var _upgrade_btns: Dictionary = {}
 
+# Wallet display
+var _wallet_label: Label
+var _vault_label: Label
+
 func _ready() -> void:
 	_spawn_docked_ship()
 	_spawn_drone_visuals()
+	_build_wallet_display()
 	_build_drone_ui()
 	_build_voyage_ui()
 	_build_expedition_ui()
@@ -63,6 +68,7 @@ func _ready() -> void:
 	GameState.expedition_progress_updated.connect(_on_expedition_progress)
 	GameState.exotic_minerals_changed.connect(_on_exotic_minerals_changed)
 	GameState.drone_upgrades_changed.connect(_on_drone_upgrades_changed)
+	GameState.bank_balance_changed.connect(_on_bank_balance_changed)
 
 	_refresh_drone_visuals()
 	_refresh_ui()
@@ -150,6 +156,46 @@ func _refresh_drone_visuals() -> void:
 		drone_node.add_child(drawer)
 		_drone_container.add_child(drone_node)
 		_drone_nodes.append(drone_node)
+
+# === WALLET DISPLAY ===
+
+func _build_wallet_display() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+	var viewport_size = get_viewport_rect().size
+
+	# Position at top-left corner of viewport
+	var x_pos = -viewport_size.x * 0.5 + 16
+	var y_pos = -viewport_size.y * 0.5 + 12
+
+	# Credits line
+	_wallet_label = Label.new()
+	_wallet_label.text = "%d cr" % GameState.credits
+	_wallet_label.add_theme_font_size_override("font_size", 18)
+	_wallet_label.add_theme_color_override("font_color", Color.WHITE)
+	if mono_font:
+		_wallet_label.add_theme_font_override("font", mono_font)
+	_wallet_label.position = Vector2(x_pos, y_pos)
+	add_child(_wallet_label)
+
+	# Vault line (smaller, below credits)
+	_vault_label = Label.new()
+	_vault_label.add_theme_font_size_override("font_size", 13)
+	_vault_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+	if mono_font:
+		_vault_label.add_theme_font_override("font", mono_font)
+	_vault_label.position = Vector2(x_pos, y_pos + 24)
+	add_child(_vault_label)
+
+	_refresh_wallet_display()
+
+func _refresh_wallet_display() -> void:
+	if _wallet_label:
+		_wallet_label.text = "%d cr" % GameState.credits
+	if _vault_label:
+		if GameState.bank_balance > 0:
+			_vault_label.text = "vault: %d cr" % GameState.bank_balance
+		else:
+			_vault_label.text = ""
 
 # === UI BUILDING ===
 
@@ -645,7 +691,11 @@ func _on_drones_changed(_count: int) -> void:
 	_refresh_ui()
 
 func _on_credits_changed(_credits: int) -> void:
+	_refresh_wallet_display()
 	_refresh_ui()
+
+func _on_bank_balance_changed(_balance: int) -> void:
+	_refresh_wallet_display()
 
 func _on_voyage_started() -> void:
 	_refresh_drone_visuals()
