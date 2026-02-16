@@ -113,15 +113,16 @@ func _get_weapon_stats(weapon_name: String, upgrade_data: Dictionary) -> Diction
 	}
 
 	var level = upgrade_data.get("level", 0)
+	var array_index = max(level - 1, 0)
 
 	# Generic handler for all "*_values" arrays
 	for key in upgrade_data.keys():
 		if key.ends_with("_values") and upgrade_data[key] is Array:
 			var values_array = upgrade_data[key]
-			if level < values_array.size():
+			if array_index < values_array.size():
 				# Extract stat name (remove "_values" suffix)
 				var stat_name = key.substr(0, key.length() - 7)
-				stats[stat_name] = values_array[level]
+				stats[stat_name] = values_array[array_index]
 
 	return stats
 
