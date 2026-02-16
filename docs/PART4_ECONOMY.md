@@ -137,13 +137,50 @@ price = clamp(price, 15, 95)
 
 ## Price History & Graphs
 
-The `MineralPriceGraph` system (`Scripts/MineralPriceGraph.gd` and the B&W variant) renders price history as line graphs in the bottom panel. Key details:
+The game visualizes market data through line graphs rendered entirely via Godot's `_draw()` API — no chart libraries, no textures.
 
-- Reads from `Market.get_price_history(mineral)` and `Market.get_fuel_price_history()`
-- Displays last 10 data points
-- Graphs update reactively via the `prices_changed` signal
-- B&W variant uses white lines on black background (matching game aesthetic)
-- Panel slides in/out from the left when TAB is pressed
+### Two Variants
+
+| Script | Class | Style |
+|--------|-------|-------|
+| `MineralPriceGraph.gd` | (none) | Colored lines (cyan default), dark background, dots at each data point |
+| `MineralPriceGraph.B&W.gd` | `PriceGraph` | White lines on black background, no dots — matches the game's monochrome aesthetic |
+
+The **B&W variant** (`PriceGraph`) is the one used in-game. It uses the DM Mono font for titles, disables the grid by default, and sets `point_radius` to 0 for clean lines only.
+
+### How They Work
+
+Each graph instance tracks **one mineral type** via its `@export var mineral_type` property. On `_ready()`, the graph connects to `Market.prices_changed` and caches the last 10 prices from `Market.get_price_history(mineral_type)`. Every time the market ticks (every 3 seconds), the graph receives the signal, updates its cache, and calls `queue_redraw()`.
+
+### Drawing Process
+
+The `_draw()` method renders three layers:
+
+1. **Background** — Black filled rectangle (`Color(0, 0, 0, 0.8)`)
+2. **Labels** — Mineral name + " Price History" as title, `$0`-`$8` on the Y-axis, "Time ->" on the X-axis
+3. **Price line** — Points are spread evenly across the graph width. Each consecutive pair is connected by a `draw_line()` call. Y position is calculated as `price / max_price * graph_height`.
+
+Optional grid lines (horizontal for price levels, vertical for time points) can be enabled via `show_grid`.
+
+### Configurable Properties
+
+| Property | Default (B&W) | Description |
+|----------|--------------|-------------|
+| `mineral_type` | `IRON` | Which mineral to track |
+| `line_color` | `Color.WHITE` | Line and point color |
+| `line_width` | 2.0 | Thickness of connecting lines |
+| `point_radius` | 0.0 | Radius of dots at data points (0 = no dots) |
+| `background_color` | `Color(0, 0, 0, 0.8)` | Graph background |
+| `grid_color` | `Color(0.3, 0.3, 0.4, 0.5)` | Grid line color |
+| `text_color` | `Color.WHITE` | Label text color |
+| `show_grid` | false | Toggle grid lines |
+| `show_labels` | true | Toggle title and axis labels |
+| `max_price` | 8 | Y-axis ceiling |
+| `margin_left/right/top/bottom` | 40/20/30/30 | Graph area padding for labels |
+
+### Panel Container
+
+The graphs live inside `graphs_panel.gd` (`Scenes/graphs_panel_ui.tscn`), a `PanelContainer` that occupies the bottom 27.78% of the screen. It slides in from the left when TAB is pressed and slides back out on the next TAB. One graph instance per mineral type is placed side by side within the panel.
 
 ---
 
