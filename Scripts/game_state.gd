@@ -101,7 +101,7 @@ var upgrades = {
 			"unlocked": false,
 			"level": 0,
 			"damage_values": [3.0, 4.0, 5.0, 7.0],
-			"cooldown_values": [2.0, 1.75, 1.5, 1.25],
+			"cooldown_values": [5.0, 4.5, 4.0, 3.5],
 			"pierce_falloff_values": [0.2, 0.15, 0.1, 0.05]  # Less falloff = more damage retention
 		}
 	},

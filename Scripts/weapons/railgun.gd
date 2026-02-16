@@ -15,17 +15,25 @@ extends WeaponBase
 @export var beam_color: Color = Color(0.2, 0.8, 1.0, 1.0)  # Cyan/electric blue
 @export var beam_flash_color: Color = Color(1.0, 1.0, 1.0, 1.0)  # White flash
 
-## Visual nodes
+## Charge buildup visual nodes
 var beam_line: Line2D = null
+var charge_line: Line2D = null  # Shows charge buildup at barrel
 
 func _init() -> void:
 	weapon_name = "Railgun"
 	base_damage = 3.0
-	base_cooldown = 2.0  # 2 second cooldown
+	base_cooldown = 5.0  # 5 second cooldown
 	enabled = false  # Requires unlock
 
 func _ready_weapon() -> void:
-	# Create visual components
+	# Create charge buildup line (visible while charging)
+	charge_line = Line2D.new()
+	charge_line.width = 2.0
+	charge_line.default_color = Color(0.2, 0.8, 1.0, 0.0)
+	charge_line.visible = false
+	add_child(charge_line)
+
+	# Create beam line (visible on fire)
 	beam_line = Line2D.new()
 	beam_line.width = beam_width
 	beam_line.default_color = beam_color
@@ -33,6 +41,11 @@ func _ready_weapon() -> void:
 	add_child(beam_line)
 
 func _process(delta: float) -> void:
+	# Update charge buildup visual
+	if charge_line and enabled and _owner_node:
+		var progress = get_cooldown_progress()
+		_update_charge_visual(progress)
+
 	# Fade out beam visual
 	if beam_line and beam_line.visible:
 		var alpha: float = beam_line.default_color.a
@@ -44,10 +57,46 @@ func _process(delta: float) -> void:
 			color.a = alpha
 			beam_line.default_color = color
 
+## Update the charge buildup visual at the barrel
+func _update_charge_visual(progress: float) -> void:
+	charge_line.clear_points()
+	if progress >= 1.0 or progress <= 0.0:
+		# Hide when fully charged (ready to fire) or just fired
+		if progress >= 1.0:
+			# Pulse when ready
+			charge_line.visible = true
+			var pulse = sin(Time.get_ticks_msec() * 0.01) * 0.3 + 0.7
+			charge_line.width = 6.0
+			charge_line.default_color = Color(0.4, 0.9, 1.0, pulse)
+			charge_line.add_point(Vector2(50, 0))
+			charge_line.add_point(Vector2(80, 0))
+		else:
+			charge_line.visible = false
+		return
+
+	charge_line.visible = true
+
+	# Barrel charge grows in length and intensity with progress
+	var barrel_start = Vector2(50, 0)  # Near ship nose
+	var barrel_length = 5.0 + progress * 25.0
+	var barrel_end = Vector2(50 + barrel_length, 0)
+
+	charge_line.add_point(barrel_start)
+	charge_line.add_point(barrel_end)
+
+	# Width and brightness increase with charge
+	charge_line.width = 2.0 + progress * 6.0
+	var alpha = progress * 0.8
+	charge_line.default_color = Color(0.2, 0.8, 1.0, alpha)
+
 ## Execute railgun shot
 func _execute_fire() -> void:
 	if not _owner_node:
 		return
+
+	# Hide charge visual on fire
+	if charge_line:
+		charge_line.visible = false
 
 	var from_position = _owner_node.global_position
 	var direction = Vector2.RIGHT.rotated(_owner_node.rotation)
