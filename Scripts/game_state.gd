@@ -256,8 +256,9 @@ var upgrades = {
 		"Rocket Launcher": {
 			"unlocked": false,
 			"level": 0,
-			"damage_values": [1.0, 2.0, 3.0, 5.0],
-			"cooldown_values": [2.0, 1.5, 1.0, 0.75]
+			"rocket_damage_level": 0,
+			"rocket_speed_level": 0,
+			"rocket_fire_rate_level": 0,
 		},
 		"Mine Layer": {
 			"unlocked": false,
@@ -529,6 +530,57 @@ func get_spawner_difficulty() -> int:
 	if upgrades.has("spawner") and upgrades.spawner.has("difficulty"):
 		return upgrades.spawner.difficulty.level
 	return 0
+
+# === ROCKET UPGRADE SYSTEM (infinite, escalating) ===
+
+const ROCKET_UPGRADE_BASE_COST := 100
+const ROCKET_UPGRADE_COST_MULTIPLIER := 1.5
+
+## Get current rocket damage (1 + level)
+func get_rocket_damage() -> float:
+	var level: int = upgrades.weapons["Rocket Launcher"].rocket_damage_level
+	return 1.0 + level
+
+## Get current rocket speed (400 base, +20% per level)
+func get_rocket_speed() -> float:
+	var level: int = upgrades.weapons["Rocket Launcher"].rocket_speed_level
+	return 400.0 * (1.0 + 0.2 * level)
+
+## Get current rocket cooldown (2.0 base, decreases with level)
+func get_rocket_cooldown() -> float:
+	var level: int = upgrades.weapons["Rocket Launcher"].rocket_fire_rate_level
+	return 2.0 / (1.0 + 0.25 * level)
+
+## Get cost for a specific rocket upgrade at its current level
+func get_rocket_upgrade_cost(upgrade_type: String) -> int:
+	var level: int = 0
+	var data = upgrades.weapons["Rocket Launcher"]
+	match upgrade_type:
+		"rocket_damage":
+			level = data.rocket_damage_level
+		"rocket_speed":
+			level = data.rocket_speed_level
+		"rocket_fire_rate":
+			level = data.rocket_fire_rate_level
+	return int(ceil(ROCKET_UPGRADE_BASE_COST * pow(ROCKET_UPGRADE_COST_MULTIPLIER, level)))
+
+## Purchase a rocket upgrade
+func upgrade_rocket_stat(upgrade_type: String) -> bool:
+	var data = upgrades.weapons["Rocket Launcher"]
+	if not data.unlocked:
+		return false
+	match upgrade_type:
+		"rocket_damage":
+			data.rocket_damage_level += 1
+		"rocket_speed":
+			data.rocket_speed_level += 1
+		"rocket_fire_rate":
+			data.rocket_fire_rate_level += 1
+		_:
+			push_error("Unknown rocket upgrade type: " + upgrade_type)
+			return false
+	emit_signal("upgrades_changed")
+	return true
 
 # === DRONE SYSTEM ===
 

@@ -112,6 +112,13 @@ func _get_weapon_stats(weapon_name: String, upgrade_data: Dictionary) -> Diction
 		"level": upgrade_data.get("level", 0)
 	}
 
+	# Rocket Launcher uses formula-based infinite upgrades
+	if weapon_name == "Rocket Launcher":
+		stats["damage"] = GameState.get_rocket_damage()
+		stats["cooldown"] = GameState.get_rocket_cooldown()
+		stats["speed"] = GameState.get_rocket_speed()
+		return stats
+
 	var level = upgrade_data.get("level", 0)
 
 	# Generic handler for all "*_values" arrays

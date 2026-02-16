@@ -62,6 +62,9 @@ var display_names = {
 	"regen_delay": "Regen Delay",
 	"zoom_level": "Zoom Level",
 	"capacity": "Cargo Hold",
+	"rocket_damage": "  Damage",
+	"rocket_speed": "  Speed",
+	"rocket_fire_rate": "  Fire Rate",
 }
 
 func _ready() -> void:
@@ -198,6 +201,10 @@ func _build_upgrade_list() -> void:
 	_add_section_header("WEAPONS")
 	for weapon_name in GameState.upgrades.weapons:
 		_add_upgrade_row("weapons", weapon_name)
+		# Add infinite sub-upgrade rows for Rocket Launcher
+		if weapon_name == "Rocket Launcher":
+			for sub_type in ["rocket_damage", "rocket_speed", "rocket_fire_rate"]:
+				_add_rocket_sub_row(sub_type)
 
 	_add_section_header("SHIELDS")
 	for upgrade_name in GameState.upgrades.shield:
@@ -257,9 +264,76 @@ func _add_upgrade_row(system: String, upgrade_name: String) -> void:
 	_scroll_vbox.add_child(row)
 	_update_row(row, system, upgrade_name)
 
+## Add a rocket sub-upgrade row (damage, speed, or fire rate)
+func _add_rocket_sub_row(upgrade_type: String) -> void:
+	var row = HBoxContainer.new()
+	row.name = "rocket_sub_" + upgrade_type
+	row.set_meta("system", "rocket_sub")
+	row.set_meta("upgrade_name", upgrade_type)
+
+	var name_label = Label.new()
+	name_label.text = display_names.get(upgrade_type, upgrade_type)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.add_theme_font_size_override("font_size", 13)
+	name_label.add_theme_color_override("font_color", Color.WHITE)
+	if _mono_font:
+		name_label.add_theme_font_override("font", _mono_font)
+	row.add_child(name_label)
+
+	var level_label = Label.new()
+	level_label.name = "LevelLabel"
+	level_label.add_theme_font_size_override("font_size", 13)
+	level_label.custom_minimum_size.x = 40
+	if _mono_font:
+		level_label.add_theme_font_override("font", _mono_font)
+	row.add_child(level_label)
+
+	var buy_btn = Button.new()
+	buy_btn.name = "BuyButton"
+	buy_btn.custom_minimum_size.x = 100
+	_apply_button_style(buy_btn, 12)
+	buy_btn.pressed.connect(_on_rocket_sub_buy.bind(upgrade_type))
+	row.add_child(buy_btn)
+
+	_scroll_vbox.add_child(row)
+	_update_rocket_sub_row(row, upgrade_type)
+
+## Update a rocket sub-upgrade row
+func _update_rocket_sub_row(row: HBoxContainer, upgrade_type: String) -> void:
+	var level_label = row.get_node("LevelLabel")
+	var buy_btn = row.get_node("BuyButton")
+	var data = GameState.upgrades.weapons["Rocket Launcher"]
+	var is_unlocked = data.unlocked
+
+	if not is_unlocked:
+		row.visible = false
+		return
+	row.visible = true
+
+	var level: int = data.get(upgrade_type + "_level", 0)
+	level_label.text = "Lv." + str(level)
+	level_label.add_theme_color_override("font_color", Color.WHITE)
+
+	var cost = GameState.get_rocket_upgrade_cost(upgrade_type)
+	buy_btn.text = str(cost) + "cr"
+	buy_btn.disabled = GameState.credits < cost
+
+## Purchase a rocket sub-upgrade
+func _on_rocket_sub_buy(upgrade_type: String) -> void:
+	var cost = GameState.get_rocket_upgrade_cost(upgrade_type)
+	if GameState.credits < cost:
+		return
+	GameState.add_credits(-cost)
+	GameState.upgrade_rocket_stat(upgrade_type)
+
 # === Row Update ===
 
 func _update_row(row: HBoxContainer, system: String, upgrade_name: String) -> void:
+	# Rocket sub-upgrade rows are handled separately
+	if system == "rocket_sub":
+		_update_rocket_sub_row(row, upgrade_name)
+		return
+
 	var level_label = row.get_node("LevelLabel")
 	var buy_btn = row.get_node("BuyButton")
 
@@ -272,10 +346,14 @@ func _update_row(row: HBoxContainer, system: String, upgrade_name: String) -> vo
 	var level: int = data.level
 	var max_level: int
 	var is_locked: bool = false
+	var is_rocket: bool = (upgrade_name == "Rocket Launcher")
 
 	if system == "weapons":
 		is_locked = not data.unlocked
-		if data.has("damage_values"):
+		if is_rocket:
+			# Rocket Launcher main row only handles unlock (sub-rows handle upgrades)
+			max_level = 0
+		elif data.has("damage_values"):
 			max_level = data.damage_values.size() - 1
 		elif data.has("max_damage_values"):
 			max_level = data.max_damage_values.size() - 1
@@ -288,6 +366,10 @@ func _update_row(row: HBoxContainer, system: String, upgrade_name: String) -> vo
 	if system == "weapons" and is_locked:
 		level_label.text = "LOCKED"
 		level_label.add_theme_color_override("font_color", Color(0.6, 0.3, 0.3))
+	elif is_rocket and not is_locked:
+		# Rocket main row shows unlocked status; upgrades are in sub-rows
+		level_label.text = "READY"
+		level_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
 	elif level >= max_level:
 		level_label.text = "MAX"
 		level_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
@@ -301,6 +383,9 @@ func _update_row(row: HBoxContainer, system: String, upgrade_name: String) -> vo
 	if system == "weapons" and is_locked:
 		buy_btn.text = str(cost) + "cr UNLOCK"
 		buy_btn.disabled = GameState.credits < cost
+	elif is_rocket and not is_locked:
+		buy_btn.text = "---"
+		buy_btn.disabled = true
 	elif level >= max_level:
 		buy_btn.text = "MAXED"
 		buy_btn.disabled = true

@@ -4,6 +4,7 @@ class_name RocketLauncher
 extends WeaponBase
 
 var rocket_scene: PackedScene = preload("res://Scenes/rocket.tscn")
+var _rocket_speed: float = 400.0
 
 func _init() -> void:
 	weapon_name = "Rocket Launcher"
@@ -30,16 +31,18 @@ func _spawn_rocket() -> void:
 	rocket.global_position = _owner_node.global_position
 	rocket.rotation = _owner_node.rotation
 
-	# Apply damage upgrade to rocket if it has the property
+	# Apply damage upgrade to rocket
 	if "damage" in rocket:
 		rocket.damage = int(current_damage)
+
+	# Apply speed upgrade to rocket
+	if "speed" in rocket:
+		rocket.speed = _rocket_speed
 
 	# Add to owner's scene root (works with SubViewport)
 	var scene_root = _owner_node.owner if _owner_node.owner else _owner_node.get_tree().current_scene
 	scene_root.add_child(rocket)
-	print("Rocket spawned at: ", rocket.global_position)
 
 func _apply_custom_upgrade(stats: Dictionary) -> void:
-	# Apply rocket-specific upgrades
-	if stats.has("fire_rate"):
-		current_cooldown = 1.0 / stats.fire_rate  # Convert rate to cooldown
+	if stats.has("speed"):
+		_rocket_speed = stats.speed
