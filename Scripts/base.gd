@@ -858,7 +858,7 @@ class _ExpeditionDroneDrawer extends Node2D:
 			Vector2(30, 0)
 		])
 		draw_polyline(points, Color(0.4, 0.7, 1.0), 1.5)
-
+		
 
 # Inner class for voyage progress bar (drawn via _draw for consistency with game style)
 class _VoyageProgressBar extends Control:
