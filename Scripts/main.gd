@@ -43,6 +43,13 @@ var _voyage_results_label: Label
 var _voyage_results_timer: float = 0.0
 const VOYAGE_RESULTS_DISPLAY_TIME := 6.0
 
+# Go to Base button
+var _base_btn: Button
+var _base_countdown_label: Label
+var _base_countdown_active: bool = false
+var _base_countdown_time: float = 0.0
+const BASE_COUNTDOWN_DURATION := 5.0
+
 signal spawn_text
 
 func _ready() -> void:
@@ -75,6 +82,9 @@ func _ready() -> void:
 	GameState.voyage_started.connect(_on_voyage_started)
 	GameState.voyage_completed.connect(_on_voyage_completed)
 
+	# Create styled "Go to Base!" button
+	_create_base_button()
+
 func _process(delta: float) -> void:
 	_run_time += delta
 	# Update timer display
@@ -90,7 +100,16 @@ func _process(delta: float) -> void:
 		_last_difficulty_level = target_level
 		GameState.set_spawner_difficulty(target_level)
 
-	# Voyage results display timer
+	# Base countdown
+	if _base_countdown_active:
+		_base_countdown_time -= delta
+		if _base_countdown_time <= 0.0:
+			_base_countdown_active = false
+			get_tree().change_scene_to_file("res://Scenes/base.tscn")
+		elif _base_countdown_label:
+			_base_countdown_label.text = "Traveling to base... %ds" % ceili(_base_countdown_time)
+	
+  # Voyage results display timer
 	if _voyage_results_timer > 0.0:
 		_voyage_results_timer -= delta
 		if _voyage_results_timer <= 0.0 and _voyage_results_label:
@@ -167,6 +186,96 @@ func _create_upgrade_panel() -> void:
 		_upgrade_panel.theme = theme
 
 	$CanvasLayer.add_child(_upgrade_panel)
+
+# === Go to Base Button ===
+
+func _create_base_button() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	var container = PanelContainer.new()
+	container.name = "BaseButtonPanel"
+
+	# Anchor to bottom-right
+	container.anchor_left = 0.85
+	container.anchor_right = 0.98
+	container.anchor_top = 0.92
+	container.anchor_bottom = 0.98
+	container.offset_left = 0
+	container.offset_right = 0
+	container.offset_top = 0
+	container.offset_bottom = 0
+
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0, 0, 0, 1)
+	panel_style.border_color = Color(0.6, 0.6, 0.6)
+	panel_style.set_border_width_all(2)
+	panel_style.set_corner_radius_all(0)
+	panel_style.set_content_margin_all(4)
+	container.add_theme_stylebox_override("panel", panel_style)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 4)
+	container.add_child(vbox)
+
+	_base_btn = Button.new()
+	_base_btn.text = "Go to Base!"
+	_base_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_apply_base_button_style(_base_btn, mono_font, 14)
+	_base_btn.pressed.connect(_on_go_to_base_pressed)
+	vbox.add_child(_base_btn)
+
+	_base_countdown_label = Label.new()
+	_base_countdown_label.text = ""
+	_base_countdown_label.add_theme_font_size_override("font_size", 11)
+	_base_countdown_label.add_theme_color_override("font_color", Color.WHITE)
+	if mono_font:
+		_base_countdown_label.add_theme_font_override("font", mono_font)
+	_base_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(_base_countdown_label)
+
+	$CanvasLayer.add_child(container)
+
+func _on_go_to_base_pressed() -> void:
+	_base_countdown_active = true
+	_base_countdown_time = BASE_COUNTDOWN_DURATION
+	_base_btn.visible = false
+	if _base_countdown_label:
+		_base_countdown_label.text = "Traveling to base... %ds" % ceili(_base_countdown_time)
+
+func _apply_base_button_style(btn: Button, font: Font, font_size: int) -> void:
+	btn.add_theme_font_size_override("font_size", font_size)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7))
+	if font:
+		btn.add_theme_font_override("font", font)
+
+	var normal = StyleBoxFlat.new()
+	normal.bg_color = Color(0, 0, 0, 1)
+	normal.border_color = Color(0.6, 0.6, 0.6)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(0)
+	normal.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("normal", normal)
+
+	var hover = StyleBoxFlat.new()
+	hover.bg_color = Color(0.1, 0.1, 0.1, 1)
+	hover.border_color = Color.WHITE
+	hover.set_border_width_all(1)
+	hover.set_corner_radius_all(0)
+	hover.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("hover", hover)
+
+	var pressed = StyleBoxFlat.new()
+	pressed.bg_color = Color(0.2, 0.2, 0.2, 1)
+	pressed.border_color = Color.WHITE
+	pressed.set_border_width_all(1)
+	pressed.set_corner_radius_all(0)
+	pressed.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("pressed", pressed)
+
+	var focus = StyleBoxEmpty.new()
+	btn.add_theme_stylebox_override("focus", focus)
 
 # === Voyage Progress Bar (in graph menu area) ===
 
