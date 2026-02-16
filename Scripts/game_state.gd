@@ -219,8 +219,8 @@ var upgrades = {
 		"Primary Cannon": {
 			"unlocked": true,  # Primary weapon is always unlocked
 			"level": 0,
-			"damage_values": [1.0, 2.0, 3.0, 5.0],
-			"cooldown_values": [0.5, 0.4, 0.3, 0.2]
+			"damage_values": [1.0, 1.0, 2.0, 2.0],
+			"cooldown_values": [0.5, 0.35, 0.35, 0.2]
 		},
 		"Laser Beam": {
 			"unlocked": false,

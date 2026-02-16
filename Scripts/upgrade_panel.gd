@@ -37,7 +37,7 @@ var _iridium_label: Label
 # Upgrade cost definitions per level
 var upgrade_costs = {
 	"weapons": {
-		"Primary Cannon": [0, 50, 150, 400],
+		"Primary Cannon": [50, 150, 400],
 		"Laser Beam": [100, 200, 400, 800],
 		"Rocket Launcher": [100, 200, 400, 800],
 		"Mine Layer": [100, 200, 400, 800],
