@@ -44,10 +44,12 @@ var _voyage_results_timer: float = 0.0
 const VOYAGE_RESULTS_DISPLAY_TIME := 6.0
 
 # Go to Base button
+var _base_panel: PanelContainer
 var _base_btn: Button
 var _base_countdown_label: Label
 var _base_countdown_active: bool = false
 var _base_countdown_time: float = 0.0
+var _base_btn_tween: Tween
 const BASE_COUNTDOWN_DURATION := 5.0
 
 signal spawn_text
@@ -192,18 +194,18 @@ func _create_upgrade_panel() -> void:
 func _create_base_button() -> void:
 	var mono_font = load("res://Assets/DMMono-Regular.ttf")
 
-	var container = PanelContainer.new()
-	container.name = "BaseButtonPanel"
+	_base_panel = PanelContainer.new()
+	_base_panel.name = "BaseButtonPanel"
 
-	# Anchor to bottom-right
-	container.anchor_left = 0.85
-	container.anchor_right = 0.98
-	container.anchor_top = 0.92
-	container.anchor_bottom = 0.98
-	container.offset_left = 0
-	container.offset_right = 0
-	container.offset_top = 0
-	container.offset_bottom = 0
+	# Top center-right, starts off-screen above
+	_base_panel.anchor_left = 0.6
+	_base_panel.anchor_right = 0.75
+	_base_panel.anchor_top = -0.06
+	_base_panel.anchor_bottom = -0.01
+	_base_panel.offset_left = 0
+	_base_panel.offset_right = 0
+	_base_panel.offset_top = 0
+	_base_panel.offset_bottom = 0
 
 	var panel_style = StyleBoxFlat.new()
 	panel_style.bg_color = Color(0, 0, 0, 1)
@@ -211,11 +213,11 @@ func _create_base_button() -> void:
 	panel_style.set_border_width_all(2)
 	panel_style.set_corner_radius_all(0)
 	panel_style.set_content_margin_all(4)
-	container.add_theme_stylebox_override("panel", panel_style)
+	_base_panel.add_theme_stylebox_override("panel", panel_style)
 
 	var vbox = VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 4)
-	container.add_child(vbox)
+	_base_panel.add_child(vbox)
 
 	_base_btn = Button.new()
 	_base_btn.text = "Go to Base!"
@@ -226,6 +228,7 @@ func _create_base_button() -> void:
 
 	_base_countdown_label = Label.new()
 	_base_countdown_label.text = ""
+	_base_countdown_label.visible = false
 	_base_countdown_label.add_theme_font_size_override("font_size", 11)
 	_base_countdown_label.add_theme_color_override("font_color", Color.WHITE)
 	if mono_font:
@@ -233,13 +236,14 @@ func _create_base_button() -> void:
 	_base_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_base_countdown_label)
 
-	$CanvasLayer.add_child(container)
+	$CanvasLayer.add_child(_base_panel)
 
 func _on_go_to_base_pressed() -> void:
 	_base_countdown_active = true
 	_base_countdown_time = BASE_COUNTDOWN_DURATION
 	_base_btn.visible = false
 	if _base_countdown_label:
+		_base_countdown_label.visible = true
 		_base_countdown_label.text = "Traveling to base... %ds" % ceili(_base_countdown_time)
 
 func _apply_base_button_style(btn: Button, font: Font, font_size: int) -> void:
@@ -403,11 +407,13 @@ func _toggle_menus() -> void:
 		graphs_panel.slide_in()
 		_upgrade_panel.slide_in()
 		_slide_voyage_bar_in()
+		_slide_base_btn_in()
 		_zoom_camera_out()
 	else:
 		graphs_panel.slide_out()
 		_upgrade_panel.slide_out()
 		_slide_voyage_bar_out()
+		_slide_base_btn_out()
 		_zoom_camera_in()
 
 func _slide_voyage_bar_in() -> void:
@@ -433,6 +439,30 @@ func _slide_voyage_bar_out() -> void:
 	_voyage_bar_tween.set_parallel(true)
 	_voyage_bar_tween.tween_property(_voyage_bar_container, "anchor_left", -0.65, menu_slide_duration)
 	_voyage_bar_tween.tween_property(_voyage_bar_container, "anchor_right", -0.35, menu_slide_duration)
+
+func _slide_base_btn_in() -> void:
+	if not _base_panel:
+		return
+	if _base_btn_tween:
+		_base_btn_tween.kill()
+	_base_btn_tween = create_tween()
+	_base_btn_tween.set_ease(Tween.EASE_OUT)
+	_base_btn_tween.set_trans(Tween.TRANS_CUBIC)
+	_base_btn_tween.set_parallel(true)
+	_base_btn_tween.tween_property(_base_panel, "anchor_top", 0.01, menu_slide_duration)
+	_base_btn_tween.tween_property(_base_panel, "anchor_bottom", 0.06, menu_slide_duration)
+
+func _slide_base_btn_out() -> void:
+	if not _base_panel:
+		return
+	if _base_btn_tween:
+		_base_btn_tween.kill()
+	_base_btn_tween = create_tween()
+	_base_btn_tween.set_ease(Tween.EASE_IN)
+	_base_btn_tween.set_trans(Tween.TRANS_CUBIC)
+	_base_btn_tween.set_parallel(true)
+	_base_btn_tween.tween_property(_base_panel, "anchor_top", -0.06, menu_slide_duration)
+	_base_btn_tween.tween_property(_base_panel, "anchor_bottom", -0.01, menu_slide_duration)
 
 func _zoom_camera_out() -> void:
 	var radar = $Radar
