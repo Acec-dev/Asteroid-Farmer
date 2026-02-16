@@ -1,7 +1,6 @@
 [gd_resource type="AudioBusLayout" format=3 uid="uid://cjkqtyp3anxb2"]
 
 [resource]
-bus/0/volume_db = -29.23591
 bus/1/name = &"Primary Cannon"
 bus/1/solo = false
 bus/1/mute = false
