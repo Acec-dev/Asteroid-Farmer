@@ -3,20 +3,21 @@ extends Area2D
 
 @export var speed: float = 400.0
 @export var lifetime: float = 3.0
-@export var damage: int = 1  # Damage per hit (asteroids have 3 HP)
+@export var damage: int = 1  # Damage per hit
 @export var explosion_radius: float = 80.0
 @export var detection_radius: float = 500.0  # How far rockets can detect asteroids
 @export var rotation_speed: float = 3.0  # How fast rockets turn (radians per second)
 
 var _age: float = 0.0
 var _target: Node = null  # Current asteroid target
+var _has_exploded: bool = false  # Guard against double-explosion
 
 func _ready() -> void:
 	queue_redraw()
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	# Find or update target
 	if not _target or not is_instance_valid(_target):
 		_target = _find_nearest_asteroid()
@@ -57,25 +58,31 @@ func _draw() -> void:
 	draw_line(Vector2(-4, 3), Vector2(-8, 6), Color.WHITE, 1.0)
 
 func _on_body_entered(body: Node) -> void:
+	if _has_exploded:
+		return
 	# Only hit on-screen targets
 	if body.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(body):
-		print("Rocket hit body: ", body.name)
-		# Apply damage - asteroid needs multiple hits
-		body.hit_by_projectile(self)
-		_explode()
+		# Apply damage based on rocket's damage value
+		for i in damage:
+			body.hit_by_projectile(self)
+		_explode(body)
 
 func _on_area_entered(area: Area2D) -> void:
+	if _has_exploded:
+		return
 	# Only hit on-screen targets
 	if area.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(area):
-		print("Rocket hit area: ", area.name)
-		area.hit_by_projectile(self)
-		_explode()
+		for i in damage:
+			area.hit_by_projectile(self)
+		_explode(area)
 
-func _explode() -> void:
+func _explode(direct_hit_target: Node = null) -> void:
+	if _has_exploded:
+		return
+	_has_exploded = true
 	AudioManager.play_sfx("explode_rocket")
-	print("Rocket exploded!")
-	
-	# Damage nearby asteroids in explosion radius
+
+	# Damage nearby asteroids in explosion radius (splash damage)
 	var space_state = get_world_2d().direct_space_state
 	var query = PhysicsShapeQueryParameters2D.new()
 	var shape = CircleShape2D.new()
@@ -84,14 +91,14 @@ func _explode() -> void:
 	query.transform = Transform2D(0, global_position)
 	query.collide_with_bodies = true
 	query.collide_with_areas = true
-	
+
 	var results = space_state.intersect_shape(query, 32)
 	for result in results:
 		var obj = result.collider
-		# Only damage objects that are on-screen
-		if obj and obj != self and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
-			print("  Explosion hit: ", obj.name)
-			obj.hit_by_projectile(self)
+		# Skip self and the direct-hit target (already damaged above)
+		if obj and obj != self and obj != direct_hit_target and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
+			for i in damage:
+				obj.hit_by_projectile(self)
 
 	queue_free()
 

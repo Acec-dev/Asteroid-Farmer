@@ -13,6 +13,7 @@ class_name Asteroid
 
 var _dir: Vector2 = Vector2.ZERO # for optional debug draw
 var _speed: float = 0.0
+var _is_breaking: bool = false  # Guard against multiple _break_safe calls
 
 @onready var visuals: Node2D = $Visuals
 
@@ -66,9 +67,12 @@ func _physics_process(_delta: float) -> void:
 		linear_velocity = _dir * _speed
 
 func hit_by_projectile(_p: Node) -> void:
+	if _is_breaking:
+		return
 	hit_points -= 1
-	
+
 	if hit_points <= 0:
+		_is_breaking = true
 		# Defer the break; don't modify the tree/collision right now
 		call_deferred("_break_safe")
 	else:
@@ -78,6 +82,8 @@ func hit_by_projectile(_p: Node) -> void:
 
 func _on_body_entered(body: Node) -> void:
 	"""Damage player shield when asteroid collides with them"""
+	if _is_breaking:
+		return
 	# Check if the colliding body is the player
 	if body.has_method("take_damage"):
 		var damage_amount := 20.0  # Base damage per collision
@@ -92,9 +98,9 @@ func _on_body_entered(body: Node) -> void:
 		apply_central_impulse(collision_normal * 100.0 * mass)
 
 		# Reduce asteroid health from the impact
+		_is_breaking = true
 		hit_points = 0
-		if hit_points <= 0:
-			call_deferred("_break_safe")
+		call_deferred("_break_safe")
 
 func _spawn_particles() -> void:
 	if particle_scene == null:
