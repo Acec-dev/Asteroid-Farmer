@@ -21,6 +21,7 @@ GameState="*res://Scripts/game_state.gd"
 Market="*res://Scripts/Market.gd"
 ScreenUtils="*res://Scripts/screen_utils.gd"
 VoyageManager="*res://Scripts/voyage_manager.gd"
+AudioManager="*res://Scripts/audio_manager.gd"
 
 [display]
 
