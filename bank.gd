@@ -17,10 +17,16 @@ var _bank_panel: PanelContainer
 var _upgrade_panel: PanelContainer
 var _history_panel: PanelContainer
 var _bond_panel: PanelContainer
+var _futures_panel: PanelContainer
 var _history_vbox: VBoxContainer
 var _bond_status_vbox: VBoxContainer
+var _futures_status_vbox: VBoxContainer
+var _fuel_price_label: Label
+var _futures_info_label: Label
 var _upgrade_btns: Dictionary = {}
 var _bond_btns: Dictionary = {}
+var _futures_long_btns: Dictionary = {}
+var _futures_short_btns: Dictionary = {}
 var _deposit_btns: Array[Button] = []
 var _withdraw_btns: Array[Button] = []
 
@@ -31,11 +37,13 @@ func _ready() -> void:
 	_build_upgrade_panel()
 	_build_history_panel()
 	_build_bond_panel()
+	_build_futures_panel()
 
 	GameState.bank_balance_changed.connect(_on_bank_balance_changed)
 	GameState.credits_changed.connect(_on_credits_changed)
 	GameState.bank_upgraded.connect(_on_bank_upgraded)
 	GameState.bank_bond_changed.connect(_on_bond_changed)
+	GameState.fuel_futures_changed.connect(_on_futures_changed)
 
 	_refresh_ui()
 
@@ -76,6 +84,10 @@ func _process(delta: float) -> void:
 
 	# Update active bond progress
 	_refresh_bond_status()
+
+	# Update fuel price display and active futures
+	_refresh_fuel_price_display()
+	_refresh_futures_status()
 
 # === VAULT VISUAL ===
 
@@ -434,6 +446,120 @@ func _build_bond_panel() -> void:
 	_bond_panel.size = Vector2(260, 0)
 	add_child(_bond_panel)
 
+# === FUEL FUTURES PANEL ===
+
+func _build_futures_panel() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	_futures_panel = PanelContainer.new()
+	_futures_panel.name = "FuturesPanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.9, 0.5, 0.2)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_futures_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_futures_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "FUEL FUTURES"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.9, 0.6, 0.2))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	_add_separator(vbox)
+
+	# Fuel price display
+	_fuel_price_label = Label.new()
+	_fuel_price_label.text = "Fuel Price: %d cr" % GameState.get_fuel_price()
+	_fuel_price_label.add_theme_font_size_override("font_size", 14)
+	_fuel_price_label.add_theme_color_override("font_color", Color(0.9, 0.6, 0.2))
+	if mono_font:
+		_fuel_price_label.add_theme_font_override("font", mono_font)
+	_fuel_price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(_fuel_price_label)
+
+	# Info text
+	_futures_info_label = Label.new()
+	_futures_info_label.text = "Buy LONG (price up) or SHORT (price down)"
+	_futures_info_label.add_theme_font_size_override("font_size", 10)
+	_futures_info_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	if mono_font:
+		_futures_info_label.add_theme_font_override("font", mono_font)
+	_futures_info_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	vbox.add_child(_futures_info_label)
+
+	_add_separator(vbox)
+
+	# Tier buttons (LONG / SHORT for each tier)
+	for tier_key in GameState.FUEL_FUTURES_TIERS:
+		var tier = GameState.FUEL_FUTURES_TIERS[tier_key]
+
+		# Tier header
+		var tier_header = Label.new()
+		tier_header.text = "%s: %dcr | %ds | %dx" % [tier.name, tier.cost, int(tier.duration), int(tier.leverage)]
+		tier_header.add_theme_font_size_override("font_size", 11)
+		tier_header.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+		if mono_font:
+			tier_header.add_theme_font_override("font", mono_font)
+		vbox.add_child(tier_header)
+
+		var btn_row = HBoxContainer.new()
+		btn_row.add_theme_constant_override("separation", 4)
+
+		# LONG button
+		var long_btn = Button.new()
+		long_btn.text = "LONG"
+		long_btn.name = "FutureLong_" + tier_key
+		_apply_button_style(long_btn, mono_font, 11)
+		long_btn.pressed.connect(_on_future_pressed.bind(tier_key, true))
+		long_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn_row.add_child(long_btn)
+		_futures_long_btns[tier_key] = long_btn
+
+		# SHORT button
+		var short_btn = Button.new()
+		short_btn.text = "SHORT"
+		short_btn.name = "FutureShort_" + tier_key
+		_apply_button_style(short_btn, mono_font, 11)
+		short_btn.pressed.connect(_on_future_pressed.bind(tier_key, false))
+		short_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn_row.add_child(short_btn)
+		_futures_short_btns[tier_key] = short_btn
+
+		vbox.add_child(btn_row)
+
+	_add_separator(vbox)
+
+	# Active futures status area
+	var active_title = Label.new()
+	active_title.text = "ACTIVE CONTRACTS"
+	active_title.add_theme_font_size_override("font_size", 12)
+	active_title.add_theme_color_override("font_color", Color(0.9, 0.6, 0.2))
+	if mono_font:
+		active_title.add_theme_font_override("font", mono_font)
+	vbox.add_child(active_title)
+
+	_futures_status_vbox = VBoxContainer.new()
+	_futures_status_vbox.add_theme_constant_override("separation", 2)
+	vbox.add_child(_futures_status_vbox)
+
+	_futures_panel.position = Vector2(480, -340)
+	_futures_panel.size = Vector2(260, 0)
+	add_child(_futures_panel)
+
 # === HELPERS ===
 
 func _add_separator(parent: Control) -> void:
@@ -521,6 +647,7 @@ func _refresh_ui() -> void:
 	_refresh_upgrades_ui()
 	_refresh_history_ui()
 	_refresh_bond_buttons()
+	_refresh_futures_buttons()
 
 func _refresh_upgrades_ui() -> void:
 	var value_formatters = {
@@ -582,6 +709,8 @@ func _refresh_history_ui() -> void:
 		"upgrade": {"prefix": "-", "color": Color(0.7, 0.5, 0.8)},
 		"bond_buy": {"prefix": "-", "color": Color(0.4, 0.7, 1.0)},
 		"bond_mature": {"prefix": "+", "color": Color(0.3, 0.8, 1.0)},
+		"future_buy": {"prefix": "-", "color": Color(0.9, 0.6, 0.2)},
+		"future_settle": {"prefix": "+", "color": Color(0.9, 0.7, 0.3)},
 	}
 
 	# Show last 10
@@ -671,6 +800,95 @@ func _refresh_bond_status() -> void:
 
 		_bond_status_vbox.add_child(row)
 
+func _refresh_futures_buttons() -> void:
+	var at_max = GameState.fuel_futures.size() >= GameState.MAX_FUEL_FUTURES
+	for tier_key in GameState.FUEL_FUTURES_TIERS:
+		var tier = GameState.FUEL_FUTURES_TIERS[tier_key]
+		var long_btn = _futures_long_btns.get(tier_key)
+		var short_btn = _futures_short_btns.get(tier_key)
+		var cant_afford = GameState.credits < tier.cost
+		if long_btn:
+			long_btn.disabled = cant_afford or at_max
+		if short_btn:
+			short_btn.disabled = cant_afford or at_max
+
+func _refresh_fuel_price_display() -> void:
+	if _fuel_price_label:
+		_fuel_price_label.text = "Fuel Price: %d cr" % GameState.get_fuel_price()
+
+func _refresh_futures_status() -> void:
+	if not _futures_status_vbox:
+		return
+
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	for child in _futures_status_vbox.get_children():
+		child.queue_free()
+
+	if GameState.fuel_futures.size() == 0:
+		var none_label = Label.new()
+		none_label.text = "No active contracts"
+		none_label.add_theme_font_size_override("font_size", 10)
+		none_label.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+		if mono_font:
+			none_label.add_theme_font_override("font", mono_font)
+		_futures_status_vbox.add_child(none_label)
+		return
+
+	var current_price = GameState.get_fuel_price()
+	for future in GameState.fuel_futures:
+		var tier = GameState.FUEL_FUTURES_TIERS[future.tier]
+		var remaining = future.duration - future.elapsed
+		var progress = future.elapsed / future.duration
+		var direction = "LONG" if future.is_long else "SHORT"
+
+		# Calculate current projected payout
+		var price_change: float
+		if future.is_long:
+			price_change = float(current_price - future.strike_price) / float(future.strike_price)
+		else:
+			price_change = float(future.strike_price - current_price) / float(future.strike_price)
+		var projected = int(floor(future.cost * (1.0 + price_change * future.leverage)))
+		projected = maxi(projected, 0)
+
+		var row = VBoxContainer.new()
+		row.add_theme_constant_override("separation", 1)
+
+		var info_label = Label.new()
+		info_label.text = "%s %s @%d (%ds)" % [tier.name, direction, future.strike_price, ceili(remaining)]
+		info_label.add_theme_font_size_override("font_size", 10)
+		if future.is_long:
+			info_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+		else:
+			info_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.4))
+		if mono_font:
+			info_label.add_theme_font_override("font", mono_font)
+		row.add_child(info_label)
+
+		var payout_label = Label.new()
+		var profit = projected - future.cost
+		var profit_str: String
+		if profit >= 0:
+			profit_str = "+%d" % profit
+		else:
+			profit_str = "%d" % profit
+		payout_label.text = "Payout: %dcr (%s)" % [projected, profit_str]
+		payout_label.add_theme_font_size_override("font_size", 10)
+		if projected >= future.cost:
+			payout_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+		else:
+			payout_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.4))
+		if mono_font:
+			payout_label.add_theme_font_override("font", mono_font)
+		row.add_child(payout_label)
+
+		var bar = _FuturesProgressBar.new()
+		bar.progress = progress
+		bar.is_profitable = projected >= future.cost
+		row.add_child(bar)
+
+		_futures_status_vbox.add_child(row)
+
 # === CALLBACKS ===
 
 func _on_deposit_pressed(amount: int) -> void:
@@ -688,6 +906,12 @@ func _on_upgrade_pressed(upgrade_name: String) -> void:
 
 func _on_bond_pressed(tier_key: String) -> void:
 	GameState.buy_bond(tier_key)
+
+func _on_future_pressed(tier_key: String, is_long: bool) -> void:
+	GameState.buy_fuel_future(tier_key, is_long)
+
+func _on_futures_changed() -> void:
+	_refresh_ui()
 
 func _on_bank_balance_changed(_balance: int) -> void:
 	_refresh_ui()
@@ -793,5 +1017,32 @@ class _BondProgressBar extends Control:
 		var fill_w = BAR_WIDTH * clampf(progress, 0.0, 1.0)
 		if fill_w > 0:
 			draw_rect(Rect2(x, y, fill_w, BAR_HEIGHT), Color(0.4, 0.7, 1.0), true)
+
+		draw_rect(Rect2(x, y, BAR_WIDTH, BAR_HEIGHT), Color(0.4, 0.4, 0.4), false, 1.0)
+
+
+class _FuturesProgressBar extends Control:
+	var progress: float = 0.0
+	var is_profitable: bool = true
+	const BAR_WIDTH := 220.0
+	const BAR_HEIGHT := 8.0
+
+	func _get_minimum_size() -> Vector2:
+		return Vector2(BAR_WIDTH + 4, BAR_HEIGHT + 4)
+
+	func _draw() -> void:
+		var x := 2.0
+		var y := 2.0
+
+		draw_rect(Rect2(x, y, BAR_WIDTH, BAR_HEIGHT), Color(0.1, 0.1, 0.1), true)
+
+		var fill_w = BAR_WIDTH * clampf(progress, 0.0, 1.0)
+		if fill_w > 0:
+			var fill_color: Color
+			if is_profitable:
+				fill_color = Color(0.3, 0.8, 0.3)
+			else:
+				fill_color = Color(0.9, 0.4, 0.4)
+			draw_rect(Rect2(x, y, fill_w, BAR_HEIGHT), fill_color, true)
 
 		draw_rect(Rect2(x, y, BAR_WIDTH, BAR_HEIGHT), Color(0.4, 0.4, 0.4), false, 1.0)
