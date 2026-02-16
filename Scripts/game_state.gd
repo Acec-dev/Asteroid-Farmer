@@ -65,8 +65,62 @@ signal expedition_completed(results: Dictionary)
 signal expedition_progress_updated(progress: float)
 signal exotic_minerals_changed()
 signal drone_upgrades_changed()
+signal bank_balance_changed(new_balance: int)
+signal bank_bond_changed()
+signal bank_upgraded()
 
 var credits: int = 0
+
+# === BANK SYSTEM ===
+var bank_balance: int = 0
+var bank_interest_timer: float = 0.0
+var bank_transaction_history: Array[Dictionary] = []
+const MAX_TRANSACTION_HISTORY := 20
+
+# Bank upgrades
+var bank_upgrades = {
+	"vault_capacity": {
+		"level": 0,
+		"max_level": 3,
+		"values": [500, 2000, 5000, 15000],
+		"costs": [0, 200, 500, 1500],
+	},
+	"interest_rate": {
+		"level": 0,
+		"max_level": 3,
+		"values": [0.01, 0.02, 0.03, 0.05],
+		"costs": [0, 300, 800, 2000],
+	},
+	"compound_speed": {
+		"level": 0,
+		"max_level": 3,
+		"values": [30.0, 20.0, 15.0, 10.0],
+		"costs": [0, 250, 600, 1800],
+	},
+}
+
+# Bond system
+var bank_bonds: Array[Dictionary] = []  # Active bonds
+const BOND_TIERS = {
+	"short": {
+		"name": "Short Bond",
+		"duration": 60.0,
+		"rate": 0.08,
+		"min_investment": 50,
+	},
+	"medium": {
+		"name": "Medium Bond",
+		"duration": 180.0,
+		"rate": 0.20,
+		"min_investment": 150,
+	},
+	"long": {
+		"name": "Long Bond",
+		"duration": 360.0,
+		"rate": 0.40,
+		"min_investment": 300,
+	},
+}
 
 # Drone system (separate pools for voyages and expeditions)
 var voyage_drone_count: int = 0
@@ -236,6 +290,10 @@ func _ready() -> void:
 		Market.prices_changed.connect(_on_market_prices_changed)
 		# Sync initial prices
 		market_prices = Market.market_prices.duplicate()
+
+func _process(delta: float) -> void:
+	_bank_tick(delta)
+	_bond_tick(delta)
 
 
 func _on_market_prices_changed(new_prices: Dictionary) -> void:
@@ -537,3 +595,120 @@ func buy_drone_upgrade(upgrade_name: String) -> bool:
 	emit_signal("exotic_minerals_changed")
 	print("Drone upgrade purchased: %s to level %d" % [upgrade_name, data.level])
 	return true
+
+# === BANK SYSTEM ===
+
+func get_bank_capacity() -> int:
+	var data = bank_upgrades["vault_capacity"]
+	return data.values[data.level]
+
+func get_bank_interest_rate() -> float:
+	var data = bank_upgrades["interest_rate"]
+	return data.values[data.level]
+
+func get_bank_compound_interval() -> float:
+	var data = bank_upgrades["compound_speed"]
+	return data.values[data.level]
+
+func bank_deposit(amount: int) -> bool:
+	var capacity = get_bank_capacity()
+	var space = capacity - bank_balance
+	if space <= 0 or amount <= 0 or credits < amount:
+		return false
+	var actual = mini(amount, mini(credits, space))
+	add_credits(-actual)
+	bank_balance += actual
+	_add_transaction("deposit", actual)
+	emit_signal("bank_balance_changed", bank_balance)
+	return true
+
+func bank_withdraw(amount: int) -> bool:
+	if amount <= 0 or bank_balance <= 0:
+		return false
+	var actual = mini(amount, bank_balance)
+	bank_balance -= actual
+	add_credits(actual)
+	_add_transaction("withdraw", actual)
+	emit_signal("bank_balance_changed", bank_balance)
+	return true
+
+func _bank_tick(delta: float) -> void:
+	if bank_balance <= 0:
+		return
+	bank_interest_timer += delta
+	var interval = get_bank_compound_interval()
+	if bank_interest_timer >= interval:
+		bank_interest_timer -= interval
+		var rate = get_bank_interest_rate()
+		var interest = int(floor(bank_balance * rate))
+		if interest > 0:
+			var capacity = get_bank_capacity()
+			interest = mini(interest, capacity - bank_balance)
+			if interest > 0:
+				bank_balance += interest
+				_add_transaction("interest", interest)
+				emit_signal("bank_balance_changed", bank_balance)
+
+func _add_transaction(type: String, amount: int) -> void:
+	bank_transaction_history.push_front({"type": type, "amount": amount, "balance": bank_balance})
+	if bank_transaction_history.size() > MAX_TRANSACTION_HISTORY:
+		bank_transaction_history.pop_back()
+
+func can_afford_bank_upgrade(upgrade_name: String) -> bool:
+	if not bank_upgrades.has(upgrade_name):
+		return false
+	var data = bank_upgrades[upgrade_name]
+	if data.level >= data.max_level:
+		return false
+	var cost = data.costs[data.level + 1]
+	return credits >= cost
+
+func buy_bank_upgrade(upgrade_name: String) -> bool:
+	if not can_afford_bank_upgrade(upgrade_name):
+		return false
+	var data = bank_upgrades[upgrade_name]
+	var cost = data.costs[data.level + 1]
+	add_credits(-cost)
+	data.level += 1
+	_add_transaction("upgrade", cost)
+	emit_signal("bank_upgraded")
+	return true
+
+# === BOND SYSTEM ===
+
+func buy_bond(tier_key: String) -> bool:
+	if not BOND_TIERS.has(tier_key):
+		return false
+	var tier = BOND_TIERS[tier_key]
+	if credits < tier.min_investment:
+		return false
+	var investment = tier.min_investment
+	add_credits(-investment)
+	var bond = {
+		"tier": tier_key,
+		"principal": investment,
+		"payout": int(ceil(investment * (1.0 + tier.rate))),
+		"duration": tier.duration,
+		"elapsed": 0.0,
+	}
+	bank_bonds.append(bond)
+	_add_transaction("bond_buy", investment)
+	emit_signal("bank_bond_changed")
+	return true
+
+func _bond_tick(delta: float) -> void:
+	var matured_indices := []
+	for i in range(bank_bonds.size()):
+		bank_bonds[i].elapsed += delta
+		if bank_bonds[i].elapsed >= bank_bonds[i].duration:
+			matured_indices.append(i)
+
+	if matured_indices.size() > 0:
+		# Process in reverse so indices stay valid
+		matured_indices.reverse()
+		for i in matured_indices:
+			var bond = bank_bonds[i]
+			add_credits(bond.payout)
+			_add_transaction("bond_mature", bond.payout)
+			bank_bonds.remove_at(i)
+		emit_signal("bank_bond_changed")

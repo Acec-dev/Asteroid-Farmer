@@ -3,22 +3,45 @@ extends Node2D
 var _ship_node: Node2D
 var _ship_rest_pos: Vector2
 var _bob_time: float = 0.0
-const BOB_AMPLITUDE := 4.0  # pixels up/down
-const BOB_SPEED := 1.5  # cycles per second
-const FLY_IN_DURATION := 1.2  # seconds
+const BOB_AMPLITUDE := 4.0
+const BOB_SPEED := 1.5
+const FLY_IN_DURATION := 1.2
 
-# Called when the node enters the scene tree for the first time.
+# UI references
+var _vault_visual: _VaultDrawer
+var _balance_label: Label
+var _wallet_label: Label
+var _interest_info_label: Label
+var _countdown_label: Label
+var _bank_panel: PanelContainer
+var _upgrade_panel: PanelContainer
+var _history_panel: PanelContainer
+var _bond_panel: PanelContainer
+var _history_vbox: VBoxContainer
+var _bond_status_vbox: VBoxContainer
+var _upgrade_btns: Dictionary = {}
+var _bond_btns: Dictionary = {}
+var _deposit_btns: Array[Button] = []
+var _withdraw_btns: Array[Button] = []
+
 func _ready() -> void:
 	_spawn_docked_ship()
-	
+	_build_vault_visual()
+	_build_bank_panel()
+	_build_upgrade_panel()
+	_build_history_panel()
+	_build_bond_panel()
+
+	GameState.bank_balance_changed.connect(_on_bank_balance_changed)
+	GameState.credits_changed.connect(_on_credits_changed)
+	GameState.bank_upgraded.connect(_on_bank_upgraded)
+	GameState.bank_bond_changed.connect(_on_bond_changed)
+
+	_refresh_ui()
 
 func _spawn_docked_ship() -> void:
 	var viewport_size = get_viewport_rect().size
-
-	# Rest position: upper-left quadrant
 	_ship_rest_pos = Vector2(viewport_size.x * -0.35, viewport_size.y * -0.18)
-
-	# Start off-screen to the left
 	var start_pos = Vector2(-viewport_size.x * 0.6, _ship_rest_pos.y + 40)
 
 	_ship_node = Node2D.new()
@@ -26,33 +49,665 @@ func _spawn_docked_ship() -> void:
 	_ship_node.position = start_pos
 	add_child(_ship_node)
 
-	# Draw the same triangle as the player ship
 	var ship_draw = _ShipDrawer.new()
 	_ship_node.add_child(ship_draw)
 
-	# Fly-in tween
 	var tw = create_tween()
 	tw.set_ease(Tween.EASE_OUT)
 	tw.set_trans(Tween.TRANS_CUBIC)
 	tw.tween_property(_ship_node, "position", _ship_rest_pos, FLY_IN_DURATION)
 
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	if _ship_node:
 		_bob_time += delta
 		_ship_node.position.y = _ship_rest_pos.y + sin(_bob_time * BOB_SPEED * TAU) * BOB_AMPLITUDE
 
+	# Update vault fill animation
+	if _vault_visual:
+		_vault_visual.target_fill = float(GameState.bank_balance) / float(maxi(GameState.get_bank_capacity(), 1))
+		_vault_visual.queue_redraw()
+
+	# Update countdown
+	if _countdown_label and GameState.bank_balance > 0:
+		var remaining = GameState.get_bank_compound_interval() - GameState.bank_interest_timer
+		_countdown_label.text = "Next interest in %ds" % ceili(remaining)
+	elif _countdown_label:
+		_countdown_label.text = ""
+
+	# Update active bond progress
+	_refresh_bond_status()
+
+# === VAULT VISUAL ===
+
+func _build_vault_visual() -> void:
+	_vault_visual = _VaultDrawer.new()
+	_vault_visual.position = Vector2(-80, -100)
+	add_child(_vault_visual)
+
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	# Balance label centered above vault
+	_balance_label = Label.new()
+	_balance_label.text = "0 cr"
+	_balance_label.add_theme_font_size_override("font_size", 22)
+	_balance_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	if mono_font:
+		_balance_label.add_theme_font_override("font", mono_font)
+	_balance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_balance_label.custom_minimum_size.x = 160
+	_balance_label.position = Vector2(-80, -140)
+	add_child(_balance_label)
+
+	# "VAULT" label above balance
+	var vault_title = Label.new()
+	vault_title.text = "VAULT"
+	vault_title.add_theme_font_size_override("font_size", 14)
+	vault_title.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	if mono_font:
+		vault_title.add_theme_font_override("font", mono_font)
+	vault_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vault_title.custom_minimum_size.x = 160
+	vault_title.position = Vector2(-80, -162)
+	add_child(vault_title)
+
+	# Countdown label below vault
+	_countdown_label = Label.new()
+	_countdown_label.text = ""
+	_countdown_label.add_theme_font_size_override("font_size", 12)
+	_countdown_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	if mono_font:
+		_countdown_label.add_theme_font_override("font", mono_font)
+	_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_countdown_label.custom_minimum_size.x = 160
+	_countdown_label.position = Vector2(-80, 108)
+	add_child(_countdown_label)
+
+# === BANK PANEL (deposit/withdraw) ===
+
+func _build_bank_panel() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	_bank_panel = PanelContainer.new()
+	_bank_panel.name = "BankPanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.3, 0.7, 0.3)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_bank_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_bank_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "GALACTIC BANK"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	_add_separator(vbox)
+
+	# Wallet display
+	_wallet_label = Label.new()
+	_wallet_label.text = "Wallet: 0 cr"
+	_wallet_label.add_theme_font_size_override("font_size", 14)
+	_wallet_label.add_theme_color_override("font_color", Color.WHITE)
+	if mono_font:
+		_wallet_label.add_theme_font_override("font", mono_font)
+	vbox.add_child(_wallet_label)
+
+	# Interest info
+	_interest_info_label = Label.new()
+	_interest_info_label.add_theme_font_size_override("font_size", 11)
+	_interest_info_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	if mono_font:
+		_interest_info_label.add_theme_font_override("font", mono_font)
+	_interest_info_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+	vbox.add_child(_interest_info_label)
+
+	_add_separator(vbox)
+
+	# Deposit header
+	var dep_header = Label.new()
+	dep_header.text = "DEPOSIT"
+	dep_header.add_theme_font_size_override("font_size", 12)
+	dep_header.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
+	if mono_font:
+		dep_header.add_theme_font_override("font", mono_font)
+	vbox.add_child(dep_header)
+
+	var dep_row = HBoxContainer.new()
+	dep_row.add_theme_constant_override("separation", 4)
+	for amount in [10, 50, -1]:  # -1 means ALL
+		var btn = Button.new()
+		btn.text = "ALL" if amount == -1 else "%dcr" % amount
+		_apply_button_style(btn, mono_font, 12)
+		btn.pressed.connect(_on_deposit_pressed.bind(amount))
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		dep_row.add_child(btn)
+		_deposit_btns.append(btn)
+	vbox.add_child(dep_row)
+
+	# Withdraw header
+	var wd_header = Label.new()
+	wd_header.text = "WITHDRAW"
+	wd_header.add_theme_font_size_override("font_size", 12)
+	wd_header.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
+	if mono_font:
+		wd_header.add_theme_font_override("font", mono_font)
+	vbox.add_child(wd_header)
+
+	var wd_row = HBoxContainer.new()
+	wd_row.add_theme_constant_override("separation", 4)
+	for amount in [10, 50, -1]:
+		var btn = Button.new()
+		btn.text = "ALL" if amount == -1 else "%dcr" % amount
+		_apply_button_style(btn, mono_font, 12)
+		btn.pressed.connect(_on_withdraw_pressed.bind(amount))
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		wd_row.add_child(btn)
+		_withdraw_btns.append(btn)
+	vbox.add_child(wd_row)
+
+	_bank_panel.position = Vector2(200, -340)
+	_bank_panel.size = Vector2(240, 0)
+	add_child(_bank_panel)
+
+# === UPGRADE PANEL ===
+
+func _build_upgrade_panel() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	_upgrade_panel = PanelContainer.new()
+	_upgrade_panel.name = "UpgradePanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.6, 0.6, 0.3)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_upgrade_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_upgrade_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(vbox)
+
+	var title = Label.new()
+	title.text = "BANK UPGRADES"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.3))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	_add_separator(vbox)
+
+	var display_info = {
+		"vault_capacity": {"name": "Vault Capacity", "desc": "Max deposit limit"},
+		"interest_rate": {"name": "Interest Rate", "desc": "% earned per cycle"},
+		"compound_speed": {"name": "Compound Speed", "desc": "Seconds between interest"},
+	}
+
+	for upgrade_name in GameState.bank_upgrades:
+		var data = GameState.bank_upgrades[upgrade_name]
+		var info = display_info[upgrade_name]
+
+		var row = VBoxContainer.new()
+		row.add_theme_constant_override("separation", 2)
+
+		var header_row = HBoxContainer.new()
+		var name_label = Label.new()
+		name_label.text = info.name
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_label.add_theme_font_size_override("font_size", 12)
+		name_label.add_theme_color_override("font_color", Color.WHITE)
+		if mono_font:
+			name_label.add_theme_font_override("font", mono_font)
+		header_row.add_child(name_label)
+
+		var level_label = Label.new()
+		level_label.name = "BankUpgLevel_" + upgrade_name
+		level_label.add_theme_font_size_override("font_size", 12)
+		if mono_font:
+			level_label.add_theme_font_override("font", mono_font)
+		header_row.add_child(level_label)
+		row.add_child(header_row)
+
+		var desc_label = Label.new()
+		desc_label.text = info.desc
+		desc_label.add_theme_font_size_override("font_size", 10)
+		desc_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		if mono_font:
+			desc_label.add_theme_font_override("font", mono_font)
+		row.add_child(desc_label)
+
+		var btn = Button.new()
+		btn.name = "BankUpgBtn_" + upgrade_name
+		_apply_button_style(btn, mono_font, 11)
+		btn.pressed.connect(_on_upgrade_pressed.bind(upgrade_name))
+		row.add_child(btn)
+		_upgrade_btns[upgrade_name] = btn
+
+		vbox.add_child(row)
+
+	_upgrade_panel.position = Vector2(200, -30)
+	_upgrade_panel.size = Vector2(240, 0)
+	add_child(_upgrade_panel)
+
+# === TRANSACTION HISTORY PANEL ===
+
+func _build_history_panel() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	_history_panel = PanelContainer.new()
+	_history_panel.name = "HistoryPanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.5, 0.5, 0.5)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_history_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_history_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 4)
+	margin.add_child(vbox)
+
+	var title = Label.new()
+	title.text = "TRANSACTIONS"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	_add_separator(vbox)
+
+	_history_vbox = VBoxContainer.new()
+	_history_vbox.add_theme_constant_override("separation", 2)
+	vbox.add_child(_history_vbox)
+
+	# Empty state
+	var empty_label = Label.new()
+	empty_label.name = "EmptyLabel"
+	empty_label.text = "No transactions yet"
+	empty_label.add_theme_font_size_override("font_size", 11)
+	empty_label.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+	if mono_font:
+		empty_label.add_theme_font_override("font", mono_font)
+	_history_vbox.add_child(empty_label)
+
+	_history_panel.position = Vector2(-500, -340)
+	_history_panel.size = Vector2(260, 0)
+	add_child(_history_panel)
+
+# === BOND PANEL ===
+
+func _build_bond_panel() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	_bond_panel = PanelContainer.new()
+	_bond_panel.name = "BondPanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.3, 0.5, 0.8)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_bond_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_bond_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(vbox)
+
+	var title = Label.new()
+	title.text = "BONDS"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	_add_separator(vbox)
+
+	var info = Label.new()
+	info.text = "Lock credits for a guaranteed return"
+	info.add_theme_font_size_override("font_size", 10)
+	info.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	if mono_font:
+		info.add_theme_font_override("font", mono_font)
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD
+	vbox.add_child(info)
+
+	for tier_key in GameState.BOND_TIERS:
+		var tier = GameState.BOND_TIERS[tier_key]
+		var btn = Button.new()
+		var return_pct = int(tier.rate * 100)
+		btn.text = "%s: %dcr (%ds, +%d%%)" % [tier.name, tier.min_investment, int(tier.duration), return_pct]
+		_apply_button_style(btn, mono_font, 11)
+		btn.pressed.connect(_on_bond_pressed.bind(tier_key))
+		btn.name = "BondBtn_" + tier_key
+		vbox.add_child(btn)
+		_bond_btns[tier_key] = btn
+
+	_add_separator(vbox)
+
+	# Active bonds status area
+	var active_title = Label.new()
+	active_title.text = "ACTIVE BONDS"
+	active_title.add_theme_font_size_override("font_size", 12)
+	active_title.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+	if mono_font:
+		active_title.add_theme_font_override("font", mono_font)
+	vbox.add_child(active_title)
+
+	_bond_status_vbox = VBoxContainer.new()
+	_bond_status_vbox.add_theme_constant_override("separation", 2)
+	vbox.add_child(_bond_status_vbox)
+
+	_bond_panel.position = Vector2(-500, 20)
+	_bond_panel.size = Vector2(260, 0)
+	add_child(_bond_panel)
+
+# === HELPERS ===
+
+func _add_separator(parent: Control) -> void:
+	var sep = HSeparator.new()
+	var sep_style = StyleBoxFlat.new()
+	sep_style.bg_color = Color(0.6, 0.6, 0.6)
+	sep_style.set_content_margin_all(0)
+	sep_style.content_margin_top = 1
+	sep_style.content_margin_bottom = 1
+	sep.add_theme_stylebox_override("separator", sep_style)
+	parent.add_child(sep)
+
+func _apply_button_style(btn: Button, font: Font, font_size: int) -> void:
+	btn.add_theme_font_size_override("font_size", font_size)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7))
+	btn.add_theme_color_override("font_disabled_color", Color(0.35, 0.35, 0.35))
+	if font:
+		btn.add_theme_font_override("font", font)
+
+	var normal = StyleBoxFlat.new()
+	normal.bg_color = Color(0, 0, 0, 1)
+	normal.border_color = Color(0.6, 0.6, 0.6)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(0)
+	normal.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("normal", normal)
+
+	var hover = StyleBoxFlat.new()
+	hover.bg_color = Color(0.1, 0.1, 0.1, 1)
+	hover.border_color = Color.WHITE
+	hover.set_border_width_all(1)
+	hover.set_corner_radius_all(0)
+	hover.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("hover", hover)
+
+	var pressed = StyleBoxFlat.new()
+	pressed.bg_color = Color(0.2, 0.2, 0.2, 1)
+	pressed.border_color = Color.WHITE
+	pressed.set_border_width_all(1)
+	pressed.set_corner_radius_all(0)
+	pressed.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("pressed", pressed)
+
+	var disabled = StyleBoxFlat.new()
+	disabled.bg_color = Color(0.05, 0.05, 0.05, 1)
+	disabled.border_color = Color(0.25, 0.25, 0.25)
+	disabled.set_border_width_all(1)
+	disabled.set_corner_radius_all(0)
+	disabled.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("disabled", disabled)
+
+	var focus = StyleBoxEmpty.new()
+	btn.add_theme_stylebox_override("focus", focus)
+
+# === REFRESH ===
+
+func _refresh_ui() -> void:
+	# Balance
+	if _balance_label:
+		_balance_label.text = "%d cr" % GameState.bank_balance
+
+	# Wallet
+	if _wallet_label:
+		_wallet_label.text = "Wallet: %d cr" % GameState.credits
+
+	# Interest info
+	if _interest_info_label:
+		var rate = GameState.get_bank_interest_rate()
+		var interval = GameState.get_bank_compound_interval()
+		var capacity = GameState.get_bank_capacity()
+		_interest_info_label.text = "%d%% every %ds | Capacity: %d cr" % [int(rate * 100), int(interval), capacity]
+
+	# Deposit buttons: disabled if no credits or vault full
+	var can_deposit = GameState.credits > 0 and GameState.bank_balance < GameState.get_bank_capacity()
+	for btn in _deposit_btns:
+		btn.disabled = not can_deposit
+
+	# Withdraw buttons: disabled if bank empty
+	var can_withdraw = GameState.bank_balance > 0
+	for btn in _withdraw_btns:
+		btn.disabled = not can_withdraw
+
+	_refresh_upgrades_ui()
+	_refresh_history_ui()
+	_refresh_bond_buttons()
+
+func _refresh_upgrades_ui() -> void:
+	var value_formatters = {
+		"vault_capacity": func(v): return "%d cr" % int(v),
+		"interest_rate": func(v): return "%d%%" % int(v * 100),
+		"compound_speed": func(v): return "%ds" % int(v),
+	}
+
+	for upgrade_name in GameState.bank_upgrades:
+		var data = GameState.bank_upgrades[upgrade_name]
+		var btn = _upgrade_btns.get(upgrade_name)
+		if not btn:
+			continue
+
+		var level_label = _upgrade_panel.find_child("BankUpgLevel_" + upgrade_name, true, false)
+		if level_label:
+			var current_val = data.values[data.level]
+			var formatter = value_formatters.get(upgrade_name)
+			var val_str = formatter.call(current_val) if formatter else str(current_val)
+			if data.level >= data.max_level:
+				level_label.text = "MAX (%s)" % val_str
+				level_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+			else:
+				level_label.text = "Lv.%d (%s)" % [data.level, val_str]
+				level_label.add_theme_color_override("font_color", Color.WHITE)
+
+		if data.level >= data.max_level:
+			btn.text = "MAXED"
+			btn.disabled = true
+		else:
+			var cost = data.costs[data.level + 1]
+			btn.text = "Upgrade: %d cr" % cost
+			btn.disabled = not GameState.can_afford_bank_upgrade(upgrade_name)
+
+func _refresh_history_ui() -> void:
+	if not _history_vbox:
+		return
+
+	# Clear existing
+	for child in _history_vbox.get_children():
+		child.queue_free()
+
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	if GameState.bank_transaction_history.size() == 0:
+		var empty = Label.new()
+		empty.text = "No transactions yet"
+		empty.add_theme_font_size_override("font_size", 11)
+		empty.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+		if mono_font:
+			empty.add_theme_font_override("font", mono_font)
+		_history_vbox.add_child(empty)
+		return
+
+	var type_display = {
+		"deposit": {"prefix": "+", "color": Color(0.3, 0.9, 0.3)},
+		"withdraw": {"prefix": "-", "color": Color(0.9, 0.5, 0.3)},
+		"interest": {"prefix": "+", "color": Color(0.9, 0.9, 0.3)},
+		"upgrade": {"prefix": "-", "color": Color(0.7, 0.5, 0.8)},
+		"bond_buy": {"prefix": "-", "color": Color(0.4, 0.7, 1.0)},
+		"bond_mature": {"prefix": "+", "color": Color(0.3, 0.8, 1.0)},
+	}
+
+	# Show last 10
+	var count = mini(GameState.bank_transaction_history.size(), 10)
+	for i in range(count):
+		var tx = GameState.bank_transaction_history[i]
+		var info = type_display.get(tx.type, {"prefix": "", "color": Color.WHITE})
+
+		var row = HBoxContainer.new()
+		var type_label = Label.new()
+		type_label.text = tx.type.to_upper()
+		type_label.add_theme_font_size_override("font_size", 10)
+		type_label.add_theme_color_override("font_color", info.color)
+		type_label.custom_minimum_size.x = 80
+		if mono_font:
+			type_label.add_theme_font_override("font", mono_font)
+		row.add_child(type_label)
+
+		var amount_label = Label.new()
+		amount_label.text = "%s%d cr" % [info.prefix, tx.amount]
+		amount_label.add_theme_font_size_override("font_size", 10)
+		amount_label.add_theme_color_override("font_color", info.color)
+		amount_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		amount_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		if mono_font:
+			amount_label.add_theme_font_override("font", mono_font)
+		row.add_child(amount_label)
+
+		var bal_label = Label.new()
+		bal_label.text = "bal:%d" % tx.balance
+		bal_label.add_theme_font_size_override("font_size", 10)
+		bal_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+		bal_label.custom_minimum_size.x = 65
+		bal_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		if mono_font:
+			bal_label.add_theme_font_override("font", mono_font)
+		row.add_child(bal_label)
+
+		_history_vbox.add_child(row)
+
+func _refresh_bond_buttons() -> void:
+	for tier_key in GameState.BOND_TIERS:
+		var tier = GameState.BOND_TIERS[tier_key]
+		var btn = _bond_btns.get(tier_key)
+		if btn:
+			btn.disabled = GameState.credits < tier.min_investment
+
+func _refresh_bond_status() -> void:
+	if not _bond_status_vbox:
+		return
+
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	# Clear existing
+	for child in _bond_status_vbox.get_children():
+		child.queue_free()
+
+	if GameState.bank_bonds.size() == 0:
+		var none_label = Label.new()
+		none_label.text = "No active bonds"
+		none_label.add_theme_font_size_override("font_size", 10)
+		none_label.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+		if mono_font:
+			none_label.add_theme_font_override("font", mono_font)
+		_bond_status_vbox.add_child(none_label)
+		return
+
+	for bond in GameState.bank_bonds:
+		var tier = GameState.BOND_TIERS[bond.tier]
+		var remaining = bond.duration - bond.elapsed
+		var progress = bond.elapsed / bond.duration
+
+		var row = VBoxContainer.new()
+		row.add_theme_constant_override("separation", 1)
+
+		var info_label = Label.new()
+		info_label.text = "%s: %dcr -> %dcr (%ds)" % [tier.name, bond.principal, bond.payout, ceili(remaining)]
+		info_label.add_theme_font_size_override("font_size", 10)
+		info_label.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+		if mono_font:
+			info_label.add_theme_font_override("font", mono_font)
+		row.add_child(info_label)
+
+		var bar = _BondProgressBar.new()
+		bar.progress = progress
+		row.add_child(bar)
+
+		_bond_status_vbox.add_child(row)
+
+# === CALLBACKS ===
+
+func _on_deposit_pressed(amount: int) -> void:
+	if amount == -1:
+		amount = GameState.credits
+	GameState.bank_deposit(amount)
+
+func _on_withdraw_pressed(amount: int) -> void:
+	if amount == -1:
+		amount = GameState.bank_balance
+	GameState.bank_withdraw(amount)
+
+func _on_upgrade_pressed(upgrade_name: String) -> void:
+	GameState.buy_bank_upgrade(upgrade_name)
+
+func _on_bond_pressed(tier_key: String) -> void:
+	GameState.buy_bond(tier_key)
+
+func _on_bank_balance_changed(_balance: int) -> void:
+	_refresh_ui()
+
+func _on_credits_changed(_credits: int) -> void:
+	_refresh_ui()
+
+func _on_bank_upgraded() -> void:
+	_refresh_ui()
+
+func _on_bond_changed() -> void:
+	_refresh_ui()
 
 func _on_back_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://Scenes/main.tscn")
 
-
 func _on_base_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://Scenes/base.tscn")
 
-
-# Inner class that draws the player ship triangle
+# === INNER CLASSES ===
 
 class _ShipDrawer extends Node2D:
 	func _draw() -> void:
@@ -63,3 +718,80 @@ class _ShipDrawer extends Node2D:
 			Vector2(60, 0)
 		])
 		draw_polyline(points, Color.WHITE, 2.0)
+
+
+class _VaultDrawer extends Node2D:
+	var target_fill: float = 0.0
+	var _particle_time: float = 0.0
+
+	const VAULT_W := 160.0
+	const VAULT_H := 200.0
+
+	func _process(delta: float) -> void:
+		_particle_time += delta
+
+	func _draw() -> void:
+		var x := 0.0
+		var y := 0.0
+
+		# Fill level
+		var fill = clampf(target_fill, 0.0, 1.0)
+		var fill_h = VAULT_H * fill
+		if fill_h > 0:
+			var fill_color = Color(0.25, 0.7, 0.25, 0.4)
+			draw_rect(Rect2(x + 2, y + VAULT_H - fill_h, VAULT_W - 4, fill_h), fill_color, true)
+
+			# Animated dots inside the fill area
+			for i in range(8):
+				var dot_phase = _particle_time * 0.5 + i * 0.8
+				var dot_x = x + 10 + fmod(dot_phase * 17.3 + i * 23.7, VAULT_W - 20)
+				var dot_base_y = y + VAULT_H - fmod(dot_phase * 12.0 + i * 31.0, fill_h)
+				var dot_y = dot_base_y + sin(dot_phase * 2.0) * 3.0
+				if dot_y > y + VAULT_H - fill_h and dot_y < y + VAULT_H:
+					var dot_alpha = 0.3 + 0.3 * sin(dot_phase * 3.0)
+					draw_circle(Vector2(dot_x, dot_y), 2.0, Color(0.4, 0.9, 0.4, dot_alpha))
+
+		# Vault outline - gets brighter as it fills
+		var border_brightness = 0.4 + 0.6 * fill
+		var border_color = Color(border_brightness, border_brightness, border_brightness)
+		var border_width = 1.5 + fill * 1.0
+		draw_rect(Rect2(x, y, VAULT_W, VAULT_H), border_color, false, border_width)
+
+		# Door outline on the front
+		var door_w = VAULT_W * 0.5
+		var door_h = VAULT_H * 0.6
+		var door_x = x + (VAULT_W - door_w) * 0.5
+		var door_y = y + (VAULT_H - door_h) * 0.5
+		draw_rect(Rect2(door_x, door_y, door_w, door_h), Color(border_brightness * 0.7, border_brightness * 0.7, border_brightness * 0.7), false, 1.0)
+
+		# Door handle (small circle)
+		var handle_x = door_x + door_w * 0.75
+		var handle_y = door_y + door_h * 0.5
+		draw_circle(Vector2(handle_x, handle_y), 4.0, Color(border_brightness, border_brightness, border_brightness))
+		draw_circle(Vector2(handle_x, handle_y), 2.5, Color(0, 0, 0))
+
+		# Capacity indicator line
+		draw_line(Vector2(x + VAULT_W + 6, y), Vector2(x + VAULT_W + 6, y + VAULT_H), Color(0.3, 0.3, 0.3), 1.0)
+		if fill > 0:
+			draw_line(Vector2(x + VAULT_W + 6, y + VAULT_H - fill_h), Vector2(x + VAULT_W + 6, y + VAULT_H), Color(0.3, 0.7, 0.3), 2.0)
+
+
+class _BondProgressBar extends Control:
+	var progress: float = 0.0
+	const BAR_WIDTH := 220.0
+	const BAR_HEIGHT := 8.0
+
+	func _get_minimum_size() -> Vector2:
+		return Vector2(BAR_WIDTH + 4, BAR_HEIGHT + 4)
+
+	func _draw() -> void:
+		var x := 2.0
+		var y := 2.0
+
+		draw_rect(Rect2(x, y, BAR_WIDTH, BAR_HEIGHT), Color(0.1, 0.1, 0.1), true)
+
+		var fill_w = BAR_WIDTH * clampf(progress, 0.0, 1.0)
+		if fill_w > 0:
+			draw_rect(Rect2(x, y, fill_w, BAR_HEIGHT), Color(0.4, 0.7, 1.0), true)
+
+		draw_rect(Rect2(x, y, BAR_WIDTH, BAR_HEIGHT), Color(0.4, 0.4, 0.4), false, 1.0)
