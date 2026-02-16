@@ -26,6 +26,7 @@ var _nickel_price_label: Label
 var _silica_price_label: Label
 var _platinum_price_label: Label
 var _sell_btn: Button
+var _mono_font: Font
 
 # Upgrade cost definitions per level
 var upgrade_costs = {
@@ -59,6 +60,15 @@ var display_names = {
 
 func _ready() -> void:
 	add_to_group("upgrade_panel")
+	_mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	# Panel stylebox: pure black, sharp corners, gray border
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0, 0, 0, 1)
+	panel_style.border_color = Color(0.6, 0.6, 0.6)
+	panel_style.set_border_width_all(2)
+	panel_style.set_corner_radius_all(0)
+	add_theme_stylebox_override("panel", panel_style)
 
 	# Set anchors for visible position
 	anchor_left = ANCHOR_LEFT_VISIBLE
@@ -198,9 +208,12 @@ func _add_section_header(title: String) -> void:
 	label.text = title
 	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	if _mono_font:
+		label.add_theme_font_override("font", _mono_font)
 	_scroll_vbox.add_child(label)
 
 	var sep = HSeparator.new()
+	_style_separator(sep)
 	_scroll_vbox.add_child(sep)
 
 func _add_upgrade_row(system: String, upgrade_name: String) -> void:
@@ -213,18 +226,23 @@ func _add_upgrade_row(system: String, upgrade_name: String) -> void:
 	name_label.text = display_names.get(upgrade_name, upgrade_name)
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.add_theme_font_size_override("font_size", 13)
+	name_label.add_theme_color_override("font_color", Color.WHITE)
+	if _mono_font:
+		name_label.add_theme_font_override("font", _mono_font)
 	row.add_child(name_label)
 
 	var level_label = Label.new()
 	level_label.name = "LevelLabel"
 	level_label.add_theme_font_size_override("font_size", 13)
 	level_label.custom_minimum_size.x = 40
+	if _mono_font:
+		level_label.add_theme_font_override("font", _mono_font)
 	row.add_child(level_label)
 
 	var buy_btn = Button.new()
 	buy_btn.name = "BuyButton"
-	buy_btn.add_theme_font_size_override("font_size", 12)
 	buy_btn.custom_minimum_size.x = 100
+	_apply_button_style(buy_btn, 12)
 	buy_btn.pressed.connect(_on_buy_pressed.bind(system, upgrade_name))
 	row.add_child(buy_btn)
 
@@ -333,6 +351,7 @@ func _refresh_upgrade_list() -> void:
 
 func _build_inventory_section() -> void:
 	var sep = HSeparator.new()
+	_style_separator(sep)
 	_inventory_vbox.add_child(sep)
 
 	_add_section_header_to("INVENTORY", _inventory_vbox)
@@ -367,20 +386,24 @@ func _build_inventory_section() -> void:
 	_cargo_label.text = "Cargo: 0/%d" % GameState.cargo_capacity
 	_cargo_label.add_theme_font_size_override("font_size", 13)
 	_cargo_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	if _mono_font:
+		_cargo_label.add_theme_font_override("font", _mono_font)
 	_inventory_vbox.add_child(_cargo_label)
 
 	# Credits row
 	_credit_label = Label.new()
 	_credit_label.text = "Credits: 0"
 	_credit_label.add_theme_font_size_override("font_size", 14)
-	_credit_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+	_credit_label.add_theme_color_override("font_color", Color.WHITE)
+	if _mono_font:
+		_credit_label.add_theme_font_override("font", _mono_font)
 	_inventory_vbox.add_child(_credit_label)
 
 	# Sell button
 	_sell_btn = Button.new()
 	_sell_btn.text = "SELL ALL"
-	_sell_btn.add_theme_font_size_override("font_size", 12)
 	_sell_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_apply_button_style(_sell_btn, 12)
 	_sell_btn.pressed.connect(_on_sell_all)
 	_inventory_vbox.add_child(_sell_btn)
 
@@ -391,14 +414,20 @@ func _make_inventory_row(mineral_name: String, count: String, price: String) -> 
 	name_label.text = mineral_name
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.add_theme_font_size_override("font_size", 13)
+	name_label.add_theme_color_override("font_color", Color.WHITE)
+	if _mono_font:
+		name_label.add_theme_font_override("font", _mono_font)
 	row.add_child(name_label)
 
 	var count_label = Label.new()
 	count_label.name = "CountLabel"
 	count_label.text = count
 	count_label.add_theme_font_size_override("font_size", 13)
+	count_label.add_theme_color_override("font_color", Color.WHITE)
 	count_label.custom_minimum_size.x = 40
 	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	if _mono_font:
+		count_label.add_theme_font_override("font", _mono_font)
 	row.add_child(count_label)
 
 	var price_label = Label.new()
@@ -408,6 +437,8 @@ func _make_inventory_row(mineral_name: String, count: String, price: String) -> 
 	price_label.custom_minimum_size.x = 40
 	price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	price_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
+	if _mono_font:
+		price_label.add_theme_font_override("font", _mono_font)
 	row.add_child(price_label)
 
 	return row
@@ -417,9 +448,12 @@ func _add_section_header_to(title: String, parent: Control) -> void:
 	label.text = title
 	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override("font_color", Color(0.9, 0.8, 0.3))
+	if _mono_font:
+		label.add_theme_font_override("font", _mono_font)
 	parent.add_child(label)
 
 	var sep = HSeparator.new()
+	_style_separator(sep)
 	parent.add_child(sep)
 
 func _refresh_inventory(_new_credits: int = 0) -> void:
@@ -439,6 +473,58 @@ func _refresh_prices() -> void:
 	_nickel_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.NICKEL]
 	_silica_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.SILICA]
 	_platinum_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.PLATINUM]
+
+func _style_separator(sep: HSeparator) -> void:
+	var sep_style = StyleBoxFlat.new()
+	sep_style.bg_color = Color(0.6, 0.6, 0.6)
+	sep_style.set_content_margin_all(0)
+	sep_style.content_margin_top = 1
+	sep_style.content_margin_bottom = 1
+	sep.add_theme_stylebox_override("separator", sep_style)
+
+func _apply_button_style(btn: Button, font_size: int) -> void:
+	btn.add_theme_font_size_override("font_size", font_size)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7))
+	btn.add_theme_color_override("font_disabled_color", Color(0.35, 0.35, 0.35))
+	if _mono_font:
+		btn.add_theme_font_override("font", _mono_font)
+
+	var normal = StyleBoxFlat.new()
+	normal.bg_color = Color(0, 0, 0, 1)
+	normal.border_color = Color(0.6, 0.6, 0.6)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(0)
+	normal.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("normal", normal)
+
+	var hover = StyleBoxFlat.new()
+	hover.bg_color = Color(0.1, 0.1, 0.1, 1)
+	hover.border_color = Color.WHITE
+	hover.set_border_width_all(1)
+	hover.set_corner_radius_all(0)
+	hover.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("hover", hover)
+
+	var pressed = StyleBoxFlat.new()
+	pressed.bg_color = Color(0.2, 0.2, 0.2, 1)
+	pressed.border_color = Color.WHITE
+	pressed.set_border_width_all(1)
+	pressed.set_corner_radius_all(0)
+	pressed.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("pressed", pressed)
+
+	var disabled = StyleBoxFlat.new()
+	disabled.bg_color = Color(0.05, 0.05, 0.05, 1)
+	disabled.border_color = Color(0.25, 0.25, 0.25)
+	disabled.set_border_width_all(1)
+	disabled.set_corner_radius_all(0)
+	disabled.set_content_margin_all(6)
+	btn.add_theme_stylebox_override("disabled", disabled)
+
+	var focus = StyleBoxEmpty.new()
+	btn.add_theme_stylebox_override("focus", focus)
 
 func _on_sell_all() -> void:
 	GameState.sell_all()
