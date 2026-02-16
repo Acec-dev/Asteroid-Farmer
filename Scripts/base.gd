@@ -28,8 +28,8 @@ const DRONE_SCALE := 0.4
 var _voyage_panel: PanelContainer
 var _voyage_progress_bar: Control
 var _voyage_progress_label: Label
-var _drone_count_label: Label
-var _buy_drone_btn: Button
+var _voyage_drone_count_label: Label
+var _buy_voyage_drone_btn: Button
 var _voyage_results_label: Label
 var _results_timer: float = 0.0
 const RESULTS_DISPLAY_TIME := 5.0
@@ -38,6 +38,8 @@ const RESULTS_DISPLAY_TIME := 5.0
 var _expedition_panel: PanelContainer
 var _expedition_progress_bar: Control
 var _expedition_progress_label: Label
+var _expedition_drone_count_label: Label
+var _buy_expedition_drone_btn: Button
 var _expedition_results_timer: float = 0.0
 
 # Drone upgrades UI
@@ -53,7 +55,8 @@ func _ready() -> void:
 	_build_expedition_ui()
 	_build_drone_upgrades_ui()
 
-	GameState.drones_changed.connect(_on_drones_changed)
+	GameState.voyage_drones_changed.connect(_on_voyage_drones_changed)
+	GameState.expedition_drones_changed.connect(_on_expedition_drones_changed)
 	GameState.credits_changed.connect(_on_credits_changed)
 	GameState.voyage_started.connect(_on_voyage_started)
 	GameState.voyage_completed.connect(_on_voyage_completed)
@@ -125,31 +128,49 @@ func _refresh_drone_visuals() -> void:
 			drone.queue_free()
 	_drone_nodes.clear()
 
-	# Don't show drones when voyage or expedition is active
-	if VoyageManager.voyage_active or ExpeditionManager.expedition_active:
-		_drone_container.visible = false
-		return
-
 	_drone_container.visible = true
 
-	# Arrange drones in a grid
-	var count = GameState.drone_count
-	var cols = ceili(sqrt(float(count))) if count > 0 else 1
-	for i in range(count):
-		var col = i % cols
-		var row = i / cols
-		var pos = Vector2(col * DRONE_SPACING - (cols - 1) * DRONE_SPACING * 0.5, row * DRONE_SPACING)
+	# Show voyage drones on the left, expedition drones on the right
+	var voyage_count = GameState.voyage_drone_count if not VoyageManager.voyage_active else 0
+	var expedition_count = GameState.expedition_drone_count if not ExpeditionManager.expedition_active else 0
 
-		var drone_node = Node2D.new()
-		drone_node.position = pos
-		drone_node.scale = Vector2(DRONE_SCALE, DRONE_SCALE)
-		drone_node.set_meta("base_pos", pos)
-		drone_node.set_meta("phase", randf() * TAU)
+	# Voyage drones (left side, white)
+	if voyage_count > 0:
+		var cols = ceili(sqrt(float(voyage_count)))
+		for i in range(voyage_count):
+			var col = i % cols
+			var row = i / cols
+			var pos = Vector2(col * DRONE_SPACING - (cols - 1) * DRONE_SPACING * 0.5 - 80, row * DRONE_SPACING)
 
-		var drawer = _DroneDrawer.new()
-		drone_node.add_child(drawer)
-		_drone_container.add_child(drone_node)
-		_drone_nodes.append(drone_node)
+			var drone_node = Node2D.new()
+			drone_node.position = pos
+			drone_node.scale = Vector2(DRONE_SCALE, DRONE_SCALE)
+			drone_node.set_meta("base_pos", pos)
+			drone_node.set_meta("phase", randf() * TAU)
+
+			var drawer = _DroneDrawer.new()
+			drone_node.add_child(drawer)
+			_drone_container.add_child(drone_node)
+			_drone_nodes.append(drone_node)
+
+	# Expedition drones (right side, blue tint)
+	if expedition_count > 0:
+		var cols = ceili(sqrt(float(expedition_count)))
+		for i in range(expedition_count):
+			var col = i % cols
+			var row = i / cols
+			var pos = Vector2(col * DRONE_SPACING - (cols - 1) * DRONE_SPACING * 0.5 + 80, row * DRONE_SPACING)
+
+			var drone_node = Node2D.new()
+			drone_node.position = pos
+			drone_node.scale = Vector2(DRONE_SCALE, DRONE_SCALE)
+			drone_node.set_meta("base_pos", pos)
+			drone_node.set_meta("phase", randf() * TAU)
+
+			var drawer = _ExpeditionDroneDrawer.new()
+			drone_node.add_child(drawer)
+			_drone_container.add_child(drone_node)
+			_drone_nodes.append(drone_node)
 
 # === UI BUILDING ===
 
@@ -157,16 +178,27 @@ func _build_drone_ui() -> void:
 	var mono_font = load("res://Assets/DMMono-Regular.ttf")
 	var viewport_size = get_viewport_rect().size
 
-	# Drone count label (above the drone area)
-	_drone_count_label = Label.new()
-	_drone_count_label.text = "Drones: 0"
-	_drone_count_label.add_theme_font_size_override("font_size", 18)
-	_drone_count_label.add_theme_color_override("font_color", Color.WHITE)
+	# Voyage drone count label (left side above drone area)
+	_voyage_drone_count_label = Label.new()
+	_voyage_drone_count_label.text = "Voyage: 0"
+	_voyage_drone_count_label.add_theme_font_size_override("font_size", 16)
+	_voyage_drone_count_label.add_theme_color_override("font_color", Color.WHITE)
 	if mono_font:
-		_drone_count_label.add_theme_font_override("font", mono_font)
-	_drone_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_drone_count_label.position = Vector2(DRONE_AREA_CENTER.x - 60, DRONE_AREA_CENTER.y - 50)
-	add_child(_drone_count_label)
+		_voyage_drone_count_label.add_theme_font_override("font", mono_font)
+	_voyage_drone_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_voyage_drone_count_label.position = Vector2(DRONE_AREA_CENTER.x - 140, DRONE_AREA_CENTER.y - 50)
+	add_child(_voyage_drone_count_label)
+
+	# Expedition drone count label (right side above drone area)
+	_expedition_drone_count_label = Label.new()
+	_expedition_drone_count_label.text = "Expedition: 0"
+	_expedition_drone_count_label.add_theme_font_size_override("font_size", 16)
+	_expedition_drone_count_label.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+	if mono_font:
+		_expedition_drone_count_label.add_theme_font_override("font", mono_font)
+	_expedition_drone_count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_expedition_drone_count_label.position = Vector2(DRONE_AREA_CENTER.x + 20, DRONE_AREA_CENTER.y - 50)
+	add_child(_expedition_drone_count_label)
 
 	# Voyage results label (center-top of screen)
 	_voyage_results_label = Label.new()
@@ -222,12 +254,12 @@ func _build_voyage_ui() -> void:
 	sep.add_theme_stylebox_override("separator", sep_style)
 	vbox.add_child(sep)
 
-	# Buy drone button
-	_buy_drone_btn = Button.new()
-	_buy_drone_btn.text = "Buy Drone (%dcr)" % GameState.DRONE_COST
-	_apply_button_style(_buy_drone_btn, mono_font, 14)
-	_buy_drone_btn.pressed.connect(_on_buy_drone_pressed)
-	vbox.add_child(_buy_drone_btn)
+	# Buy voyage drone button
+	_buy_voyage_drone_btn = Button.new()
+	_buy_voyage_drone_btn.text = "Buy Voyage Drone (%dcr)" % GameState.DRONE_COST
+	_apply_button_style(_buy_voyage_drone_btn, mono_font, 14)
+	_buy_voyage_drone_btn.pressed.connect(_on_buy_voyage_drone_pressed)
+	vbox.add_child(_buy_voyage_drone_btn)
 
 	# Voyage section header
 	var voyage_header = Label.new()
@@ -374,6 +406,17 @@ func _build_expedition_ui() -> void:
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD
 	vbox.add_child(info)
+
+	# Buy expedition drone button
+	_buy_expedition_drone_btn = Button.new()
+	_buy_expedition_drone_btn.text = "Buy Expedition Drone (%dcr)" % GameState.DRONE_COST
+	_apply_button_style(_buy_expedition_drone_btn, mono_font, 14)
+	_buy_expedition_drone_btn.pressed.connect(_on_buy_expedition_drone_pressed)
+	vbox.add_child(_buy_expedition_drone_btn)
+
+	var sep2_exp = HSeparator.new()
+	_style_separator(sep2_exp)
+	vbox.add_child(sep2_exp)
 
 	# Expedition tier buttons
 	for tier in ExpeditionManager.ExpeditionTier.values():
@@ -581,14 +624,20 @@ func _refresh_drone_upgrades_ui() -> void:
 			btn.disabled = not GameState.can_afford_drone_upgrade(upgrade_name)
 
 func _refresh_ui() -> void:
-	if _drone_count_label:
-		_drone_count_label.text = "Drones: %d" % GameState.drone_count
+	if _voyage_drone_count_label:
+		_voyage_drone_count_label.text = "Voyage: %d" % GameState.voyage_drone_count
 
-	if _buy_drone_btn:
-		_buy_drone_btn.disabled = GameState.credits < GameState.DRONE_COST
+	if _expedition_drone_count_label:
+		_expedition_drone_count_label.text = "Expedition: %d" % GameState.expedition_drone_count
+
+	if _buy_voyage_drone_btn:
+		_buy_voyage_drone_btn.disabled = GameState.credits < GameState.DRONE_COST
+
+	if _buy_expedition_drone_btn:
+		_buy_expedition_drone_btn.disabled = GameState.credits < GameState.DRONE_COST
 
 	# Update voyage buttons
-	var can_voyage = GameState.drone_count > 0 and not VoyageManager.voyage_active and not ExpeditionManager.expedition_active
+	var can_voyage = GameState.voyage_drone_count > 0 and not VoyageManager.voyage_active
 	for tier in VoyageManager.VoyageTier.values():
 		var btn_name = "VoyageBtn_" + str(tier)
 		var btn = _voyage_panel.find_child(btn_name, true, false)
@@ -607,7 +656,7 @@ func _refresh_ui() -> void:
 			_voyage_progress_label.text = ""
 
 	# Update expedition buttons
-	var can_expedition = GameState.drone_count > 0 and not ExpeditionManager.expedition_active and not VoyageManager.voyage_active
+	var can_expedition = GameState.expedition_drone_count > 0 and not ExpeditionManager.expedition_active
 	if _expedition_panel:
 		for tier in ExpeditionManager.ExpeditionTier.values():
 			var btn_name = "ExpeditionBtn_" + str(tier)
@@ -630,8 +679,13 @@ func _refresh_ui() -> void:
 
 # === CALLBACKS ===
 
-func _on_buy_drone_pressed() -> void:
-	GameState.buy_drone()
+func _on_buy_voyage_drone_pressed() -> void:
+	GameState.buy_voyage_drone()
+	_refresh_drone_visuals()
+	_refresh_ui()
+
+func _on_buy_expedition_drone_pressed() -> void:
+	GameState.buy_expedition_drone()
 	_refresh_drone_visuals()
 	_refresh_ui()
 
@@ -640,7 +694,11 @@ func _on_voyage_pressed(tier: int) -> void:
 		_refresh_drone_visuals()
 		_refresh_ui()
 
-func _on_drones_changed(_count: int) -> void:
+func _on_voyage_drones_changed(_count: int) -> void:
+	_refresh_drone_visuals()
+	_refresh_ui()
+
+func _on_expedition_drones_changed(_count: int) -> void:
 	_refresh_drone_visuals()
 	_refresh_ui()
 
@@ -770,7 +828,7 @@ class _ShipDrawer extends Node2D:
 		draw_polyline(points, Color.WHITE, 2.0)
 
 
-# Inner class that draws a small drone triangle
+# Inner class that draws a small drone triangle (voyage drones - white)
 class _DroneDrawer extends Node2D:
 	func _draw() -> void:
 		var points = PackedVector2Array([
@@ -780,6 +838,18 @@ class _DroneDrawer extends Node2D:
 			Vector2(30, 0)
 		])
 		draw_polyline(points, Color.WHITE, 1.5)
+
+
+# Inner class that draws a small drone triangle (expedition drones - blue)
+class _ExpeditionDroneDrawer extends Node2D:
+	func _draw() -> void:
+		var points = PackedVector2Array([
+			Vector2(30, 0),
+			Vector2(-10, -8),
+			Vector2(-10, 8),
+			Vector2(30, 0)
+		])
+		draw_polyline(points, Color(0.4, 0.7, 1.0), 1.5)
 
 
 # Inner class for voyage progress bar (drawn via _draw for consistency with game style)
