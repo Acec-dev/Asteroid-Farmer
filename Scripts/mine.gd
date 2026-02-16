@@ -2,7 +2,7 @@
 extends Area2D
 
 @export var explosion_delay: float = 3.0  # Time before mine explodes
-@export var explosion_radius: float = 150.0  # Damage radius
+@export var explosion_radius: float = 250.0  # Damage radius
 @export var damage: int = 1  # Damage dealt to each asteroid hit
 @export var blink_speed: float = 5.0  # How fast the mine blinks before exploding
 
@@ -93,8 +93,7 @@ func _explode() -> void:
 	var hit_count = 0
 	for result in results:
 		var obj = result.collider
-		# Only damage on-screen targets
-		if obj and obj != self and obj.has_method("hit_by_projectile") and ScreenUtils.is_node_on_screen(obj):
+		if obj and obj != self and obj.has_method("hit_by_projectile"):
 			print("  Mine explosion hit: ", obj.name)
 			obj.hit_by_projectile(self)
 			hit_count += 1

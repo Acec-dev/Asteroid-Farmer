@@ -32,6 +32,7 @@ signal shield_changed(current: float, maximum: float)
 signal prices_changed()
 signal upgrades_changed()  # Emitted when any upgrade is purchased/modified
 signal cargo_full()  # Emitted when cargo hold is at capacity
+signal over_encumbered(is_encumbered: bool)  # Emitted when encumbrance state changes
 signal drones_changed(new_count: int)
 signal voyage_started()
 signal voyage_completed(results: Dictionary)
@@ -64,6 +65,8 @@ var projectile_speed: float = 800.0
 
 # Cargo hold system
 var cargo_capacity: int = 40  # max total minerals player can carry (upgradeable)
+const ENCUMBRANCE_MIN_SPEED_MULT: float = 0.25  # Floor: never slower than 25% speed
+var _was_over_encumbered: bool = false
 
 #Shield/Armor upgrade system
 var max_shield: float = 100.0 # maximum shield capacity (upgradeable)
@@ -101,7 +104,7 @@ var upgrades = {
 			"unlocked": false,
 			"level": 0,
 			"damage_values": [3.0, 4.0, 5.0, 7.0],
-			"cooldown_values": [2.0, 1.75, 1.5, 1.25],
+			"cooldown_values": [5.0, 4.5, 4.0, 3.5],
 			"pierce_falloff_values": [0.2, 0.15, 0.1, 0.05]  # Less falloff = more damage retention
 		}
 	},
@@ -172,21 +175,33 @@ func get_total_minerals() -> int:
 		total += count
 	return total
 
+func is_over_encumbered() -> bool:
+	return get_total_minerals() > cargo_capacity
+
+func get_speed_multiplier() -> float:
+	var total := get_total_minerals()
+	if total <= cargo_capacity:
+		return 1.0
+	# speed = capacity / total, floored at minimum
+	return maxf(float(cargo_capacity) / float(total), ENCUMBRANCE_MIN_SPEED_MULT)
+
 func add_mineral(kind: MineralType, amount: int = 1) -> void:
 	if not minerals.has(kind):
 		minerals[kind] = 0
-	var space_left := cargo_capacity - get_total_minerals()
-	if space_left <= 0:
-		emit_signal("cargo_full")
-		return
-	var to_add := mini(amount, space_left)
-	minerals[kind] += to_add
+	minerals[kind] += amount
 	emit_signal("new_pickup")
 	emit_signal("inventory_changed")
-	if get_total_minerals() >= cargo_capacity:
+	var total := get_total_minerals()
+	if total >= cargo_capacity:
 		emit_signal("cargo_full")
+	# Track encumbrance state transitions
+	var is_over := total > cargo_capacity
+	if is_over != _was_over_encumbered:
+		_was_over_encumbered = is_over
+		emit_signal("over_encumbered", is_over)
 
 func sell_all() -> void:
+	var was_over := is_over_encumbered()
 	var total := 0
 	for k in minerals.keys():
 		var count: int = minerals[k]
@@ -202,6 +217,9 @@ func sell_all() -> void:
 	if total > 0:
 		add_credits(total)
 		emit_signal("inventory_changed")
+		if was_over:
+			_was_over_encumbered = false
+			emit_signal("over_encumbered", false)
 
 func _price_for(kind: MineralType) -> int:
 	if market_prices.has(kind):
