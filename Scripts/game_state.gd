@@ -55,7 +55,8 @@ signal prices_changed()
 signal upgrades_changed()  # Emitted when any upgrade is purchased/modified
 signal cargo_full()  # Emitted when cargo hold is at capacity
 signal over_encumbered(is_encumbered: bool)  # Emitted when encumbrance state changes
-signal drones_changed(new_count: int)
+signal voyage_drones_changed(new_count: int)
+signal expedition_drones_changed(new_count: int)
 signal voyage_started()
 signal voyage_completed(results: Dictionary)
 signal voyage_progress_updated(progress: float)
@@ -67,8 +68,9 @@ signal drone_upgrades_changed()
 
 var credits: int = 0
 
-# Drone system
-var drone_count: int = 0
+# Drone system (separate pools for voyages and expeditions)
+var voyage_drone_count: int = 0
+var expedition_drone_count: int = 0
 const DRONE_COST: int = 75
 var minerals = {
 	MineralType.IRON: 0,
@@ -445,17 +447,29 @@ func get_spawner_difficulty() -> int:
 
 # === DRONE SYSTEM ===
 
-func buy_drone() -> bool:
+func buy_voyage_drone() -> bool:
 	if credits < DRONE_COST:
 		return false
 	add_credits(-DRONE_COST)
-	drone_count += 1
-	emit_signal("drones_changed", drone_count)
+	voyage_drone_count += 1
+	emit_signal("voyage_drones_changed", voyage_drone_count)
 	return true
 
-func remove_drones(amount: int) -> void:
-	drone_count = max(0, drone_count - amount)
-	emit_signal("drones_changed", drone_count)
+func buy_expedition_drone() -> bool:
+	if credits < DRONE_COST:
+		return false
+	add_credits(-DRONE_COST)
+	expedition_drone_count += 1
+	emit_signal("expedition_drones_changed", expedition_drone_count)
+	return true
+
+func remove_voyage_drones(amount: int) -> void:
+	voyage_drone_count = max(0, voyage_drone_count - amount)
+	emit_signal("voyage_drones_changed", voyage_drone_count)
+
+func remove_expedition_drones(amount: int) -> void:
+	expedition_drone_count = max(0, expedition_drone_count - amount)
+	emit_signal("expedition_drones_changed", expedition_drone_count)
 
 # === EXOTIC MINERAL SYSTEM ===
 
