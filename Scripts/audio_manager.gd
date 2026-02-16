@@ -19,6 +19,7 @@ const _SOUND_REGISTRY := {
 	"gun_1": {
 		"path": "res://Assets/gun-1.wav",
 		"volume_db": -14.0,
+		"bus": "Primary Cannon",
 	},
 }
 
@@ -58,6 +59,7 @@ func play_sfx(key: String, volume_db: float = NAN, pitch_scale: float = 1.0) -> 
 
 	var player := _next_sfx_player()
 	player.stream = stream
+	player.bus = entry.get("bus", "Master")
 	player.volume_db = volume_db if not is_nan(volume_db) else entry.get("volume_db", 0.0)
 	player.volume_db += sfx_volume_offset
 	player.pitch_scale = pitch_scale
