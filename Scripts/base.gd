@@ -887,6 +887,11 @@ func _on_back_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://Scenes/main.tscn")
 
 
+func _on_bank_button_pressed() -> void:
+	SaveManager.save_game()
+	get_tree().change_scene_to_file("res://Scenes/bank.tscn")
+	
+
 # Inner class that draws the player ship triangle
 class _ShipDrawer extends Node2D:
 	func _draw() -> void:
