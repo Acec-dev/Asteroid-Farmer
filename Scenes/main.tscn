@@ -145,9 +145,9 @@ metadata/_edit_use_anchors_ = true
 
 [node name="Label" type="Label" parent="CanvasLayer"]
 offset_left = 1629.0
-offset_top = 71.0
+offset_top = 38.0
 offset_right = 1746.0
-offset_bottom = 94.0
+offset_bottom = 61.0
 text = "CLICK THIS ---->"
 script = ExtResource("9_hptm8")
 
