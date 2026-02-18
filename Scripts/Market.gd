@@ -3,6 +3,7 @@ extends Node
 ## Emits signals when prices change, allowing UI and GameState to respond
 
 signal prices_changed(new_prices: Dictionary)
+signal gm100_phase_changed(new_phase: int)
 
 ## How often prices update (in seconds)
 @export var update_interval: float = 3.0
@@ -48,6 +49,32 @@ var fuel_price: int = FUEL_BASE_PRICE
 var _fuel_drift: float = 0.0  # Accumulated fractional drift
 var fuel_price_history: Array = []
 
+# === GM100 INDEX FUND SYSTEM ===
+# The GM100 (Galactic Materials 100) is a composite market index that
+# fluctuates with random boom/bust cycles.
+enum GM100Phase { NORMAL, BOOM, BUST }
+
+const GM100_BASE_VALUE := 100.0
+const GM100_MIN_VALUE := 20.0
+const GM100_MAX_VALUE := 500.0
+const GM100_NORMAL_VOLATILITY := 1.5    # Normal random walk magnitude
+const GM100_NORMAL_DRIFT := 0.3         # Slight upward bias in normal mode
+const GM100_BOOM_DRIFT := 3.0           # Strong upward movement during boom
+const GM100_BOOM_VOLATILITY := 2.0      # Extra volatility during boom
+const GM100_BUST_DRIFT := -4.0          # Downward movement during bust
+const GM100_BUST_VOLATILITY := 3.0      # High volatility during bust
+const GM100_BOOM_CHANCE := 0.05         # 5% chance per tick to enter boom from normal
+const GM100_BUST_CHANCE := 0.04         # 4% chance per tick to enter bust from normal
+const GM100_PHASE_MIN_DURATION := 30.0  # Minimum duration of boom/bust phase (seconds)
+const GM100_PHASE_MAX_DURATION := 60.0  # Maximum duration of boom/bust phase (seconds)
+
+var gm100_value: float = GM100_BASE_VALUE
+var gm100_phase: GM100Phase = GM100Phase.NORMAL
+var gm100_phase_timer: float = 0.0
+var gm100_phase_duration: float = 0.0
+var _gm100_drift: float = 0.0
+var gm100_history: Array = []
+
 # Nickel pricing state (supply/demand model with time appreciation)
 const NICKEL_SALES_DECAY_RATE := 0.15
 const NICKEL_APPRECIATION_RATE := 0.2  # How fast price rises when not selling
@@ -70,6 +97,7 @@ func _ready() -> void:
 	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM]:
 		price_history[mineral].append(market_prices[mineral])
 	fuel_price_history.append(fuel_price)
+	gm100_history.append(gm100_value)
 
 	# Create and configure timer
 	_timer = Timer.new()
@@ -92,6 +120,7 @@ func _update_market_prices() -> void:
 	_update_silica_price()
 	_update_platinum_price()
 	_update_fuel_price()
+	_update_gm100()
 
 	# Add current prices to history (limited to MAX_HISTORY_LENGTH)
 	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM]:
@@ -102,6 +131,10 @@ func _update_market_prices() -> void:
 	fuel_price_history.append(fuel_price)
 	if fuel_price_history.size() > MAX_HISTORY_LENGTH:
 		fuel_price_history.pop_front()
+
+	gm100_history.append(gm100_value)
+	if gm100_history.size() > MAX_HISTORY_LENGTH:
+		gm100_history.pop_front()
 
 	# Notify listeners
 	prices_changed.emit(market_prices)
@@ -200,6 +233,77 @@ func get_price_history(mineral: GameState.MineralType) -> Array:
 	return price_history.get(mineral, [])
 
 
+## GM100 uses a random walk with boom/bust phase transitions
+func _update_gm100() -> void:
+	# Phase timer management
+	if gm100_phase != GM100Phase.NORMAL:
+		gm100_phase_timer += update_interval
+		if gm100_phase_timer >= gm100_phase_duration:
+			gm100_phase = GM100Phase.NORMAL
+			gm100_phase_timer = 0.0
+			gm100_phase_duration = 0.0
+			gm100_phase_changed.emit(gm100_phase)
+	else:
+		# Random chance to enter boom or bust
+		var roll = randf()
+		if roll < GM100_BOOM_CHANCE:
+			gm100_phase = GM100Phase.BOOM
+			gm100_phase_timer = 0.0
+			gm100_phase_duration = randf_range(GM100_PHASE_MIN_DURATION, GM100_PHASE_MAX_DURATION)
+			gm100_phase_changed.emit(gm100_phase)
+		elif roll < GM100_BOOM_CHANCE + GM100_BUST_CHANCE:
+			gm100_phase = GM100Phase.BUST
+			gm100_phase_timer = 0.0
+			gm100_phase_duration = randf_range(GM100_PHASE_MIN_DURATION, GM100_PHASE_MAX_DURATION)
+			gm100_phase_changed.emit(gm100_phase)
+
+	# Calculate price movement based on phase
+	var drift: float
+	var volatility: float
+	match gm100_phase:
+		GM100Phase.BOOM:
+			drift = GM100_BOOM_DRIFT
+			volatility = GM100_BOOM_VOLATILITY
+		GM100Phase.BUST:
+			drift = GM100_BUST_DRIFT
+			volatility = GM100_BUST_VOLATILITY
+		_:
+			drift = GM100_NORMAL_DRIFT
+			volatility = GM100_NORMAL_VOLATILITY
+
+	var noise = randf_range(-volatility, volatility)
+	_gm100_drift += drift + noise
+	var change = int(_gm100_drift)
+	_gm100_drift -= change
+	gm100_value = clampf(gm100_value + change, GM100_MIN_VALUE, GM100_MAX_VALUE)
+
+
+## Get current GM100 index value
+func get_gm100_value() -> float:
+	return gm100_value
+
+
+## Get GM100 price history
+func get_gm100_history() -> Array:
+	return gm100_history
+
+
+## Get current GM100 market phase
+func get_gm100_phase() -> int:
+	return gm100_phase
+
+
+## Get the return rate for the current GM100 phase
+func get_gm100_return_rate() -> float:
+	match gm100_phase:
+		GM100Phase.BOOM:
+			return randf_range(0.10, 0.15)
+		GM100Phase.BUST:
+			return randf_range(-0.05, 0.0)
+		_:
+			return 0.05
+
+
 ## Reset market to initial state
 func reset_market() -> void:
 	market_prices = {
@@ -221,4 +325,10 @@ func reset_market() -> void:
 	fuel_price = FUEL_BASE_PRICE
 	_fuel_drift = 0.0
 	fuel_price_history = [FUEL_BASE_PRICE]
+	gm100_value = GM100_BASE_VALUE
+	gm100_phase = GM100Phase.NORMAL
+	gm100_phase_timer = 0.0
+	gm100_phase_duration = 0.0
+	_gm100_drift = 0.0
+	gm100_history = [GM100_BASE_VALUE]
 	prices_changed.emit(market_prices)
