@@ -1,34 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://r52877o5j8nx"]
+[gd_scene load_steps=2 format=3 uid="uid://r52877o5j8nx"]
 
 [ext_resource type="Script" uid="uid://dcalt3yyln4cp" path="res://Scripts/start_menu.gd" id="1_jgtwh"]
-[ext_resource type="Texture2D" uid="uid://dunx5soo8rtfe" path="res://Assets/start.png" id="1_juhg0"]
 
 [node name="StartMenu" type="Node2D"]
 script = ExtResource("1_jgtwh")
-
-[node name="Control" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 157.0
-offset_right = 157.0
-scale = Vector2(0.2400003, 0.2400003)
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
-layout_mode = 0
-offset_left = 646.0
-offset_top = 409.0
-offset_right = 716.0
-offset_bottom = 475.0
-scale = Vector2(8.8, 8.8)
-
-[node name="Button" type="TextureButton" parent="Control/VBoxContainer"]
-layout_mode = 2
-texture_normal = ExtResource("1_juhg0")
-
-[node name="Button2" type="Button" parent="Control/VBoxContainer"]
-layout_mode = 2
-text = "Options"
-
-[node name="Start Button" type="ColorRect" parent="."]
-
-[connection signal="pressed" from="Control/VBoxContainer/Button" to="." method="_on_button_pressed"]

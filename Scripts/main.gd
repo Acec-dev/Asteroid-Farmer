@@ -63,6 +63,7 @@ signal spawn_text
 
 func _ready() -> void:
 	randomize()
+	_run_time = GameState.run_time
 	_spawn_player()
 
 	# Setup asteroid spawner component
@@ -102,6 +103,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_run_time += delta
+	GameState.run_time = _run_time
 	# Update timer display
 	if _run_timer_label:
 		var minutes := int(_run_time) / 60
@@ -120,6 +122,7 @@ func _process(delta: float) -> void:
 		_base_countdown_time -= delta
 		if _base_countdown_time <= 0.0:
 			_base_countdown_active = false
+			SaveManager.save_game()
 			get_tree().change_scene_to_file("res://Scenes/base.tscn")
 		elif _base_countdown_label:
 			_base_countdown_label.text = "Traveling to base... %ds" % ceili(_base_countdown_time)
