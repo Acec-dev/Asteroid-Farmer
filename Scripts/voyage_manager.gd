@@ -8,22 +8,22 @@ const VOYAGE_DATA = {
 		"name": "Short Expedition",
 		"duration": 30.0,
 		"break_chance": 0.05,
-		"min_minerals": 1,
-		"max_minerals": 2,
+		"min_minerals": 2,
+		"max_minerals": 3,
 	},
 	VoyageTier.MEDIUM: {
 		"name": "Medium Expedition",
 		"duration": 45.0,
 		"break_chance": 0.20,
-		"min_minerals": 2,
-		"max_minerals": 4,
+		"min_minerals": 3,
+		"max_minerals": 5,
 	},
 	VoyageTier.LONG: {
 		"name": "Long Expedition",
 		"duration": 60.0,
 		"break_chance": 0.35,
-		"min_minerals": 4,
-		"max_minerals": 8,
+		"min_minerals": 5,
+		"max_minerals": 9,
 	},
 }
 
