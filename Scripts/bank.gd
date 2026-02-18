@@ -30,6 +30,17 @@ var _futures_short_btns: Dictionary = {}
 var _deposit_btns: Array[Button] = []
 var _withdraw_btns: Array[Button] = []
 
+# GM100 panel references
+var _gm100_panel: PanelContainer
+var _gm100_graph: _GM100Graph
+var _gm100_value_label: Label
+var _gm100_phase_label: Label
+var _gm100_invested_label: Label
+var _gm100_rate_label: Label
+var _gm100_countdown_label: Label
+var _gm100_invest_btns: Array[Button] = []
+var _gm100_withdraw_btns: Array[Button] = []
+
 func _ready() -> void:
 	_spawn_docked_ship()
 	_build_vault_visual()
@@ -38,12 +49,14 @@ func _ready() -> void:
 	_build_history_panel()
 	_build_bond_panel()
 	_build_futures_panel()
+	_build_gm100_panel()
 
 	GameState.bank_balance_changed.connect(_on_bank_balance_changed)
 	GameState.credits_changed.connect(_on_credits_changed)
 	GameState.bank_upgraded.connect(_on_bank_upgraded)
 	GameState.bank_bond_changed.connect(_on_bond_changed)
 	GameState.fuel_futures_changed.connect(_on_futures_changed)
+	GameState.gm100_changed.connect(_on_gm100_changed)
 
 	_refresh_ui()
 
@@ -88,6 +101,9 @@ func _process(delta: float) -> void:
 	# Update fuel price display and active futures
 	_refresh_fuel_price_display()
 	_refresh_futures_status()
+
+	# Update GM100 display
+	_refresh_gm100_display()
 
 # === VAULT VISUAL ===
 
@@ -560,6 +576,146 @@ func _build_futures_panel() -> void:
 	_futures_panel.size = Vector2(260, 0)
 	add_child(_futures_panel)
 
+# === GM100 INDEX FUND PANEL ===
+
+func _build_gm100_panel() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+
+	_gm100_panel = PanelContainer.new()
+	_gm100_panel.name = "GM100Panel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.2, 0.8, 0.6)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_gm100_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_gm100_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "GM100 INDEX FUND"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.2, 0.9, 0.7))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	_add_separator(vbox)
+
+	# GM100 Graph
+	_gm100_graph = _GM100Graph.new()
+	_gm100_graph.custom_minimum_size = Vector2(236, 80)
+	vbox.add_child(_gm100_graph)
+
+	# Index value and phase
+	var info_row = HBoxContainer.new()
+	info_row.add_theme_constant_override("separation", 8)
+
+	_gm100_value_label = Label.new()
+	_gm100_value_label.text = "Index: 100"
+	_gm100_value_label.add_theme_font_size_override("font_size", 14)
+	_gm100_value_label.add_theme_color_override("font_color", Color(0.2, 0.9, 0.7))
+	_gm100_value_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	if mono_font:
+		_gm100_value_label.add_theme_font_override("font", mono_font)
+	info_row.add_child(_gm100_value_label)
+
+	_gm100_phase_label = Label.new()
+	_gm100_phase_label.text = "NORMAL"
+	_gm100_phase_label.add_theme_font_size_override("font_size", 14)
+	_gm100_phase_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	if mono_font:
+		_gm100_phase_label.add_theme_font_override("font", mono_font)
+	info_row.add_child(_gm100_phase_label)
+
+	vbox.add_child(info_row)
+
+	# Rate and return info
+	_gm100_rate_label = Label.new()
+	_gm100_rate_label.text = "Return: 5% every 4min"
+	_gm100_rate_label.add_theme_font_size_override("font_size", 10)
+	_gm100_rate_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	if mono_font:
+		_gm100_rate_label.add_theme_font_override("font", mono_font)
+	vbox.add_child(_gm100_rate_label)
+
+	_add_separator(vbox)
+
+	# Invested amount
+	_gm100_invested_label = Label.new()
+	_gm100_invested_label.text = "Invested: 0 cr"
+	_gm100_invested_label.add_theme_font_size_override("font_size", 14)
+	_gm100_invested_label.add_theme_color_override("font_color", Color.WHITE)
+	if mono_font:
+		_gm100_invested_label.add_theme_font_override("font", mono_font)
+	vbox.add_child(_gm100_invested_label)
+
+	# Countdown to next return
+	_gm100_countdown_label = Label.new()
+	_gm100_countdown_label.text = ""
+	_gm100_countdown_label.add_theme_font_size_override("font_size", 10)
+	_gm100_countdown_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
+	if mono_font:
+		_gm100_countdown_label.add_theme_font_override("font", mono_font)
+	vbox.add_child(_gm100_countdown_label)
+
+	_add_separator(vbox)
+
+	# Invest header
+	var invest_header = Label.new()
+	invest_header.text = "INVEST"
+	invest_header.add_theme_font_size_override("font_size", 12)
+	invest_header.add_theme_color_override("font_color", Color(0.2, 0.9, 0.7))
+	if mono_font:
+		invest_header.add_theme_font_override("font", mono_font)
+	vbox.add_child(invest_header)
+
+	var invest_row = HBoxContainer.new()
+	invest_row.add_theme_constant_override("separation", 4)
+	for amount in [50, 100, -1]:  # -1 means ALL
+		var btn = Button.new()
+		btn.text = "ALL" if amount == -1 else "%dcr" % amount
+		_apply_button_style(btn, mono_font, 12)
+		btn.pressed.connect(_on_gm100_invest_pressed.bind(amount))
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		invest_row.add_child(btn)
+		_gm100_invest_btns.append(btn)
+	vbox.add_child(invest_row)
+
+	# Withdraw header
+	var wd_header = Label.new()
+	wd_header.text = "WITHDRAW"
+	wd_header.add_theme_font_size_override("font_size", 12)
+	wd_header.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
+	if mono_font:
+		wd_header.add_theme_font_override("font", mono_font)
+	vbox.add_child(wd_header)
+
+	var wd_row = HBoxContainer.new()
+	wd_row.add_theme_constant_override("separation", 4)
+	for amount in [50, 100, -1]:
+		var btn = Button.new()
+		btn.text = "ALL" if amount == -1 else "%dcr" % amount
+		_apply_button_style(btn, mono_font, 12)
+		btn.pressed.connect(_on_gm100_withdraw_pressed.bind(amount))
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		wd_row.add_child(btn)
+		_gm100_withdraw_btns.append(btn)
+	vbox.add_child(wd_row)
+
+	_gm100_panel.position = Vector2(480, 20)
+	_gm100_panel.size = Vector2(260, 0)
+	add_child(_gm100_panel)
+
 # === HELPERS ===
 
 func _add_separator(parent: Control) -> void:
@@ -648,6 +804,7 @@ func _refresh_ui() -> void:
 	_refresh_history_ui()
 	_refresh_bond_buttons()
 	_refresh_futures_buttons()
+	_refresh_gm100_buttons()
 
 func _refresh_upgrades_ui() -> void:
 	var value_formatters = {
@@ -711,6 +868,10 @@ func _refresh_history_ui() -> void:
 		"bond_mature": {"prefix": "+", "color": Color(0.3, 0.8, 1.0)},
 		"future_buy": {"prefix": "-", "color": Color(0.9, 0.6, 0.2)},
 		"future_settle": {"prefix": "+", "color": Color(0.9, 0.7, 0.3)},
+		"gm100_invest": {"prefix": "-", "color": Color(0.2, 0.8, 0.6)},
+		"gm100_withdraw": {"prefix": "+", "color": Color(0.2, 0.9, 0.7)},
+		"gm100_return": {"prefix": "+", "color": Color(0.3, 1.0, 0.7)},
+		"gm100_loss": {"prefix": "-", "color": Color(0.9, 0.4, 0.4)},
 	}
 
 	# Show last 10
@@ -889,6 +1050,62 @@ func _refresh_futures_status() -> void:
 
 		_futures_status_vbox.add_child(row)
 
+func _refresh_gm100_display() -> void:
+	if not Market:
+		return
+
+	# Update index value
+	if _gm100_value_label:
+		_gm100_value_label.text = "Index: %d" % int(Market.get_gm100_value())
+
+	# Update phase indicator
+	if _gm100_phase_label:
+		match Market.gm100_phase:
+			Market.GM100Phase.BOOM:
+				_gm100_phase_label.text = "BOOM"
+				_gm100_phase_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3))
+			Market.GM100Phase.BUST:
+				_gm100_phase_label.text = "BUST"
+				_gm100_phase_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+			_:
+				_gm100_phase_label.text = "NORMAL"
+				_gm100_phase_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+
+	# Update rate display
+	if _gm100_rate_label:
+		var rate = GameState.get_gm100_current_rate()
+		var rate_pct = int(rate * 100)
+		if rate >= 0:
+			_gm100_rate_label.text = "Return: +%d%% every 4min" % rate_pct
+			_gm100_rate_label.add_theme_color_override("font_color", Color(0.3, 0.8, 0.3))
+		else:
+			_gm100_rate_label.text = "Return: %d%% every 4min" % rate_pct
+			_gm100_rate_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.4))
+
+	# Update invested amount
+	if _gm100_invested_label:
+		_gm100_invested_label.text = "Invested: %d cr" % GameState.gm100_invested
+
+	# Update countdown
+	if _gm100_countdown_label and GameState.gm100_invested > 0:
+		var remaining = GameState.get_gm100_return_interval() - GameState.gm100_return_timer
+		_gm100_countdown_label.text = "Next return in %ds" % ceili(remaining)
+	elif _gm100_countdown_label:
+		_gm100_countdown_label.text = ""
+
+	# Update graph
+	if _gm100_graph:
+		_gm100_graph.price_history = Market.get_gm100_history().duplicate()
+		_gm100_graph.queue_redraw()
+
+func _refresh_gm100_buttons() -> void:
+	var can_invest = GameState.credits >= GameState.GM100_MIN_INVESTMENT
+	for btn in _gm100_invest_btns:
+		btn.disabled = not can_invest
+	var can_withdraw = GameState.gm100_invested > 0
+	for btn in _gm100_withdraw_btns:
+		btn.disabled = not can_withdraw
+
 # === CALLBACKS ===
 
 func _on_deposit_pressed(amount: int) -> void:
@@ -924,6 +1141,19 @@ func _on_bank_upgraded() -> void:
 
 func _on_bond_changed() -> void:
 	_refresh_ui()
+
+func _on_gm100_changed() -> void:
+	_refresh_ui()
+
+func _on_gm100_invest_pressed(amount: int) -> void:
+	if amount == -1:
+		amount = GameState.credits
+	GameState.gm100_invest(amount)
+
+func _on_gm100_withdraw_pressed(amount: int) -> void:
+	if amount == -1:
+		amount = GameState.gm100_invested
+	GameState.gm100_withdraw(amount)
 
 func _on_back_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://Scenes/main.tscn")
@@ -1046,3 +1276,72 @@ class _FuturesProgressBar extends Control:
 			draw_rect(Rect2(x, y, fill_w, BAR_HEIGHT), fill_color, true)
 
 		draw_rect(Rect2(x, y, BAR_WIDTH, BAR_HEIGHT), Color(0.4, 0.4, 0.4), false, 1.0)
+
+
+class _GM100Graph extends Control:
+	var price_history: Array = []
+	const GRAPH_COLOR := Color(0.2, 0.9, 0.7)
+	const GRID_COLOR := Color(0.2, 0.2, 0.25, 0.5)
+	const BG_COLOR := Color(0.05, 0.08, 0.08, 0.9)
+	const MARGIN := 4.0
+
+	func _get_minimum_size() -> Vector2:
+		return Vector2(236, 80)
+
+	func _draw() -> void:
+		var w := size.x - MARGIN * 2
+		var h := size.y - MARGIN * 2
+		var origin := Vector2(MARGIN, MARGIN)
+
+		# Background
+		draw_rect(Rect2(origin, Vector2(w, h)), BG_COLOR, true)
+
+		# Grid lines
+		for i in range(1, 4):
+			var gy = origin.y + h * (float(i) / 4.0)
+			draw_line(Vector2(origin.x, gy), Vector2(origin.x + w, gy), GRID_COLOR, 1.0)
+
+		if price_history.is_empty():
+			return
+
+		# Determine value range
+		var min_val: float = price_history[0]
+		var max_val: float = price_history[0]
+		for p in price_history:
+			min_val = minf(min_val, p)
+			max_val = maxf(max_val, p)
+
+		# Add padding to range
+		var range_pad = maxf((max_val - min_val) * 0.1, 5.0)
+		min_val -= range_pad
+		max_val += range_pad
+		var val_range = max_val - min_val
+		if val_range < 1.0:
+			val_range = 1.0
+
+		var num_points = price_history.size()
+
+		# Draw line segments
+		if num_points >= 2:
+			for i in range(num_points - 1):
+				var p1: float = price_history[i]
+				var p2: float = price_history[i + 1]
+				var x1 = origin.x + (float(i) / (num_points - 1)) * w
+				var x2 = origin.x + (float(i + 1) / (num_points - 1)) * w
+				var y1 = origin.y + h - ((p1 - min_val) / val_range) * h
+				var y2 = origin.y + h - ((p2 - min_val) / val_range) * h
+				draw_line(Vector2(x1, y1), Vector2(x2, y2), GRAPH_COLOR, 2.0)
+
+		# Draw data points
+		for i in range(num_points):
+			var p: float = price_history[i]
+			var px: float
+			if num_points > 1:
+				px = origin.x + (float(i) / (num_points - 1)) * w
+			else:
+				px = origin.x + w * 0.5
+			var py = origin.y + h - ((p - min_val) / val_range) * h
+			draw_circle(Vector2(px, py), 3.0, GRAPH_COLOR)
+
+		# Border
+		draw_rect(Rect2(origin, Vector2(w, h)), Color(0.2, 0.5, 0.4, 0.6), false, 1.0)

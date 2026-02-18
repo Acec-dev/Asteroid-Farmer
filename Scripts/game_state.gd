@@ -69,6 +69,7 @@ signal bank_balance_changed(new_balance: int)
 signal bank_bond_changed()
 signal bank_upgraded()
 signal fuel_futures_changed()
+signal gm100_changed()
 
 var credits: int = 0
 
@@ -147,6 +148,13 @@ const FUEL_FUTURES_TIERS = {
 		"cost": 150,
 	},
 }
+
+# === GM100 INDEX FUND ===
+var gm100_invested: int = 0  # Amount currently invested in GM100
+var gm100_return_timer: float = 0.0
+const GM100_RETURN_INTERVAL := 240.0  # 4 minutes between returns
+const GM100_NORMAL_RATE := 0.05       # 5% return normally
+const GM100_MIN_INVESTMENT := 25      # Minimum amount to invest
 
 # Drone system (separate pools for voyages and expeditions)
 var voyage_drone_count: int = 0
@@ -327,6 +335,7 @@ func _process(delta: float) -> void:
 	_bank_tick(delta)
 	_bond_tick(delta)
 	_fuel_futures_tick(delta)
+	_gm100_tick(delta)
 
 
 func _on_market_prices_changed(new_prices: Dictionary) -> void:
@@ -924,3 +933,59 @@ func _fuel_futures_tick(delta: float) -> void:
 			_add_transaction("future_settle", payout)
 			fuel_futures.remove_at(i)
 		emit_signal("fuel_futures_changed")
+
+# === GM100 INDEX FUND SYSTEM ===
+
+func gm100_invest(amount: int) -> bool:
+	if amount <= 0 or credits < amount or amount < GM100_MIN_INVESTMENT:
+		return false
+	add_credits(-amount)
+	gm100_invested += amount
+	_add_transaction("gm100_invest", amount)
+	emit_signal("gm100_changed")
+	return true
+
+func gm100_withdraw(amount: int) -> bool:
+	if amount <= 0 or gm100_invested <= 0:
+		return false
+	var actual = mini(amount, gm100_invested)
+	gm100_invested -= actual
+	add_credits(actual)
+	_add_transaction("gm100_withdraw", actual)
+	emit_signal("gm100_changed")
+	return true
+
+func get_gm100_return_interval() -> float:
+	return GM100_RETURN_INTERVAL
+
+func get_gm100_current_rate() -> float:
+	if Market:
+		match Market.gm100_phase:
+			Market.GM100Phase.BOOM:
+				return 0.12
+			Market.GM100Phase.BUST:
+				return -0.03
+			_:
+				return GM100_NORMAL_RATE
+	return GM100_NORMAL_RATE
+
+func _gm100_tick(delta: float) -> void:
+	if gm100_invested <= 0:
+		return
+	gm100_return_timer += delta
+	if gm100_return_timer >= GM100_RETURN_INTERVAL:
+		gm100_return_timer -= GM100_RETURN_INTERVAL
+		var rate: float
+		if Market:
+			rate = Market.get_gm100_return_rate()
+		else:
+			rate = GM100_NORMAL_RATE
+		var returns = int(floor(gm100_invested * rate))
+		if returns > 0:
+			gm100_invested += returns
+			_add_transaction("gm100_return", returns)
+		elif returns < 0:
+			# Bust can reduce investment, but never below 0
+			gm100_invested = maxi(0, gm100_invested + returns)
+			_add_transaction("gm100_loss", absi(returns))
+		emit_signal("gm100_changed")
