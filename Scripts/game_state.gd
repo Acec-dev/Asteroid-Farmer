@@ -72,6 +72,7 @@ signal fuel_futures_changed()
 signal gm100_changed()
 
 var credits: int = 0
+var run_time: float = 0.0
 
 # === BANK SYSTEM ===
 var bank_balance: int = 0
@@ -989,3 +990,84 @@ func _gm100_tick(delta: float) -> void:
 			gm100_invested = maxi(0, gm100_invested + returns)
 			_add_transaction("gm100_loss", absi(returns))
 		emit_signal("gm100_changed")
+
+
+func reset_to_defaults() -> void:
+	credits = 0
+	run_time = 0.0
+	minerals = {
+		MineralType.IRON: 0,
+		MineralType.NICKEL: 0,
+		MineralType.SILICA: 0,
+		MineralType.PLATINUM: 0,
+	}
+	exotic_minerals = {
+		ExoticMineralType.COBALT: 0,
+		ExoticMineralType.TITANIUM: 0,
+		ExoticMineralType.XENOCRYST: 0,
+		ExoticMineralType.IRIDIUM: 0,
+	}
+	voyage_drone_count = 0
+	expedition_drone_count = 0
+	cargo_capacity = 40
+	max_shield = 100.0
+	current_shield = 100.0
+	shield_regen_rate = 10.0
+	shield_regen_delay = 3.0
+	fire_rate = 4.0
+	move_follow_strength = 12.0
+	projectile_speed = 800.0
+	_was_over_encumbered = false
+
+	# Reset weapon upgrades
+	upgrades.weapons["Primary Cannon"].unlocked = true
+	upgrades.weapons["Primary Cannon"].level = 1
+	upgrades.weapons["Laser Beam"].unlocked = false
+	upgrades.weapons["Laser Beam"].level = 0
+	upgrades.weapons["Rocket Launcher"].unlocked = false
+	upgrades.weapons["Rocket Launcher"].level = 0
+	upgrades.weapons["Rocket Launcher"].rocket_damage_level = 0
+	upgrades.weapons["Rocket Launcher"].rocket_speed_level = 0
+	upgrades.weapons["Rocket Launcher"].rocket_fire_rate_level = 0
+	upgrades.weapons["Mine Layer"].unlocked = false
+	upgrades.weapons["Mine Layer"].level = 0
+	upgrades.weapons["Mine Layer"].mine_place_speed_level = 0
+	upgrades.weapons["Mine Layer"].mine_blast_radius_level = 0
+	upgrades.weapons["Railgun"].unlocked = false
+	upgrades.weapons["Railgun"].level = 0
+
+	# Reset system upgrades
+	upgrades.shield.max_capacity.level = 0
+	upgrades.shield.regen_rate.level = 0
+	upgrades.shield.regen_delay.level = 0
+	upgrades.radar.zoom_level.level = 0
+	upgrades.cargo.capacity.level = 0
+	upgrades.tractor_beam.power.level = 0
+	upgrades.spawner.difficulty.level = 1
+
+	# Reset drone upgrades
+	for upgrade_name in drone_upgrades:
+		drone_upgrades[upgrade_name].level = 0
+
+	# Reset bank
+	bank_balance = 0
+	bank_interest_timer = 0.0
+	bank_transaction_history.clear()
+	for upgrade_name in bank_upgrades:
+		bank_upgrades[upgrade_name].level = 0
+	bank_bonds.clear()
+
+	# Reset financial instruments
+	fuel_futures.clear()
+	gm100_invested = 0
+	gm100_return_timer = 0.0
+
+	# Reset voyage/expedition managers
+	VoyageManager.voyage_active = false
+	VoyageManager.voyage_drones_sent = 0
+	VoyageManager.voyage_elapsed = 0.0
+	VoyageManager.voyage_duration = 0.0
+	ExpeditionManager.expedition_active = false
+	ExpeditionManager.expedition_drones_sent = 0
+	ExpeditionManager.expedition_elapsed = 0.0
+	ExpeditionManager.expedition_duration = 0.0

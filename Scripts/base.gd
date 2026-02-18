@@ -883,6 +883,7 @@ func _on_drill_timer_timeout() -> void:
 
 
 func _on_back_button_pressed() -> void:
+	SaveManager.save_game()
 	get_tree().change_scene_to_file("res://Scenes/main.tscn")
 
 
