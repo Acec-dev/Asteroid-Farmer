@@ -60,6 +60,9 @@ var _upgrade_btns: Dictionary = {}
 var _wallet_label: Label
 var _vault_label: Label
 
+# Mission history panel
+var _history_panel: PanelContainer
+
 func _ready() -> void:
 	_spawn_docked_ship()
 	_spawn_drone_visuals()
@@ -69,6 +72,7 @@ func _ready() -> void:
 	_build_voyage_ui()
 	_build_expedition_ui()
 	_build_drone_upgrades_ui()
+	_build_mission_history_panel()
 
 	GameState.voyage_drones_changed.connect(_on_voyage_drones_changed)
 	GameState.expedition_drones_changed.connect(_on_expedition_drones_changed)
@@ -155,6 +159,7 @@ func _refresh_drone_visuals() -> void:
 		var cols = ceili(sqrt(float(voyage_count)))
 		for i in range(voyage_count):
 			var col = i % cols
+			@warning_ignore("integer_division")
 			var row = i / cols
 			var pos = Vector2(col * DRONE_SPACING - (cols - 1) * DRONE_SPACING * 0.5 - 80, row * DRONE_SPACING)
 
@@ -174,6 +179,7 @@ func _refresh_drone_visuals() -> void:
 		var cols = ceili(sqrt(float(expedition_count)))
 		for i in range(expedition_count):
 			var col = i % cols
+			@warning_ignore("integer_division")
 			var row = i / cols
 			var pos = Vector2(col * DRONE_SPACING - (cols - 1) * DRONE_SPACING * 0.5 + 80, row * DRONE_SPACING)
 
@@ -646,6 +652,97 @@ func _build_drone_upgrades_ui() -> void:
 	_right_menu.add_child(_upgrades_panel)
 
 	_refresh_drone_upgrades_ui()
+
+func _build_mission_history_panel() -> void:
+	var mono_font = load("res://Assets/DMMono-Regular.ttf")
+	var viewport_size = get_viewport_rect().size
+
+	_history_panel = PanelContainer.new()
+	_history_panel.name = "MissionHistoryPanel"
+
+	var stylebox = StyleBoxFlat.new()
+	stylebox.bg_color = Color(0, 0, 0, 1)
+	stylebox.border_color = Color(0.5, 0.7, 0.5)
+	stylebox.set_border_width_all(2)
+	stylebox.set_corner_radius_all(0)
+	stylebox.set_content_margin_all(12)
+	_history_panel.add_theme_stylebox_override("panel", stylebox)
+
+	var margin = MarginContainer.new()
+	_history_panel.add_child(margin)
+
+	var vbox = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 4)
+	margin.add_child(vbox)
+
+	# Title
+	var title = Label.new()
+	title.text = "MISSION LOG"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))
+	if mono_font:
+		title.add_theme_font_override("font", mono_font)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var sep = HSeparator.new()
+	_style_separator(sep)
+	vbox.add_child(sep)
+
+	# Combine voyage and expedition history, show most recent first
+	var all_history: Array[Dictionary] = []
+	for entry in GameState.voyage_history:
+		all_history.append(entry)
+	for entry in GameState.expedition_history:
+		all_history.append(entry)
+
+	if all_history.is_empty():
+		var empty_label = Label.new()
+		empty_label.text = "No missions completed yet"
+		empty_label.add_theme_font_size_override("font_size", 11)
+		empty_label.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+		if mono_font:
+			empty_label.add_theme_font_override("font", mono_font)
+		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		vbox.add_child(empty_label)
+	else:
+		# Show up to 10 most recent entries
+		var count = mini(all_history.size(), 10)
+		for i in range(count):
+			var entry = all_history[i]
+			var line = Label.new()
+			var type_str = entry.get("tier", "Unknown")
+			var survived = entry.get("drones_survived", 0)
+			var sent = entry.get("drones_sent", 0)
+			var minerals = entry.get("minerals_gained", 0)
+			var lost = entry.get("drones_lost", 0)
+			var is_expedition = entry.get("type", "voyage") == "expedition"
+
+			var text = "%s | %d/%d drones" % [type_str, survived, sent]
+			if lost > 0:
+				text += " (%d lost)" % lost
+			if is_expedition:
+				text += " | +%d exotic" % minerals
+			else:
+				text += " | +%d minerals" % minerals
+
+			line.text = text
+			line.add_theme_font_size_override("font_size", 10)
+			if is_expedition:
+				line.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
+			else:
+				line.add_theme_color_override("font_color", Color.WHITE)
+			if mono_font:
+				line.add_theme_font_override("font", mono_font)
+			vbox.add_child(line)
+
+	# Position at bottom-left of the viewport
+	_history_panel.position = Vector2(
+		-viewport_size.x * 0.5 + 16,
+		viewport_size.y * 0.5 - 300
+	)
+	_history_panel.custom_minimum_size.x = 300
+	add_child(_history_panel)
 
 func _style_separator(sep: HSeparator) -> void:
 	var sep_style = StyleBoxFlat.new()

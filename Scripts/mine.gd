@@ -1,8 +1,8 @@
 # Mine.gd - Placeable mine that explodes after a timer and damages nearby asteroids
 extends Area2D
 
-@export var explosion_delay: float = 3.0  # Time before mine explodes
-@export var explosion_radius: float = 350.0  # Damage radius
+@export var explosion_delay: float = 2.0  # Time before mine explodes
+@export var explosion_radius: float = 500.0  # Damage radius
 @export var damage: int = 1  # Damage dealt to each asteroid hit
 @export var blink_speed: float = 5.0  # How fast the mine blinks before exploding
 
@@ -48,7 +48,6 @@ func _draw() -> void:
 		draw_line(inner, outer, color, 2.0)
 
 func _explode() -> void:
-	print("Mine exploded at position: ", global_position)
 
 	# Spawn explosion particle effect
 	if _explosion_particle_scene:
@@ -90,15 +89,12 @@ func _explode() -> void:
 	query.collide_with_areas = true
 
 	var results = space_state.intersect_shape(query, 32)
-	var hit_count = 0
 	for result in results:
 		var obj = result.collider
 		if obj and obj != self and obj.has_method("hit_by_projectile"):
-			print("  Mine explosion hit: ", obj.name)
-			obj.hit_by_projectile(self)
-			hit_count += 1
-
-	print("  Total asteroids damaged: ", hit_count)
+			# Apply damage multiple times based on mine damage level
+			for _hit in range(damage):
+				obj.hit_by_projectile(self)
 
 	# Remove the mine
 	queue_free()

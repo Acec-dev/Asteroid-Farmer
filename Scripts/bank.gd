@@ -1082,9 +1082,12 @@ func _refresh_gm100_display() -> void:
 			_gm100_rate_label.text = "Return: %d%% every 4min" % rate_pct
 			_gm100_rate_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.4))
 
-	# Update invested amount
+	# Update invested amount and cost basis
 	if _gm100_invested_label:
-		_gm100_invested_label.text = "Invested: %d cr" % GameState.gm100_invested
+		if GameState.gm100_invested > 0 and GameState.gm100_cost_basis > 0:
+			_gm100_invested_label.text = "Invested: %d cr (basis: %.0f)" % [GameState.gm100_invested, GameState.gm100_cost_basis]
+		else:
+			_gm100_invested_label.text = "Invested: %d cr" % GameState.gm100_invested
 
 	# Update countdown
 	if _gm100_countdown_label and GameState.gm100_invested > 0:

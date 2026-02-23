@@ -123,6 +123,7 @@ func _get_weapon_stats(weapon_name: String, upgrade_data: Dictionary) -> Diction
 	if weapon_name == "Mine Layer":
 		stats["cooldown"] = GameState.get_mine_cooldown()
 		stats["explosion_radius"] = GameState.get_mine_blast_radius()
+		stats["damage"] = GameState.get_mine_damage()
 		return stats
 
 	var level = upgrade_data.get("level", 0)

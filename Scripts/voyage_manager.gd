@@ -7,21 +7,21 @@ const VOYAGE_DATA = {
 	VoyageTier.SHORT: {
 		"name": "Short Expedition",
 		"duration": 30.0,
-		"break_chance": 0.05,
+		"break_chance": 0.30,
 		"min_minerals": 2,
 		"max_minerals": 3,
 	},
 	VoyageTier.MEDIUM: {
 		"name": "Medium Expedition",
 		"duration": 45.0,
-		"break_chance": 0.20,
+		"break_chance": 0.15,
 		"min_minerals": 3,
 		"max_minerals": 5,
 	},
 	VoyageTier.LONG: {
 		"name": "Long Expedition",
 		"duration": 60.0,
-		"break_chance": 0.35,
+		"break_chance": 0.05,
 		"min_minerals": 5,
 		"max_minerals": 9,
 	},
@@ -114,6 +114,20 @@ func _complete_voyage() -> void:
 		"minerals_gained": minerals_gained,
 		"tier": voyage_tier,
 	}
+
+	# Record in history
+	var total_minerals := 0
+	for type in minerals_gained:
+		total_minerals += minerals_gained[type]
+	var history_entry = {
+		"type": "voyage",
+		"tier": data.name,
+		"drones_sent": results.drones_sent,
+		"drones_survived": drones_survived,
+		"drones_lost": drones_lost,
+		"minerals_gained": total_minerals,
+	}
+	GameState.add_voyage_history(history_entry)
 
 	voyage_drones_sent = 0
 	GameState.emit_signal("voyage_completed", results)

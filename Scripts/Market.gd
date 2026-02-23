@@ -13,7 +13,8 @@ const BASE_PRICES := {
 	GameState.MineralType.IRON: 1,
 	GameState.MineralType.NICKEL: 2,
 	GameState.MineralType.SILICA: 3,
-	GameState.MineralType.PLATINUM: 5
+	GameState.MineralType.PLATINUM: 5,
+	GameState.MineralType.GOLD: 15
 }
 
 ## Current market prices
@@ -21,7 +22,8 @@ var market_prices := {
 	GameState.MineralType.IRON: 1,
 	GameState.MineralType.NICKEL: 2,
 	GameState.MineralType.SILICA: 3,
-	GameState.MineralType.PLATINUM: 5
+	GameState.MineralType.PLATINUM: 5,
+	GameState.MineralType.GOLD: 15
 }
 
 ## Price history - tracks last 10 prices for each mineral
@@ -29,7 +31,8 @@ var price_history := {
 	GameState.MineralType.IRON: [],
 	GameState.MineralType.NICKEL: [],
 	GameState.MineralType.SILICA: [],
-	GameState.MineralType.PLATINUM: []
+	GameState.MineralType.PLATINUM: [],
+	GameState.MineralType.GOLD: []
 }
 
 ## Maximum number of historical prices to track
@@ -94,7 +97,7 @@ var _timer: Timer
 
 func _ready() -> void:
 	# Initialize price history with starting prices
-	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM]:
+	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM, GameState.MineralType.GOLD]:
 		price_history[mineral].append(market_prices[mineral])
 	fuel_price_history.append(fuel_price)
 	gm100_history.append(gm100_value)
@@ -119,11 +122,12 @@ func _update_market_prices() -> void:
 	_update_nickel_price()
 	_update_silica_price()
 	_update_platinum_price()
+	_update_gold_price()
 	_update_fuel_price()
 	_update_gm100()
 
 	# Add current prices to history (limited to MAX_HISTORY_LENGTH)
-	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM]:
+	for mineral in [GameState.MineralType.IRON, GameState.MineralType.NICKEL, GameState.MineralType.SILICA, GameState.MineralType.PLATINUM, GameState.MineralType.GOLD]:
 		price_history[mineral].append(market_prices[mineral])
 		if price_history[mineral].size() > MAX_HISTORY_LENGTH:
 			price_history[mineral].pop_front()
@@ -186,6 +190,12 @@ func _update_platinum_price() -> void:
 		_platinum_pressure = 0.0
 	var bonus := int(_platinum_pressure)
 	market_prices[GameState.MineralType.PLATINUM] = clampi(5 + bonus, 2, 10)
+
+
+## Gold uses a volatile random walk with high base price
+func _update_gold_price() -> void:
+	var change := randi() % 7 - 3  # -3 to +3
+	market_prices[GameState.MineralType.GOLD] = clampi(market_prices[GameState.MineralType.GOLD] + change, 10, 25)
 
 
 ## Fuel uses a mean-reverting random walk with occasional volatility spikes
@@ -310,13 +320,15 @@ func reset_market() -> void:
 		GameState.MineralType.IRON: 1,
 		GameState.MineralType.NICKEL: 2,
 		GameState.MineralType.SILICA: 3,
-		GameState.MineralType.PLATINUM: 5
+		GameState.MineralType.PLATINUM: 5,
+		GameState.MineralType.GOLD: 15
 	}
 	price_history = {
 		GameState.MineralType.IRON: [1],
 		GameState.MineralType.NICKEL: [2],
 		GameState.MineralType.SILICA: [3],
-		GameState.MineralType.PLATINUM: [5]
+		GameState.MineralType.PLATINUM: [5],
+		GameState.MineralType.GOLD: [15]
 	}
 	_nickel_recent_sales = 0.0
 	_nickel_appreciation = 0.0

@@ -5,7 +5,8 @@ enum MineralType {
 	IRON,
 	NICKEL,
 	SILICA,
-	PLATINUM
+	PLATINUM,
+	GOLD
 }
 
 # Exotic mineral types (from expeditions)
@@ -21,7 +22,8 @@ const MINERAL_NAMES = {
 	MineralType.IRON: "iron",
 	MineralType.NICKEL: "nickel",
 	MineralType.SILICA: "silica",
-	MineralType.PLATINUM: "platinum"
+	MineralType.PLATINUM: "platinum",
+	MineralType.GOLD: "gold"
 }
 
 const EXOTIC_MINERAL_NAMES = {
@@ -35,8 +37,12 @@ const STRING_TO_MINERAL = {
 	"iron": MineralType.IRON,
 	"nickel": MineralType.NICKEL,
 	"silica": MineralType.SILICA,
-	"platinum": MineralType.PLATINUM
+	"platinum": MineralType.PLATINUM,
+	"gold": MineralType.GOLD
 }
+
+# Gold spawning config
+const GOLD_SPAWN_TIME_THRESHOLD := 180.0  # Gold starts appearing after 3 minutes
 
 const STRING_TO_EXOTIC = {
 	"cobalt": ExoticMineralType.COBALT,
@@ -77,6 +83,7 @@ var run_time: float = 0.0
 # === BANK SYSTEM ===
 var bank_balance: int = 0
 var bank_interest_timer: float = 0.0
+var bank_interest_accumulator: float = 0.0  # Fractional interest accumulator
 var bank_transaction_history: Array[Dictionary] = []
 const MAX_TRANSACTION_HISTORY := 20
 
@@ -152,6 +159,7 @@ const FUEL_FUTURES_TIERS = {
 
 # === GM100 INDEX FUND ===
 var gm100_invested: int = 0  # Amount currently invested in GM100
+var gm100_cost_basis: float = 0.0  # Average index price at which shares were purchased
 var gm100_return_timer: float = 0.0
 const GM100_RETURN_INTERVAL := 240.0  # 4 minutes between returns
 const GM100_NORMAL_RATE := 0.05       # 5% return normally
@@ -161,11 +169,17 @@ const GM100_MIN_INVESTMENT := 25      # Minimum amount to invest
 var voyage_drone_count: int = 0
 var expedition_drone_count: int = 0
 const DRONE_COST: int = 75
+
+# Voyage/Expedition history
+var voyage_history: Array[Dictionary] = []
+var expedition_history: Array[Dictionary] = []
+const MAX_VOYAGE_HISTORY := 15
 var minerals = {
 	MineralType.IRON: 0,
 	MineralType.NICKEL: 0,
 	MineralType.SILICA: 0,
 	MineralType.PLATINUM: 0,
+	MineralType.GOLD: 0,
 }
 
 # Exotic minerals (earned from expeditions, spent on drone upgrades)
@@ -229,7 +243,8 @@ var market_prices = {
 	MineralType.IRON: 1,
 	MineralType.NICKEL: 2,
 	MineralType.SILICA: 3,
-	MineralType.PLATINUM: 5
+	MineralType.PLATINUM: 5,
+	MineralType.GOLD: 15
 }
 
 # Upgrade hooks (read by Player/Spawner/etc.)
@@ -274,6 +289,7 @@ var upgrades = {
 			"level": 0,
 			"mine_place_speed_level": 0,
 			"mine_blast_radius_level": 0,
+			"mine_damage_level": 0,
 		},
 		"Railgun": {
 			"unlocked": false,
@@ -608,10 +624,15 @@ func get_mine_cooldown() -> float:
 	var level: int = upgrades.weapons["Mine Layer"].mine_place_speed_level
 	return 3.0 / (1.0 + 0.25 * level)
 
-## Get current mine blast radius (350 base, +15% per level)
+## Get current mine blast radius (500 base, +15% per level)
 func get_mine_blast_radius() -> float:
 	var level: int = upgrades.weapons["Mine Layer"].mine_blast_radius_level
-	return 350.0 * (1.0 + 0.15 * level)
+	return 500.0 * (1.0 + 0.15 * level)
+
+## Get current mine damage (1 base + level)
+func get_mine_damage() -> int:
+	var level: int = upgrades.weapons["Mine Layer"].mine_damage_level
+	return 1 + level
 
 ## Get cost for a specific mine upgrade at its current level
 func get_mine_upgrade_cost(upgrade_type: String) -> int:
@@ -622,6 +643,8 @@ func get_mine_upgrade_cost(upgrade_type: String) -> int:
 			level = data.mine_place_speed_level
 		"mine_blast_radius":
 			level = data.mine_blast_radius_level
+		"mine_damage":
+			level = data.mine_damage_level
 	return int(ceil(MINE_UPGRADE_BASE_COST * pow(MINE_UPGRADE_COST_MULTIPLIER, level)))
 
 ## Purchase a mine upgrade
@@ -634,6 +657,8 @@ func upgrade_mine_stat(upgrade_type: String) -> bool:
 			data.mine_place_speed_level += 1
 		"mine_blast_radius":
 			data.mine_blast_radius_level += 1
+		"mine_damage":
+			data.mine_damage_level += 1
 		_:
 			push_error("Unknown mine upgrade type: " + upgrade_type)
 			return false
@@ -691,6 +716,16 @@ func remove_voyage_drones(amount: int) -> void:
 func remove_expedition_drones(amount: int) -> void:
 	expedition_drone_count = max(0, expedition_drone_count - amount)
 	emit_signal("expedition_drones_changed", expedition_drone_count)
+
+func add_voyage_history(entry: Dictionary) -> void:
+	voyage_history.push_front(entry)
+	if voyage_history.size() > MAX_VOYAGE_HISTORY:
+		voyage_history.resize(MAX_VOYAGE_HISTORY)
+
+func add_expedition_history(entry: Dictionary) -> void:
+	expedition_history.push_front(entry)
+	if expedition_history.size() > MAX_VOYAGE_HISTORY:
+		expedition_history.resize(MAX_VOYAGE_HISTORY)
 
 # === EXOTIC MINERAL SYSTEM ===
 
@@ -803,8 +838,11 @@ func _bank_tick(delta: float) -> void:
 	if bank_interest_timer >= interval:
 		bank_interest_timer -= interval
 		var rate = get_bank_interest_rate()
-		var interest = int(floor(bank_balance * rate))
+		# Accumulate fractional interest so low balances still earn over time
+		bank_interest_accumulator += bank_balance * rate
+		var interest = int(floor(bank_interest_accumulator))
 		if interest > 0:
+			bank_interest_accumulator -= interest
 			var capacity = get_bank_capacity()
 			interest = mini(interest, capacity - bank_balance)
 			if interest > 0:
@@ -940,6 +978,13 @@ func _fuel_futures_tick(delta: float) -> void:
 func gm100_invest(amount: int) -> bool:
 	if amount <= 0 or credits < amount or amount < GM100_MIN_INVESTMENT:
 		return false
+	# Track cost basis: weighted average of buy-in index price
+	var current_index = Market.gm100_value if Market else 100.0
+	if gm100_invested <= 0:
+		gm100_cost_basis = current_index
+	else:
+		# Weighted average: (old_total * old_basis + new_amount * current_price) / new_total
+		gm100_cost_basis = (gm100_invested * gm100_cost_basis + amount * current_index) / (gm100_invested + amount)
 	add_credits(-amount)
 	gm100_invested += amount
 	_add_transaction("gm100_invest", amount)
@@ -951,6 +996,9 @@ func gm100_withdraw(amount: int) -> bool:
 		return false
 	var actual = mini(amount, gm100_invested)
 	gm100_invested -= actual
+	# If fully withdrawn, reset cost basis
+	if gm100_invested <= 0:
+		gm100_cost_basis = 0.0
 	add_credits(actual)
 	_add_transaction("gm100_withdraw", actual)
 	emit_signal("gm100_changed")
@@ -986,9 +1034,16 @@ func _gm100_tick(delta: float) -> void:
 			gm100_invested += returns
 			_add_transaction("gm100_return", returns)
 		elif returns < 0:
-			# Bust can reduce investment, but never below 0
-			gm100_invested = maxi(0, gm100_invested + returns)
-			_add_transaction("gm100_loss", absi(returns))
+			# Cost basis protection: only lose money if index drops below buy-in price
+			var current_index = Market.gm100_value if Market else 100.0
+			if current_index < gm100_cost_basis:
+				# Scale losses by how far below cost basis
+				var loss_factor = clampf(1.0 - (current_index / gm100_cost_basis), 0.0, 1.0)
+				var actual_loss = int(ceil(absi(returns) * loss_factor))
+				if actual_loss > 0:
+					gm100_invested = maxi(0, gm100_invested - actual_loss)
+					_add_transaction("gm100_loss", actual_loss)
+			# If index is above cost basis, no loss - you're still in profit
 		emit_signal("gm100_changed")
 
 
@@ -1000,6 +1055,7 @@ func reset_to_defaults() -> void:
 		MineralType.NICKEL: 0,
 		MineralType.SILICA: 0,
 		MineralType.PLATINUM: 0,
+		MineralType.GOLD: 0,
 	}
 	exotic_minerals = {
 		ExoticMineralType.COBALT: 0,
@@ -1009,6 +1065,8 @@ func reset_to_defaults() -> void:
 	}
 	voyage_drone_count = 0
 	expedition_drone_count = 0
+	voyage_history.clear()
+	expedition_history.clear()
 	cargo_capacity = 40
 	max_shield = 100.0
 	current_shield = 100.0
@@ -1033,6 +1091,7 @@ func reset_to_defaults() -> void:
 	upgrades.weapons["Mine Layer"].level = 0
 	upgrades.weapons["Mine Layer"].mine_place_speed_level = 0
 	upgrades.weapons["Mine Layer"].mine_blast_radius_level = 0
+	upgrades.weapons["Mine Layer"].mine_damage_level = 0
 	upgrades.weapons["Railgun"].unlocked = false
 	upgrades.weapons["Railgun"].level = 0
 
@@ -1052,6 +1111,7 @@ func reset_to_defaults() -> void:
 	# Reset bank
 	bank_balance = 0
 	bank_interest_timer = 0.0
+	bank_interest_accumulator = 0.0
 	bank_transaction_history.clear()
 	for upgrade_name in bank_upgrades:
 		bank_upgrades[upgrade_name].level = 0
@@ -1060,6 +1120,7 @@ func reset_to_defaults() -> void:
 	# Reset financial instruments
 	fuel_futures.clear()
 	gm100_invested = 0
+	gm100_cost_basis = 0.0
 	gm100_return_timer = 0.0
 
 	# Reset voyage/expedition managers
