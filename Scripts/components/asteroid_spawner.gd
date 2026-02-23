@@ -302,7 +302,6 @@ func _apply_difficulty_level(level: int) -> void:
 			asteroid_health = 4 + int(extra * 0.5)
 			asteroid_speed_min = 350.0 + extra * 35.0
 			asteroid_speed_max = 600.0 + extra * 60.0
-			asteroid_radius = 28.0 + extra * 2.0  # Asteroids get bigger too
 
 	# Update timer
 	if _spawn_timer:
