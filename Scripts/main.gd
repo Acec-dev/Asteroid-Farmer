@@ -112,8 +112,8 @@ func _process(delta: float) -> void:
 		_run_timer_label.text = "%d:%02d" % [minutes, seconds]
 
 	# Auto-increase difficulty based on elapsed time
-	# Level 1 (Normal) at start, then escalate every 60 seconds
-	var target_level := clampi(1 + int(_run_time / 60.0), 0, 4)
+	# Level 1 (Normal) at start, then escalate every 60 seconds (no cap)
+	var target_level := maxi(1 + int(_run_time / 60.0), 0)
 	if target_level != _last_difficulty_level:
 		_last_difficulty_level = target_level
 		GameState.set_spawner_difficulty(target_level)

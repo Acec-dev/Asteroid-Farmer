@@ -4,7 +4,7 @@ class_name MineLayer
 extends WeaponBase
 
 var mine_scene: PackedScene
-var _mine_explosion_radius: float = 500.0
+var _mine_explosion_radius: float = 1750.0
 var _mine_damage: int = 1
 
 func _init() -> void:
