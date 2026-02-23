@@ -627,7 +627,7 @@ func get_mine_cooldown() -> float:
 ## Get current mine blast radius (500 base, +15% per level)
 func get_mine_blast_radius() -> float:
 	var level: int = upgrades.weapons["Mine Layer"].mine_blast_radius_level
-	return 500.0 * (1.0 + 0.15 * level)
+	return 1750.0 * (1.0 + 0.15 * level)
 
 ## Get current mine damage (1 base + level)
 func get_mine_damage() -> int:

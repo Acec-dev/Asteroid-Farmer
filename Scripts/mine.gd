@@ -2,7 +2,7 @@
 extends Area2D
 
 @export var explosion_delay: float = 2.0  # Time before mine explodes
-@export var explosion_radius: float = 500.0  # Damage radius
+@export var explosion_radius: float = 1750.0  # Damage radius
 @export var damage: int = 1  # Damage dealt to each asteroid hit
 @export var blink_speed: float = 5.0  # How fast the mine blinks before exploding
 
