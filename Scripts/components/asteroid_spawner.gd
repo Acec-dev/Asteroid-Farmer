@@ -269,7 +269,7 @@ func sync_with_game_state() -> void:
 
 ## Apply difficulty level to spawner settings
 func _apply_difficulty_level(level: int) -> void:
-	# Scale spawn rate (more asteroids at higher difficulty)
+	# Levels 0-4 use preset values; beyond 4 scales continuously and gets ridiculous
 	match level:
 		0:  # Easy
 			spawn_interval = 3.0
@@ -295,12 +295,14 @@ func _apply_difficulty_level(level: int) -> void:
 			asteroid_health = 3
 			asteroid_speed_min = 300.0
 			asteroid_speed_max = 500.0
-		_:  # Extreme
-			spawn_interval = 0.8
-			spawn_count = 2
-			asteroid_health = 4
-			asteroid_speed_min = 350.0
-			asteroid_speed_max = 600.0
+		_:  # Extreme+ (level 4+, scales endlessly)
+			var extra := level - 4  # 0 at level 4, grows each minute
+			spawn_interval = maxf(0.8 - extra * 0.04, 0.2)
+			spawn_count = 2 + int(extra * 0.7)
+			asteroid_health = 4 + int(extra * 0.5)
+			asteroid_speed_min = 350.0 + extra * 35.0
+			asteroid_speed_max = 600.0 + extra * 60.0
+			asteroid_radius = 28.0 + extra * 2.0  # Asteroids get bigger too
 
 	# Update timer
 	if _spawn_timer:
