@@ -61,10 +61,14 @@ func _process(delta: float) -> void:
 		queue_free()
 
 func _draw() -> void:
-	# Simple diamond glyph
+	# Simple diamond glyph - Gold is drawn larger and in gold color
 	var s := 4.0
+	var color := Color.WHITE
+	if kind == GameState.MineralType.GOLD:
+		s = 6.0
+		color = Color(1.0, 0.84, 0.0)  # Gold color
 	var pts = [Vector2(0,-s), Vector2(s,0), Vector2(0,s), Vector2(-s,0), Vector2(0,-s)]
-	draw_polyline(pts, Color.WHITE, 1.5)
+	draw_polyline(pts, color, 1.5)
 
 func _collect() -> void:
 	AudioManager.play_sfx("collect")

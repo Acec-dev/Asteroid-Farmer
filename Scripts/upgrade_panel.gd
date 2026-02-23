@@ -28,6 +28,10 @@ var _platinum_price_label: Label
 var _sell_btn: Button
 var _mono_font: Font
 
+# Gold mineral UI references
+var _gold_label: Label
+var _gold_price_label: Label
+
 # Exotic mineral UI references
 var _cobalt_label: Label
 var _titanium_label: Label
@@ -67,6 +71,7 @@ var display_names = {
 	"rocket_fire_rate": "  Fire Rate",
 	"mine_place_speed": "  Place Speed",
 	"mine_blast_radius": "  Blast Radius",
+	"mine_damage": "  Damage",
 }
 
 func _ready() -> void:
@@ -209,7 +214,7 @@ func _build_upgrade_list() -> void:
 				_add_rocket_sub_row(sub_type)
 		# Add infinite sub-upgrade rows for Mine Layer
 		if weapon_name == "Mine Layer":
-			for sub_type in ["mine_place_speed", "mine_blast_radius"]:
+			for sub_type in ["mine_place_speed", "mine_blast_radius", "mine_damage"]:
 				_add_mine_sub_row(sub_type)
 
 	_add_section_header("SHIELDS")
@@ -609,6 +614,11 @@ func _build_inventory_section() -> void:
 	_platinum_label = platinum_row.get_node("CountLabel")
 	_platinum_price_label = platinum_row.get_node("PriceLabel")
 
+	var gold_row = _make_inventory_row("Gold", "0", "$0")
+	minerals_box.add_child(gold_row)
+	_gold_label = gold_row.get_node("CountLabel")
+	_gold_price_label = gold_row.get_node("PriceLabel")
+
 	# Cargo capacity display
 	_cargo_label = Label.new()
 	_cargo_label.text = "Cargo: 0/%d" % GameState.cargo_capacity
@@ -718,6 +728,8 @@ func _refresh_inventory(_new_credits: int = 0) -> void:
 	_nickel_label.text = str(GameState.minerals[GameState.MineralType.NICKEL])
 	_silica_label.text = str(GameState.minerals[GameState.MineralType.SILICA])
 	_platinum_label.text = str(GameState.minerals[GameState.MineralType.PLATINUM])
+	if _gold_label:
+		_gold_label.text = str(GameState.minerals[GameState.MineralType.GOLD])
 	var total := GameState.get_total_minerals()
 	if GameState.is_over_encumbered():
 		var speed_pct := int(GameState.get_speed_multiplier() * 100)
@@ -738,6 +750,8 @@ func _refresh_prices() -> void:
 	_nickel_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.NICKEL]
 	_silica_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.SILICA]
 	_platinum_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.PLATINUM]
+	if _gold_price_label:
+		_gold_price_label.text = "$%d" % GameState.market_prices[GameState.MineralType.GOLD]
 
 func _make_exotic_row(mineral_name: String, count: String) -> HBoxContainer:
 	var row = HBoxContainer.new()

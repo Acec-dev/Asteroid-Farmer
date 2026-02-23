@@ -7,21 +7,21 @@ const EXPEDITION_DATA = {
 	ExpeditionTier.NEAR_ORBIT: {
 		"name": "Near Orbit",
 		"duration": 60.0,
-		"break_chance": 0.10,
+		"break_chance": 0.35,
 		"min_minerals": 1,
 		"max_minerals": 2,
 	},
 	ExpeditionTier.DEEP_SPACE: {
 		"name": "Deep Space",
 		"duration": 120.0,
-		"break_chance": 0.25,
+		"break_chance": 0.20,
 		"min_minerals": 2,
 		"max_minerals": 4,
 	},
 	ExpeditionTier.UNCHARTED: {
 		"name": "Uncharted",
 		"duration": 180.0,
-		"break_chance": 0.40,
+		"break_chance": 0.10,
 		"min_minerals": 4,
 		"max_minerals": 8,
 	},
@@ -115,6 +115,20 @@ func _complete_expedition() -> void:
 		"minerals_gained": minerals_gained,
 		"tier": expedition_tier,
 	}
+
+	# Record in history
+	var total_minerals := 0
+	for type in minerals_gained:
+		total_minerals += minerals_gained[type]
+	var history_entry = {
+		"type": "expedition",
+		"tier": data.name,
+		"drones_sent": results.drones_sent,
+		"drones_survived": drones_survived,
+		"drones_lost": drones_lost,
+		"minerals_gained": total_minerals,
+	}
+	GameState.add_expedition_history(history_entry)
 
 	expedition_drones_sent = 0
 	GameState.emit_signal("expedition_completed", results)
