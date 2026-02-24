@@ -9,6 +9,7 @@ extends Area2D
 var _age: float = 0.0
 var _explosion_particle_scene: PackedScene = preload("res://Scenes/rocket_explode_particle.tscn")
 var _edge_squares: Array[Vector2] = []  # Pre-generated square positions for blast radius ring
+var _edge_sizes: Array[float] = []     # Pre-generated sizes for each square
 
 func _ready() -> void:
 	# Pre-generate scattered square positions around the blast radius edge
@@ -18,6 +19,7 @@ func _ready() -> void:
 		var radius_offset = randf_range(-2.5, 2.5)
 		var r = explosion_radius + radius_offset
 		_edge_squares.append(Vector2(cos(angle), sin(angle)) * r)
+		_edge_sizes.append(1.0 if randf() > 0.4 else 2.0)
 
 	queue_redraw()
 	# Start the explosion timer
@@ -44,12 +46,13 @@ func _draw() -> void:
 		color = Color.WHITE.lerp(Color.RED, blink_factor)
 
 	# Draw blast radius as scattered white squares forming an annulus
-	var sq_alpha = 0.15 + 0.2 * (1.0 - time_left / explosion_delay)
+	var sq_alpha = 0.35 + 0.25 * (1.0 - time_left / explosion_delay)
 	if time_left < 1.0:
-		sq_alpha = 0.5
+		sq_alpha = 0.7
 	var sq_color = Color(1.0, 1.0, 1.0, sq_alpha)
-	for pos in _edge_squares:
-		var sq_size = 1.0 if randf() > 0.4 else 2.0
+	for i in range(_edge_squares.size()):
+		var pos = _edge_squares[i]
+		var sq_size = _edge_sizes[i]
 		draw_rect(Rect2(pos - Vector2(sq_size, sq_size) * 0.5, Vector2(sq_size, sq_size)), sq_color)
 
 	# Draw main circle
