@@ -46,6 +46,10 @@ const _SOUND_REGISTRY := {
 		"path": "res://Assets/explode-5.wav",
 		"volume_db": -18.0,
 	},
+	"going_up": {
+		"path": "res://Assets/Sounds/going-up.wav",
+		"volume_db": -10.0,
+	},
 }
 
 # ── Configuration ───────────────────────────────────────────────────────────
