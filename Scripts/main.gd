@@ -56,6 +56,7 @@ var _base_btn: Button
 var _base_countdown_label: Label
 var _base_countdown_active: bool = false
 var _base_countdown_time: float = 0.0
+var _base_sound_played: bool = false
 var _base_btn_tween: Tween
 const BASE_COUNTDOWN_DURATION := 5.0
 
@@ -119,13 +120,18 @@ func _process(delta: float) -> void:
 
 	# Base countdown
 	if _base_countdown_active:
+		var prev_time := _base_countdown_time
 		_base_countdown_time -= delta
 		if _base_countdown_time <= 0.0:
 			_base_countdown_active = false
 			SaveManager.save_game()
 			get_tree().change_scene_to_file("res://Scenes/base.tscn")
-		elif _base_countdown_label:
-			_base_countdown_label.text = "Traveling to base... %ds" % ceili(_base_countdown_time)
+		else:
+			if not _base_sound_played and prev_time > 1.0 and _base_countdown_time <= 1.0:
+				AudioManager.play_sfx("going_up")
+				_base_sound_played = true
+			if _base_countdown_label:
+				_base_countdown_label.text = "Traveling to base... %ds" % ceili(_base_countdown_time)
 	
   # Voyage results display timer
 	if _voyage_results_timer > 0.0:
@@ -257,6 +263,7 @@ func _create_base_button() -> void:
 func _on_go_to_base_pressed() -> void:
 	_base_countdown_active = true
 	_base_countdown_time = BASE_COUNTDOWN_DURATION
+	_base_sound_played = false
 	_base_btn.visible = false
 	if _base_countdown_label:
 		_base_countdown_label.visible = true
