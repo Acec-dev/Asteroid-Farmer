@@ -8,7 +8,6 @@ const BOB_SPEED := 1.5
 const FLY_IN_DURATION := 1.2
 
 # UI references
-var _vault_visual: _VaultDrawer
 var _balance_label: Label
 var _wallet_label: Label
 var _interest_info_label: Label
@@ -43,7 +42,7 @@ var _gm100_withdraw_btns: Array[Button] = []
 
 func _ready() -> void:
 	_spawn_docked_ship()
-	_build_vault_visual()
+	_build_vault_labels()
 	_build_bank_panel()
 	_build_upgrade_panel()
 	_build_history_panel()
@@ -83,11 +82,6 @@ func _process(delta: float) -> void:
 		_bob_time += delta
 		_ship_node.position.y = _ship_rest_pos.y + sin(_bob_time * BOB_SPEED * TAU) * BOB_AMPLITUDE
 
-	# Update vault fill animation
-	if _vault_visual:
-		_vault_visual.target_fill = float(GameState.bank_balance) / float(maxi(GameState.get_bank_capacity(), 1))
-		_vault_visual.queue_redraw()
-
 	# Update countdown
 	if _countdown_label and GameState.bank_balance > 0:
 		var remaining = GameState.get_bank_compound_interval() - GameState.bank_interest_timer
@@ -105,16 +99,12 @@ func _process(delta: float) -> void:
 	# Update GM100 display
 	_refresh_gm100_display()
 
-# === VAULT VISUAL ===
+# === VAULT LABELS (coin SubViewport replaces the old VaultDrawer) ===
 
-func _build_vault_visual() -> void:
-	_vault_visual = _VaultDrawer.new()
-	_vault_visual.position = Vector2(-80, -100)
-	add_child(_vault_visual)
-
+func _build_vault_labels() -> void:
 	var mono_font = load("res://Assets/DMMono-Regular.ttf")
 
-	# Balance label centered above vault
+	# Balance label centered above coin display
 	_balance_label = Label.new()
 	_balance_label.text = "0 cr"
 	_balance_label.add_theme_font_size_override("font_size", 22)
@@ -122,8 +112,8 @@ func _build_vault_visual() -> void:
 	if mono_font:
 		_balance_label.add_theme_font_override("font", mono_font)
 	_balance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_balance_label.custom_minimum_size.x = 160
-	_balance_label.position = Vector2(-80, -140)
+	_balance_label.custom_minimum_size.x = 320
+	_balance_label.position = Vector2(-160, -230)
 	add_child(_balance_label)
 
 	# "VAULT" label above balance
@@ -134,11 +124,11 @@ func _build_vault_visual() -> void:
 	if mono_font:
 		vault_title.add_theme_font_override("font", mono_font)
 	vault_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	vault_title.custom_minimum_size.x = 160
-	vault_title.position = Vector2(-80, -162)
+	vault_title.custom_minimum_size.x = 320
+	vault_title.position = Vector2(-160, -252)
 	add_child(vault_title)
 
-	# Countdown label below vault
+	# Countdown label below coin display
 	_countdown_label = Label.new()
 	_countdown_label.text = ""
 	_countdown_label.add_theme_font_size_override("font_size", 12)
@@ -146,8 +136,8 @@ func _build_vault_visual() -> void:
 	if mono_font:
 		_countdown_label.add_theme_font_override("font", mono_font)
 	_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_countdown_label.custom_minimum_size.x = 160
-	_countdown_label.position = Vector2(-80, 108)
+	_countdown_label.custom_minimum_size.x = 320
+	_countdown_label.position = Vector2(-160, 208)
 	add_child(_countdown_label)
 
 # === BANK PANEL (deposit/withdraw) ===
@@ -1175,62 +1165,6 @@ class _ShipDrawer extends Node2D:
 			Vector2(60, 0)
 		])
 		draw_polyline(points, Color.WHITE, 2.0)
-
-
-class _VaultDrawer extends Node2D:
-	var target_fill: float = 0.0
-	var _particle_time: float = 0.0
-
-	const VAULT_W := 160.0
-	const VAULT_H := 200.0
-
-	func _process(delta: float) -> void:
-		_particle_time += delta
-
-	func _draw() -> void:
-		var x := 0.0
-		var y := 0.0
-
-		# Fill level
-		var fill = clampf(target_fill, 0.0, 1.0)
-		var fill_h = VAULT_H * fill
-		if fill_h > 0:
-			var fill_color = Color(0.25, 0.7, 0.25, 0.4)
-			draw_rect(Rect2(x + 2, y + VAULT_H - fill_h, VAULT_W - 4, fill_h), fill_color, true)
-
-			# Animated dots inside the fill area
-			for i in range(8):
-				var dot_phase = _particle_time * 0.5 + i * 0.8
-				var dot_x = x + 10 + fmod(dot_phase * 17.3 + i * 23.7, VAULT_W - 20)
-				var dot_base_y = y + VAULT_H - fmod(dot_phase * 12.0 + i * 31.0, fill_h)
-				var dot_y = dot_base_y + sin(dot_phase * 2.0) * 3.0
-				if dot_y > y + VAULT_H - fill_h and dot_y < y + VAULT_H:
-					var dot_alpha = 0.3 + 0.3 * sin(dot_phase * 3.0)
-					draw_circle(Vector2(dot_x, dot_y), 2.0, Color(0.4, 0.9, 0.4, dot_alpha))
-
-		# Vault outline - gets brighter as it fills
-		var border_brightness = 0.4 + 0.6 * fill
-		var border_color = Color(border_brightness, border_brightness, border_brightness)
-		var border_width = 1.5 + fill * 1.0
-		draw_rect(Rect2(x, y, VAULT_W, VAULT_H), border_color, false, border_width)
-
-		# Door outline on the front
-		var door_w = VAULT_W * 0.5
-		var door_h = VAULT_H * 0.6
-		var door_x = x + (VAULT_W - door_w) * 0.5
-		var door_y = y + (VAULT_H - door_h) * 0.5
-		draw_rect(Rect2(door_x, door_y, door_w, door_h), Color(border_brightness * 0.7, border_brightness * 0.7, border_brightness * 0.7), false, 1.0)
-
-		# Door handle (small circle)
-		var handle_x = door_x + door_w * 0.75
-		var handle_y = door_y + door_h * 0.5
-		draw_circle(Vector2(handle_x, handle_y), 4.0, Color(border_brightness, border_brightness, border_brightness))
-		draw_circle(Vector2(handle_x, handle_y), 2.5, Color(0, 0, 0))
-
-		# Capacity indicator line
-		draw_line(Vector2(x + VAULT_W + 6, y), Vector2(x + VAULT_W + 6, y + VAULT_H), Color(0.3, 0.3, 0.3), 1.0)
-		if fill > 0:
-			draw_line(Vector2(x + VAULT_W + 6, y + VAULT_H - fill_h), Vector2(x + VAULT_W + 6, y + VAULT_H), Color(0.3, 0.7, 0.3), 2.0)
 
 
 class _BondProgressBar extends Control:

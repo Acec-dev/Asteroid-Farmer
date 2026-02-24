@@ -5,7 +5,7 @@ extends Node3D
 @export var drop_interval: float = 0.15
 
 const NUM_STACKS := 13       # positions -6 through 6
-const MAX_STACK_HEIGHT := 20
+const MAX_STACK_HEIGHT := 40
 const MAX_COINS := NUM_STACKS * MAX_STACK_HEIGHT  # 260
 
 # Precomputed sequence of stack indices (0-12) for each coin drop
