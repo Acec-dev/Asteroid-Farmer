@@ -21,33 +21,6 @@ coin_scene = ExtResource("2_hpwbv")
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4617493, 8.793155)
 
-[node name="Node3D" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3518157, 0)
-
-[node name="Node3D6" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.80686855, 0)
-
-[node name="Node3D9" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2673869, 0)
-
-[node name="Node3D2" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.352, 0)
-
-[node name="Node3D7" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.63, 0)
-
-[node name="Node3D3" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0.352, 0)
-
-[node name="Node3D4" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0.352, 0)
-
-[node name="Node3D8" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0.74, 0)
-
-[node name="Node3D5" parent="." instance=ExtResource("2_hpwbv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.352, 0)
-
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_12nla")
 

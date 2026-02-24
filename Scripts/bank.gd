@@ -42,6 +42,7 @@ var _gm100_invest_btns: Array[Button] = []
 var _gm100_withdraw_btns: Array[Button] = []
 
 func _ready() -> void:
+	_build_layout_placeholders()
 	_spawn_docked_ship()
 	_build_vault_visual()
 	_build_bank_panel()
@@ -104,6 +105,14 @@ func _process(delta: float) -> void:
 
 	# Update GM100 display
 	_refresh_gm100_display()
+
+# === LAYOUT PLACEHOLDERS ===
+# Rough rectangles for each panel so we can see where the SubViewport fits.
+
+func _build_layout_placeholders() -> void:
+	var guide := _LayoutGuide.new()
+	guide.name = "LayoutGuide"
+	add_child(guide)
 
 # === VAULT VISUAL ===
 
@@ -1165,6 +1174,38 @@ func _on_base_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://Scenes/base.tscn")
 
 # === INNER CLASSES ===
+
+class _LayoutGuide extends Node2D:
+	# Panel rects: [title, position, size, border_color]
+	# Positions match the real panels in bank.gd
+	const PANELS := [
+		["VAULT", Vector2(-80, -100), Vector2(160, 200), Color(0.3, 0.7, 0.3)],
+		["GALACTIC BANK", Vector2(200, -340), Vector2(240, 290), Color(0.3, 0.7, 0.3)],
+		["BANK UPGRADES", Vector2(200, -30), Vector2(240, 300), Color(0.6, 0.6, 0.3)],
+		["TRANSACTIONS", Vector2(-500, -340), Vector2(260, 280), Color(0.5, 0.5, 0.5)],
+		["BONDS", Vector2(-500, 20), Vector2(260, 320), Color(0.3, 0.5, 0.8)],
+		["FUEL FUTURES", Vector2(480, -340), Vector2(260, 380), Color(0.9, 0.5, 0.2)],
+		["GM100 INDEX", Vector2(480, 20), Vector2(260, 380), Color(0.2, 0.8, 0.6)],
+	]
+
+	func _draw() -> void:
+		var font := ThemeDB.fallback_font
+		var font_size := 12
+
+		for p in PANELS:
+			var title: String = p[0]
+			var pos: Vector2 = p[1]
+			var sz: Vector2 = p[2]
+			var col: Color = p[3]
+
+			# Dim fill
+			draw_rect(Rect2(pos, sz), Color(col.r, col.g, col.b, 0.08), true)
+			# Dashed-style border (solid but thin)
+			draw_rect(Rect2(pos, sz), Color(col.r, col.g, col.b, 0.5), false, 1.0)
+			# Title
+			if font:
+				draw_string(font, pos + Vector2(6, 16), title, HORIZONTAL_ALIGNMENT_LEFT, sz.x - 12, font_size, Color(col.r, col.g, col.b, 0.6))
+
 
 class _ShipDrawer extends Node2D:
 	func _draw() -> void:
