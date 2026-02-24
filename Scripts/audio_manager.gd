@@ -42,6 +42,10 @@ const _SOUND_REGISTRY := {
 		"path": "res://Assets/collect-5.wav",
 		"volume_db": -12.0,
 	},
+	"mine_explode": {
+		"path": "res://Assets/explode-5.wav",
+		"volume_db": -18.0,
+	},
 }
 
 # ── Configuration ───────────────────────────────────────────────────────────

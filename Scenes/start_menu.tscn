@@ -68,6 +68,20 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
 text = "NEW GAME"
 
+[node name="OptionsHolder" type="CenterContainer" parent="CanvasLayer/Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 56)
+
+[node name="OptionsBtn" type="Button" parent="CanvasLayer/Center/OptionsHolder"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "OPTIONS"
+
 [node name="HintLabel" type="Label" parent="CanvasLayer"]
 anchor_left = 0.0
 anchor_top = 1.0
@@ -83,3 +97,4 @@ horizontal_alignment = 1
 
 [connection signal="pressed" from="CanvasLayer/Center/ContinueHolder/ContinueBtn" to="." method="_on_continue_pressed"]
 [connection signal="pressed" from="CanvasLayer/Center/NewGameHolder/NewGameBtn" to="." method="_on_new_game_pressed"]
+[connection signal="pressed" from="CanvasLayer/Center/OptionsHolder/OptionsBtn" to="." method="_on_options_pressed"]

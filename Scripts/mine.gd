@@ -48,6 +48,7 @@ func _draw() -> void:
 		draw_line(inner, outer, color, 2.0)
 
 func _explode() -> void:
+	AudioManager.play_sfx("mine_explode")
 
 	# Spawn explosion particle effect
 	if _explosion_particle_scene:
