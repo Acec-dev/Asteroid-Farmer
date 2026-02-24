@@ -1,6 +1,85 @@
-[gd_scene load_steps=2 format=3 uid="uid://r52877o5j8nx"]
+[gd_scene load_steps=4 format=3 uid="uid://r52877o5j8nx"]
 
 [ext_resource type="Script" uid="uid://dcalt3yyln4cp" path="res://Scripts/start_menu.gd" id="1_jgtwh"]
+[ext_resource type="FontFile" uid="uid://br1r0sdo5mn8j" path="res://Assets/DMMono-Regular.ttf" id="2_font"]
+[ext_resource type="FontFile" uid="uid://ds1ta2avwd378" path="res://Assets/DMMono-Medium.ttf" id="3_fontmed"]
 
 [node name="StartMenu" type="Node2D"]
 script = ExtResource("1_jgtwh")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Center" type="VBoxContainer" parent="CanvasLayer"]
+anchor_left = 0.5
+anchor_right = 0.5
+anchor_top = 0.32
+anchor_bottom = 0.78
+offset_left = -220.0
+offset_right = 220.0
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="Title" type="Label" parent="CanvasLayer/Center"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("3_fontmed")
+theme_override_font_sizes/font_size = 42
+text = "ASTEROID  FARMER"
+horizontal_alignment = 1
+
+[node name="SepHolder" type="CenterContainer" parent="CanvasLayer/Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 24)
+
+[node name="SepLine" type="ColorRect" parent="CanvasLayer/Center/SepHolder"]
+layout_mode = 2
+custom_minimum_size = Vector2(360, 1)
+color = Color(0.6, 0.6, 0.6, 1)
+
+[node name="Spacer" type="Control" parent="CanvasLayer/Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 50)
+
+[node name="ContinueHolder" type="CenterContainer" parent="CanvasLayer/Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 56)
+
+[node name="ContinueBtn" type="Button" parent="CanvasLayer/Center/ContinueHolder"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "CONTINUE"
+
+[node name="NewGameHolder" type="CenterContainer" parent="CanvasLayer/Center"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 56)
+
+[node name="NewGameBtn" type="Button" parent="CanvasLayer/Center/NewGameHolder"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 0)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.7, 0.7, 0.7, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "NEW GAME"
+
+[node name="HintLabel" type="Label" parent="CanvasLayer"]
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_bottom = -16.0
+theme_override_colors/font_color = Color(0.35, 0.35, 0.35, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 12
+text = "WASD to move  |  TAB for menus"
+horizontal_alignment = 1
+
+[connection signal="pressed" from="CanvasLayer/Center/ContinueHolder/ContinueBtn" to="." method="_on_continue_pressed"]
+[connection signal="pressed" from="CanvasLayer/Center/NewGameHolder/NewGameBtn" to="." method="_on_new_game_pressed"]
