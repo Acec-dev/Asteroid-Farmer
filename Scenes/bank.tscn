@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://o54wtmoqnd7t"]
 
-[ext_resource type="Script" uid="uid://b84v7aqhyrmyp" path="res://bank.gd" id="1_4wep6"]
-[ext_resource type="PackedScene" uid="uid://buew4jqcltodc" path="res://Scenes/coin_environment.tscn" id="2_coin"]
+[ext_resource type="Script" uid="uid://b84v7aqhyrmyp" path="res://Scripts/bank.gd" id="1_4wep6"]
+[ext_resource type="PackedScene" uid="uid://buew4jqcltodc" path="res://Scenes/coin_environment.tscn" id="2_cf7ns"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_coin"]
 viewport_path = NodePath("CoinSubViewport")
@@ -15,7 +15,7 @@ script = ExtResource("1_4wep6")
 transparent_bg = true
 size = Vector2i(320, 400)
 
-[node name="CoinEnvironment" parent="CoinSubViewport" instance=ExtResource("2_coin")]
+[node name="CoinEnvironment" parent="CoinSubViewport" instance=ExtResource("2_cf7ns")]
 
 [node name="CoinDisplay" type="TextureRect" parent="."]
 offset_left = -160.0
