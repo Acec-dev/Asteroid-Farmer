@@ -227,7 +227,7 @@ func _build_options_panel() -> void:
 	var grabber_style = StyleBoxFlat.new()
 	grabber_style.bg_color = Color.WHITE
 	grabber_style.set_corner_radius_all(0)
-	grabber_style.custom_minimum_size = Vector2(12, 20)
+	grabber_style.set_content_margin_all(6)
 	_volume_slider.add_theme_stylebox_override("grabber_area", grabber_style)
 
 	_volume_slider.value_changed.connect(_on_volume_changed)
