@@ -8,19 +8,8 @@ extends Area2D
 
 var _age: float = 0.0
 var _explosion_particle_scene: PackedScene = preload("res://Scenes/rocket_explode_particle.tscn")
-var _edge_squares: Array[Vector2] = []  # Pre-generated square positions for blast radius ring
-var _edge_sizes: Array[float] = []     # Pre-generated sizes for each square
 
 func _ready() -> void:
-	# Pre-generate scattered square positions around the blast radius edge
-	var num_squares := 120
-	for i in range(num_squares):
-		var angle = randf() * TAU
-		var radius_offset = randf_range(-2.5, 2.5)
-		var r = explosion_radius + radius_offset
-		_edge_squares.append(Vector2(cos(angle), sin(angle)) * r)
-		_edge_sizes.append(1.0 if randf() > 0.4 else 2.0)
-
 	queue_redraw()
 	# Start the explosion timer
 	var timer = Timer.new()
@@ -32,8 +21,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_age += delta
-	# Redraw every frame for blast radius fade-in and blink effect
-	queue_redraw()
+	var time_left = explosion_delay - _age
+	if time_left < 1.0:
+		queue_redraw()
 
 func _draw() -> void:
 	# Draw a mine shape - circular with spikes
@@ -44,16 +34,6 @@ func _draw() -> void:
 	if time_left < 1.0:
 		var blink_factor = sin(_age * blink_speed * PI * 2.0) * 0.5 + 0.5
 		color = Color.WHITE.lerp(Color.RED, blink_factor)
-
-	# Draw blast radius as scattered white squares forming an annulus
-	var sq_alpha = 0.35 + 0.25 * (1.0 - time_left / explosion_delay)
-	if time_left < 1.0:
-		sq_alpha = 0.7
-	var sq_color = Color(1.0, 1.0, 1.0, sq_alpha)
-	for i in range(_edge_squares.size()):
-		var pos = _edge_squares[i]
-		var sq_size = _edge_sizes[i]
-		draw_rect(Rect2(pos - Vector2(sq_size, sq_size) * 0.5, Vector2(sq_size, sq_size)), sq_color)
 
 	# Draw main circle
 	draw_circle(Vector2.ZERO, 8.0, color)
@@ -67,6 +47,13 @@ func _draw() -> void:
 
 func _explode() -> void:
 	AudioManager.play_sfx("mine_explode")
+
+	# Spawn blast radius annulus visual
+	var blast_ring = _BlastRadiusRing.new()
+	blast_ring.radius = explosion_radius
+	blast_ring.global_position = global_position
+	var scene_root = owner if owner else get_tree().current_scene
+	scene_root.add_child(blast_ring)
 
 	# Spawn explosion particle effect
 	if _explosion_particle_scene:
@@ -117,3 +104,34 @@ func _explode() -> void:
 
 	# Remove the mine
 	queue_free()
+
+
+class _BlastRadiusRing extends Node2D:
+	var radius: float = 1750.0
+	var _squares: Array[Vector2] = []
+	var _sizes: Array[float] = []
+	var _alpha: float = 0.8
+	const FADE_DURATION := 0.6
+
+	func _ready() -> void:
+		# Generate scattered squares around the blast radius edge
+		var num_squares := 120
+		for i in range(num_squares):
+			var angle = randf() * TAU
+			var r = radius + randf_range(-2.5, 2.5)
+			_squares.append(Vector2(cos(angle), sin(angle)) * r)
+			_sizes.append(1.0 if randf() > 0.4 else 2.0)
+		# Auto-remove after fade
+		var tween = create_tween()
+		tween.tween_property(self, "_alpha", 0.0, FADE_DURATION)
+		tween.tween_callback(queue_free)
+
+	func _process(_delta: float) -> void:
+		queue_redraw()
+
+	func _draw() -> void:
+		var sq_color = Color(1.0, 1.0, 1.0, _alpha)
+		for i in range(_squares.size()):
+			var pos = _squares[i]
+			var sz = _sizes[i]
+			draw_rect(Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), sq_color)
