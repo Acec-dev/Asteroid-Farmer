@@ -19,7 +19,7 @@ script = ExtResource("1_il775")
 coin_scene = ExtResource("2_hpwbv")
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4617493, 8.793155)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.27932286, 12.376512)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_12nla")
@@ -28,6 +28,7 @@ environment = SubResource("Environment_12nla")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
 transform = Transform3D(8.265, 0, 0, 0, 8.265, 0, 0, 0, 8.265, 0, 0, 0)
+visible = false
 mesh = SubResource("PlaneMesh_nf2vp")
 skeleton = NodePath("../..")
 surface_material_override/0 = SubResource("StandardMaterial3D_7bnw5")
