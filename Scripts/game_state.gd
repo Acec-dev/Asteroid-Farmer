@@ -161,7 +161,7 @@ const FUEL_FUTURES_TIERS = {
 var gm100_invested: int = 0  # Amount currently invested in GM100
 var gm100_cost_basis: float = 0.0  # Average index price at which shares were purchased
 var gm100_return_timer: float = 0.0
-const GM100_RETURN_INTERVAL := 240.0  # 4 minutes between returns
+const GM100_RETURN_INTERVAL := 150.0  # 2.5 minutes between returns
 const GM100_NORMAL_RATE := 0.05       # 5% return normally
 const GM100_MIN_INVESTMENT := 25      # Minimum amount to invest
 
