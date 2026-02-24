@@ -146,12 +146,12 @@ func _break_safe() -> void:
 	for i in mineral_drop_count:
 		if mineral_drop_scene:
 			var m = mineral_drop_scene.instantiate()
-			# Gold only spawns after the time threshold; otherwise pick from standard minerals
+			# Gold only spawns after the time threshold with a small chance
 			var can_spawn_gold = GameState.run_time >= GameState.GOLD_SPAWN_TIME_THRESHOLD
-			if can_spawn_gold:
-				m.kind = GameState.MineralType.values()[randi() % GameState.MineralType.size()]
+			if can_spawn_gold and randf() < 0.1:
+				m.kind = GameState.MineralType.GOLD
 			else:
-				# Exclude Gold (last enum value) from the pool
+				# Pick from standard minerals (exclude Gold)
 				var standard_count = GameState.MineralType.size() - 1
 				m.kind = GameState.MineralType.values()[randi() % standard_count]
 			m.global_position = global_position + Vector2(randf_range(-8,8), randf_range(-8,8))

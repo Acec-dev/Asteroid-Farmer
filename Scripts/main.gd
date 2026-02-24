@@ -63,8 +63,7 @@ signal spawn_text
 
 func _ready() -> void:
 	randomize()
-	_run_time = 0.0
-	GameState.run_time = 0.0
+	_run_time = GameState.run_time
 	_spawn_player()
 
 	# Setup asteroid spawner component
