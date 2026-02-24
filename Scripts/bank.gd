@@ -57,6 +57,7 @@ func _ready() -> void:
 	GameState.fuel_futures_changed.connect(_on_futures_changed)
 	GameState.gm100_changed.connect(_on_gm100_changed)
 
+	$Placeholders.hide()
 	_refresh_ui()
 
 func _spawn_docked_ship() -> void:
