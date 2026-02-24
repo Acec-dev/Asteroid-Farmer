@@ -42,7 +42,7 @@ const STRING_TO_MINERAL = {
 }
 
 # Gold spawning config
-const GOLD_SPAWN_TIME_THRESHOLD := 180.0  # Gold starts appearing after 3 minutes
+const GOLD_SPAWN_TIME_THRESHOLD := 660.0  # Gold starts appearing after 11 minutes
 
 const STRING_TO_EXOTIC = {
 	"cobalt": ExoticMineralType.COBALT,
