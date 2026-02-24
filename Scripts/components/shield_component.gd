@@ -72,7 +72,7 @@ func _flash_damage() -> void:
 ## Called when shield reaches zero
 func _on_shield_depleted() -> void:
 	print("Shield depleted! Game Over!")
-	_owner_node.get_tree().change_scene_to_file("res://Scenes/GameOver.tscn")
+	_owner_node.get_tree().change_scene_to_file("res://Scenes/die_screen.tscn")
 
 ## Sync shield stats with GameState
 func sync_with_game_state() -> void:
