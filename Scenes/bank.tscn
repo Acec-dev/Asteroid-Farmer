@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://b84v7aqhyrmyp" path="res://Scripts/bank.gd" id="1_4wep6"]
 [ext_resource type="PackedScene" uid="uid://buew4jqcltodc" path="res://Scenes/coin_environment.tscn" id="2_cf7ns"]
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_coin"]
+[sub_resource type="ViewportTexture" id="ViewportTexture_cf7ns"]
 viewport_path = NodePath("CoinSubViewport")
 
 [node name="Bank" type="Node2D"]
