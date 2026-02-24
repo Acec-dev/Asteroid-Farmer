@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://buew4jqcltodc" path="res://Scenes/coin_environment.tscn" id="2_cf7ns"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_cf7ns"]
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("CoinSubViewport")
 
 [node name="Bank" type="Node2D"]
 script = ExtResource("1_4wep6")
@@ -76,11 +76,11 @@ offset_right = -843.0
 offset_bottom = -451.0
 text = "BASE"
 
-[node name="SubViewport" type="SubViewport" parent="."]
+[node name="CoinSubViewport" type="SubViewport" parent="."]
 
-[node name="CoinEnvironment" parent="SubViewport" instance=ExtResource("2_cf7ns")]
+[node name="CoinEnvironment" parent="CoinSubViewport" instance=ExtResource("2_cf7ns")]
 
-[node name="TextureRect" type="TextureRect" parent="."]
+[node name="Texture" type="TextureRect" parent="."]
 offset_left = -160.0
 offset_top = 148.0
 offset_right = 352.0
