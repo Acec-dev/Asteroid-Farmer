@@ -971,6 +971,10 @@ func _fuel_futures_tick(delta: float) -> void:
 			if payout > 0:
 				add_credits(payout)
 			_add_transaction("future_settle", payout)
+			if payout > future.cost:
+				AudioManager.play_sfx("future_win")
+			else:
+				AudioManager.play_sfx("future_lose")
 			fuel_futures.remove_at(i)
 		emit_signal("fuel_futures_changed")
 
