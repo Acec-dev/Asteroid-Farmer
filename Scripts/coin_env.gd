@@ -83,6 +83,7 @@ func _drop_next_coin():
 	add_child(coin)
 	coin.global_position = Vector3(x, spawn_height, 0)
 	_spawned_coins.append(coin)
+	AudioManager.play_sfx("coin_drop")
 
 func _remove_last_coin():
 	if _spawned_coins.size() > 0:
