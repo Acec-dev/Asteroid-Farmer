@@ -600,7 +600,7 @@ func _build_drone_upgrades_ui() -> void:
 	var upgrade_display = {
 		"drone_armor": "Drone Armor",
 		"mineral_scanners": "Mineral Scanners",
-		"warp_drive": "Warp Drive",
+		"fiber_optics": "Fiber Optics",
 		"deep_probes": "Deep Probes",
 	}
 

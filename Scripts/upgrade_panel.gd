@@ -33,9 +33,9 @@ var _gold_label: Label
 var _gold_price_label: Label
 
 # Exotic mineral UI references
-var _cobalt_label: Label
+var _palladium_label: Label
 var _titanium_label: Label
-var _xenocryst_label: Label
+var _cobalt_label: Label
 var _iridium_label: Label
 
 # Upgrade cost definitions per level
@@ -656,17 +656,17 @@ func _build_inventory_section() -> void:
 	exotic_box.add_theme_constant_override("separation", 2)
 	_inventory_vbox.add_child(exotic_box)
 
-	var cobalt_row = _make_exotic_row("Cobalt", "0")
-	exotic_box.add_child(cobalt_row)
-	_cobalt_label = cobalt_row.get_node("CountLabel")
+	var palladium_row = _make_exotic_row("Palladium", "0")
+	exotic_box.add_child(palladium_row)
+	_palladium_label = palladium_row.get_node("CountLabel")
 
 	var titanium_row = _make_exotic_row("Titanium", "0")
 	exotic_box.add_child(titanium_row)
 	_titanium_label = titanium_row.get_node("CountLabel")
 
-	var xenocryst_row = _make_exotic_row("Xenocryst", "0")
-	exotic_box.add_child(xenocryst_row)
-	_xenocryst_label = xenocryst_row.get_node("CountLabel")
+	var cobalt_row = _make_exotic_row("Cobalt", "0")
+	exotic_box.add_child(cobalt_row)
+	_cobalt_label = cobalt_row.get_node("CountLabel")
 
 	var iridium_row = _make_exotic_row("Iridium", "0")
 	exotic_box.add_child(iridium_row)
@@ -779,11 +779,11 @@ func _make_exotic_row(mineral_name: String, count: String) -> HBoxContainer:
 	return row
 
 func _refresh_exotic_inventory() -> void:
-	if not _cobalt_label:
+	if not _palladium_label:
 		return
-	_cobalt_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.COBALT])
+	_palladium_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.PALLADIUM])
 	_titanium_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.TITANIUM])
-	_xenocryst_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.XENOCRYST])
+	_cobalt_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.COBALT])
 	_iridium_label.text = str(GameState.exotic_minerals[GameState.ExoticMineralType.IRIDIUM])
 
 func _style_separator(sep: HSeparator) -> void:

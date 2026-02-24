@@ -54,7 +54,7 @@ func start_voyage(tier: VoyageTier) -> bool:
 	voyage_tier = tier
 	voyage_drones_sent = GameState.voyage_drone_count
 	voyage_elapsed = 0.0
-	# Apply warp drive upgrade to duration
+	# Apply fiber optics upgrade to duration
 	voyage_duration = data.duration * GameState.get_duration_multiplier()
 
 	GameState.emit_signal("voyage_started")
