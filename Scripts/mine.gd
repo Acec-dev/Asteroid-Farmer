@@ -21,11 +21,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_age += delta
-	# Blink faster as we get closer to explosion
-	var time_left = explosion_delay - _age
-	if time_left < 1.0:
-		# Increase blink speed in the last second
-		queue_redraw()
+	# Redraw every frame for blast radius fade-in and blink effect
+	queue_redraw()
 
 func _draw() -> void:
 	# Draw a mine shape - circular with spikes
@@ -36,6 +33,19 @@ func _draw() -> void:
 	if time_left < 1.0:
 		var blink_factor = sin(_age * blink_speed * PI * 2.0) * 0.5 + 0.5
 		color = Color.WHITE.lerp(Color.RED, blink_factor)
+
+	# Draw blast radius indicator
+	var radius_alpha = 0.06 + 0.04 * (1.0 - time_left / explosion_delay)
+	if time_left < 1.0:
+		radius_alpha = 0.12
+	var radius_color = Color(1.0, 0.3, 0.2, radius_alpha)
+	draw_circle(Vector2.ZERO, explosion_radius, radius_color)
+	# Draw blast radius ring
+	var ring_alpha = 0.15 + 0.15 * (1.0 - time_left / explosion_delay)
+	if time_left < 1.0:
+		ring_alpha = 0.4
+	var ring_color = Color(1.0, 0.3, 0.2, ring_alpha)
+	draw_arc(Vector2.ZERO, explosion_radius, 0, TAU, 64, ring_color, 1.5)
 
 	# Draw main circle
 	draw_circle(Vector2.ZERO, 8.0, color)

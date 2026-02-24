@@ -93,7 +93,7 @@ func _complete_expedition() -> void:
 			drones_survived += 1
 			# Each surviving drone brings back exotic minerals
 			var base_count = randi_range(min_minerals, max_minerals)
-			# Apply deep probes yield multiplier
+			# Apply infrared scanner yield multiplier
 			var mineral_count = int(ceil(base_count * GameState.get_exotic_yield_multiplier()))
 			for _j in range(mineral_count):
 				var mineral_type = _random_exotic_mineral()

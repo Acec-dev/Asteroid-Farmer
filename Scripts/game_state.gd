@@ -161,6 +161,7 @@ const FUEL_FUTURES_TIERS = {
 var gm100_invested: int = 0  # Amount currently invested in GM100
 var gm100_cost_basis: float = 0.0  # Average index price at which shares were purchased
 var gm100_return_timer: float = 0.0
+var gm100_has_invested: bool = false  # Whether the player has ever invested in GM100
 const GM100_RETURN_INTERVAL := 150.0  # 2.5 minutes between returns
 const GM100_NORMAL_RATE := 0.05       # 5% return normally
 const GM100_MIN_INVESTMENT := 25      # Minimum amount to invest
@@ -226,7 +227,7 @@ var drone_upgrades = {
 			{ExoticMineralType.COBALT: 15},
 		],
 	},
-	"deep_probes": {
+	"infrared_scanner": {
 		"level": 0,
 		"max_level": 3,
 		"description": "Better exotic mineral yields",
@@ -767,7 +768,7 @@ func get_duration_multiplier() -> float:
 	return get_drone_upgrade_value("fiber_optics") if get_drone_upgrade_value("fiber_optics") != null else 1.0
 
 func get_exotic_yield_multiplier() -> float:
-	return get_drone_upgrade_value("deep_probes") if get_drone_upgrade_value("deep_probes") != null else 1.0
+	return get_drone_upgrade_value("infrared_scanner") if get_drone_upgrade_value("infrared_scanner") != null else 1.0
 
 func can_afford_drone_upgrade(upgrade_name: String) -> bool:
 	if not drone_upgrades.has(upgrade_name):
@@ -979,8 +980,11 @@ func _fuel_futures_tick(delta: float) -> void:
 func gm100_invest(amount: int) -> bool:
 	if amount <= 0 or credits < amount or amount < GM100_MIN_INVESTMENT:
 		return false
+	# Unlock GM100 market fluctuations on first investment
+	if not gm100_has_invested:
+		gm100_has_invested = true
 	# Track cost basis: weighted average of buy-in index price
-	var current_index = Market.gm100_value if Market else 100.0
+	var current_index = Market.gm100_value if Market else 200.0
 	if gm100_invested <= 0:
 		gm100_cost_basis = current_index
 	else:
@@ -1123,6 +1127,7 @@ func reset_to_defaults() -> void:
 	gm100_invested = 0
 	gm100_cost_basis = 0.0
 	gm100_return_timer = 0.0
+	gm100_has_invested = false
 
 	# Reset voyage/expedition managers
 	VoyageManager.voyage_active = false

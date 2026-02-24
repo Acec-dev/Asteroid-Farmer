@@ -93,6 +93,7 @@ func _build_save_data() -> Dictionary:
 	data["fuel_futures"] = _save_fuel_futures()
 	data["gm100_invested"] = GameState.gm100_invested
 	data["gm100_return_timer"] = GameState.gm100_return_timer
+	data["gm100_has_invested"] = GameState.gm100_has_invested
 
 	# Market state
 	data["market"] = _save_market()
@@ -143,6 +144,7 @@ func _restore_save_data(data: Dictionary) -> void:
 	_restore_fuel_futures(data.get("fuel_futures", []))
 	GameState.gm100_invested = int(data.get("gm100_invested", 0))
 	GameState.gm100_return_timer = data.get("gm100_return_timer", 0.0)
+	GameState.gm100_has_invested = data.get("gm100_has_invested", GameState.gm100_invested > 0)
 
 	# Market state
 	_restore_market(data.get("market", {}))
@@ -268,6 +270,9 @@ func _save_drone_upgrades() -> Dictionary:
 
 
 func _restore_drone_upgrades(data: Dictionary) -> void:
+	# Migrate renamed upgrades from old save data
+	if data.has("deep_probes") and not data.has("infrared_scanner"):
+		data["infrared_scanner"] = data["deep_probes"]
 	for upgrade_name in data:
 		if GameState.drone_upgrades.has(upgrade_name):
 			GameState.drone_upgrades[upgrade_name].level = int(data[upgrade_name])
@@ -381,7 +386,7 @@ func _restore_market(data: Dictionary) -> void:
 	Market._nickel_appreciation = data.get("nickel_appreciation", 0.0)
 	Market._market_cycle = int(data.get("market_cycle", 0))
 	Market._platinum_pressure = data.get("platinum_pressure", 0.0)
-	Market.gm100_value = data.get("gm100_value", 100.0)
+	Market.gm100_value = data.get("gm100_value", 200.0)
 	Market.gm100_phase = int(data.get("gm100_phase", 0))
 	Market.gm100_phase_timer = data.get("gm100_phase_timer", 0.0)
 	Market.gm100_phase_duration = data.get("gm100_phase_duration", 0.0)
