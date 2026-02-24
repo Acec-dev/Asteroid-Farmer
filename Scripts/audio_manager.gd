@@ -46,6 +46,18 @@ const _SOUND_REGISTRY := {
 		"path": "res://Assets/explode-5.wav",
 		"volume_db": -18.0,
 	},
+	"coin_drop": {
+		"path": "res://Assets/Sounds/coin-4.wav",
+		"volume_db": -10.0,
+	},
+	"future_win": {
+		"path": "res://Assets/Sounds/win-8.wav",
+		"volume_db": -10.0,
+	},
+	"future_lose": {
+		"path": "res://Assets/Sounds/lose-3.wav",
+		"volume_db": -10.0,
+	},
 }
 
 # ── Configuration ───────────────────────────────────────────────────────────
