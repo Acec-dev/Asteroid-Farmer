@@ -48,6 +48,7 @@ const _SOUND_REGISTRY := {
 	},
 	"going_up": {
 		"path": "res://Assets/Sounds/going-up.wav",
+	},	
 	"coin_drop": {
 		"path": "res://Assets/Sounds/coin-4.wav",
 		"volume_db": -10.0,
