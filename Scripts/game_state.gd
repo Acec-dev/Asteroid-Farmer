@@ -11,9 +11,9 @@ enum MineralType {
 
 # Exotic mineral types (from expeditions)
 enum ExoticMineralType {
-	COBALT,
+	PALLADIUM,
 	TITANIUM,
-	XENOCRYST,
+	COBALT,
 	IRIDIUM
 }
 
@@ -27,9 +27,9 @@ const MINERAL_NAMES = {
 }
 
 const EXOTIC_MINERAL_NAMES = {
-	ExoticMineralType.COBALT: "cobalt",
+	ExoticMineralType.PALLADIUM: "palladium",
 	ExoticMineralType.TITANIUM: "titanium",
-	ExoticMineralType.XENOCRYST: "xenocryst",
+	ExoticMineralType.COBALT: "cobalt",
 	ExoticMineralType.IRIDIUM: "iridium"
 }
 
@@ -45,9 +45,9 @@ const STRING_TO_MINERAL = {
 const GOLD_SPAWN_TIME_THRESHOLD := 660.0  # Gold starts appearing after 11 minutes
 
 const STRING_TO_EXOTIC = {
-	"cobalt": ExoticMineralType.COBALT,
+	"palladium": ExoticMineralType.PALLADIUM,
 	"titanium": ExoticMineralType.TITANIUM,
-	"xenocryst": ExoticMineralType.XENOCRYST,
+	"cobalt": ExoticMineralType.COBALT,
 	"iridium": ExoticMineralType.IRIDIUM
 }
 
@@ -184,9 +184,9 @@ var minerals = {
 
 # Exotic minerals (earned from expeditions, spent on drone upgrades)
 var exotic_minerals = {
-	ExoticMineralType.COBALT: 0,
+	ExoticMineralType.PALLADIUM: 0,
 	ExoticMineralType.TITANIUM: 0,
-	ExoticMineralType.XENOCRYST: 0,
+	ExoticMineralType.COBALT: 0,
 	ExoticMineralType.IRIDIUM: 0,
 }
 
@@ -194,13 +194,14 @@ var exotic_minerals = {
 var drone_upgrades = {
 	"drone_armor": {
 		"level": 0,
-		"max_level": 3,
+		"max_level": 4,
 		"description": "Reduces drone break chance",
-		"values": [0.0, 0.25, 0.50, 0.75],  # Break chance reduction multiplier
+		"values": [0.0, 0.25, 0.50, 0.75, 0.95],  # Break chance reduction multiplier
 		"costs": [
-			{ExoticMineralType.COBALT: 5},
-			{ExoticMineralType.COBALT: 10},
-			{ExoticMineralType.COBALT: 20},
+			{ExoticMineralType.PALLADIUM: 5},
+			{ExoticMineralType.PALLADIUM: 10},
+			{ExoticMineralType.PALLADIUM: 20},
+			{ExoticMineralType.PALLADIUM: 40},
 		],
 	},
 	"mineral_scanners": {
@@ -214,15 +215,15 @@ var drone_upgrades = {
 			{ExoticMineralType.TITANIUM: 20},
 		],
 	},
-	"warp_drive": {
+	"fiber_optics": {
 		"level": 0,
 		"max_level": 3,
 		"description": "Faster voyages and expeditions",
 		"values": [1.0, 0.85, 0.70, 0.55],  # Duration multiplier
 		"costs": [
-			{ExoticMineralType.XENOCRYST: 3},
-			{ExoticMineralType.XENOCRYST: 8},
-			{ExoticMineralType.XENOCRYST: 15},
+			{ExoticMineralType.COBALT: 3},
+			{ExoticMineralType.COBALT: 8},
+			{ExoticMineralType.COBALT: 15},
 		],
 	},
 	"deep_probes": {
@@ -763,7 +764,7 @@ func get_mineral_bonus() -> int:
 	return get_drone_upgrade_value("mineral_scanners") if get_drone_upgrade_value("mineral_scanners") != null else 0
 
 func get_duration_multiplier() -> float:
-	return get_drone_upgrade_value("warp_drive") if get_drone_upgrade_value("warp_drive") != null else 1.0
+	return get_drone_upgrade_value("fiber_optics") if get_drone_upgrade_value("fiber_optics") != null else 1.0
 
 func get_exotic_yield_multiplier() -> float:
 	return get_drone_upgrade_value("deep_probes") if get_drone_upgrade_value("deep_probes") != null else 1.0
@@ -1058,9 +1059,9 @@ func reset_to_defaults() -> void:
 		MineralType.GOLD: 0,
 	}
 	exotic_minerals = {
-		ExoticMineralType.COBALT: 0,
+		ExoticMineralType.PALLADIUM: 0,
 		ExoticMineralType.TITANIUM: 0,
-		ExoticMineralType.XENOCRYST: 0,
+		ExoticMineralType.COBALT: 0,
 		ExoticMineralType.IRIDIUM: 0,
 	}
 	voyage_drone_count = 0

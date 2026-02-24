@@ -54,7 +54,7 @@ func start_expedition(tier: ExpeditionTier) -> bool:
 	expedition_tier = tier
 	expedition_drones_sent = GameState.expedition_drone_count
 	expedition_elapsed = 0.0
-	# Apply warp drive upgrade to duration
+	# Apply fiber optics upgrade to duration
 	expedition_duration = data.duration * GameState.get_duration_multiplier()
 
 	GameState.emit_signal("expedition_started")
@@ -134,13 +134,13 @@ func _complete_expedition() -> void:
 	GameState.emit_signal("expedition_completed", results)
 
 func _random_exotic_mineral() -> GameState.ExoticMineralType:
-	# Weighted random: cobalt most common, iridium rarest
+	# Weighted random: palladium most common, iridium rarest
 	var roll = randf()
 	if roll < 0.40:
-		return GameState.ExoticMineralType.COBALT
+		return GameState.ExoticMineralType.PALLADIUM
 	elif roll < 0.70:
 		return GameState.ExoticMineralType.TITANIUM
 	elif roll < 0.90:
-		return GameState.ExoticMineralType.XENOCRYST
+		return GameState.ExoticMineralType.COBALT
 	else:
 		return GameState.ExoticMineralType.IRIDIUM
