@@ -190,6 +190,10 @@ func _spawn_deposit_box() -> void:
 	print("Mineral deposit box spawned at: ", deposit_box_position)
 
 func _spawn_text():
+	# Don't show the mineral name popup when over-encumbered;
+	# the cargo_full signal already shows "OVER-ENCUMBERED"
+	if GameState.is_over_encumbered():
+		return
 	_player.popup_mineral(GameState.MINERAL_NAMES[GameState.current_mat])
 	emit_signal("spawn_text")
 

@@ -601,7 +601,7 @@ func _build_drone_upgrades_ui() -> void:
 		"drone_armor": "Drone Armor",
 		"mineral_scanners": "Mineral Scanners",
 		"fiber_optics": "Fiber Optics",
-		"deep_probes": "Deep Probes",
+		"infrared_scanner": "Infrared Scanner",
 	}
 
 	for upgrade_name in GameState.drone_upgrades:

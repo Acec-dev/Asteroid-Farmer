@@ -21,10 +21,8 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_age += delta
-	# Blink faster as we get closer to explosion
 	var time_left = explosion_delay - _age
 	if time_left < 1.0:
-		# Increase blink speed in the last second
 		queue_redraw()
 
 func _draw() -> void:
@@ -49,6 +47,13 @@ func _draw() -> void:
 
 func _explode() -> void:
 	AudioManager.play_sfx("mine_explode")
+
+	# Spawn blast radius annulus visual
+	var blast_ring = _BlastRadiusRing.new()
+	blast_ring.radius = explosion_radius
+	blast_ring.global_position = global_position
+	var scene_root = owner if owner else get_tree().current_scene
+	scene_root.add_child(blast_ring)
 
 	# Spawn explosion particle effect
 	if _explosion_particle_scene:
@@ -99,3 +104,34 @@ func _explode() -> void:
 
 	# Remove the mine
 	queue_free()
+
+
+class _BlastRadiusRing extends Node2D:
+	var radius: float = 1750.0
+	var _squares: Array[Vector2] = []
+	var _sizes: Array[float] = []
+	var _alpha: float = 0.8
+	const FADE_DURATION := 0.6
+
+	func _ready() -> void:
+		# Generate scattered squares around the blast radius edge
+		var num_squares := 120
+		for i in range(num_squares):
+			var angle = randf() * TAU
+			var r = radius + randf_range(-2.5, 2.5)
+			_squares.append(Vector2(cos(angle), sin(angle)) * r)
+			_sizes.append(1.0 if randf() > 0.4 else 2.0)
+		# Auto-remove after fade
+		var tween = create_tween()
+		tween.tween_property(self, "_alpha", 0.0, FADE_DURATION)
+		tween.tween_callback(queue_free)
+
+	func _process(_delta: float) -> void:
+		queue_redraw()
+
+	func _draw() -> void:
+		var sq_color = Color(1.0, 1.0, 1.0, _alpha)
+		for i in range(_squares.size()):
+			var pos = _squares[i]
+			var sz = _sizes[i]
+			draw_rect(Rect2(pos - Vector2(sz, sz) * 0.5, Vector2(sz, sz)), sq_color)

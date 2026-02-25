@@ -26,6 +26,7 @@ var _upgrade_btns: Dictionary = {}
 var _bond_btns: Dictionary = {}
 var _futures_long_btns: Dictionary = {}
 var _futures_short_btns: Dictionary = {}
+var _fuel_price_graph: _FuelPriceGraph
 var _deposit_btns: Array[Button] = []
 var _withdraw_btns: Array[Button] = []
 
@@ -40,7 +41,13 @@ var _gm100_countdown_label: Label
 var _gm100_invest_btns: Array[Button] = []
 var _gm100_withdraw_btns: Array[Button] = []
 
+# Placeholder positions read from editor
+var _placeholder_positions: Dictionary = {}
+
 func _ready() -> void:
+	# Read placeholder positions from editor before hiding them
+	_read_placeholder_positions()
+
 	_spawn_docked_ship()
 	_build_vault_labels()
 	_build_bank_panel()
@@ -59,6 +66,11 @@ func _ready() -> void:
 
 	$Placeholders.hide()
 	_refresh_ui()
+
+func _read_placeholder_positions() -> void:
+	var placeholders = $Placeholders
+	for child in placeholders.get_children():
+		_placeholder_positions[child.name] = Vector2(child.offset_left, child.offset_top)
 
 func _spawn_docked_ship() -> void:
 	var viewport_size = get_viewport_rect().size
@@ -105,6 +117,17 @@ func _process(delta: float) -> void:
 func _build_vault_labels() -> void:
 	var mono_font = load("res://Assets/DMMono-Regular.ttf")
 
+	# Compute vault offset from default placeholder position
+	var vault_pos = _placeholder_positions.get("Vault", Vector2(-80, -100))
+	var vault_offset = vault_pos - Vector2(-80, -100)
+
+	# Move the CoinDisplay to match the vault placeholder
+	if has_node("CoinDisplay"):
+		$CoinDisplay.offset_left = -160.0 + vault_offset.x
+		$CoinDisplay.offset_top = -200.0 + vault_offset.y
+		$CoinDisplay.offset_right = 160.0 + vault_offset.x
+		$CoinDisplay.offset_bottom = 200.0 + vault_offset.y
+
 	# Balance label centered above coin display
 	_balance_label = Label.new()
 	_balance_label.text = "0 cr"
@@ -114,7 +137,7 @@ func _build_vault_labels() -> void:
 		_balance_label.add_theme_font_override("font", mono_font)
 	_balance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_balance_label.custom_minimum_size.x = 320
-	_balance_label.position = Vector2(-160, -230)
+	_balance_label.position = Vector2(-160, -230) + vault_offset
 	add_child(_balance_label)
 
 	# "VAULT" label above balance
@@ -126,7 +149,7 @@ func _build_vault_labels() -> void:
 		vault_title.add_theme_font_override("font", mono_font)
 	vault_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vault_title.custom_minimum_size.x = 320
-	vault_title.position = Vector2(-160, -252)
+	vault_title.position = Vector2(-160, -252) + vault_offset
 	add_child(vault_title)
 
 	# Countdown label below coin display
@@ -138,7 +161,7 @@ func _build_vault_labels() -> void:
 		_countdown_label.add_theme_font_override("font", mono_font)
 	_countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_countdown_label.custom_minimum_size.x = 320
-	_countdown_label.position = Vector2(-160, 208)
+	_countdown_label.position = Vector2(-160, 208) + vault_offset
 	add_child(_countdown_label)
 
 # === BANK PANEL (deposit/withdraw) ===
@@ -238,7 +261,7 @@ func _build_bank_panel() -> void:
 		_withdraw_btns.append(btn)
 	vbox.add_child(wd_row)
 
-	_bank_panel.position = Vector2(200, -340)
+	_bank_panel.position = _placeholder_positions.get("GalacticBank", Vector2(200, -340))
 	_bank_panel.size = Vector2(240, 0)
 	add_child(_bank_panel)
 
@@ -324,7 +347,7 @@ func _build_upgrade_panel() -> void:
 
 		vbox.add_child(row)
 
-	_upgrade_panel.position = Vector2(200, -30)
+	_upgrade_panel.position = _placeholder_positions.get("BankUpgrades", Vector2(200, -30))
 	_upgrade_panel.size = Vector2(240, 0)
 	add_child(_upgrade_panel)
 
@@ -376,7 +399,7 @@ func _build_history_panel() -> void:
 		empty_label.add_theme_font_override("font", mono_font)
 	_history_vbox.add_child(empty_label)
 
-	_history_panel.position = Vector2(-500, -340)
+	_history_panel.position = _placeholder_positions.get("Transactions", Vector2(-500, -340))
 	_history_panel.size = Vector2(260, 0)
 	add_child(_history_panel)
 
@@ -449,7 +472,7 @@ func _build_bond_panel() -> void:
 	_bond_status_vbox.add_theme_constant_override("separation", 2)
 	vbox.add_child(_bond_status_vbox)
 
-	_bond_panel.position = Vector2(-500, 20)
+	_bond_panel.position = _placeholder_positions.get("Bonds", Vector2(-500, 20))
 	_bond_panel.size = Vector2(260, 0)
 	add_child(_bond_panel)
 
@@ -497,6 +520,11 @@ func _build_futures_panel() -> void:
 		_fuel_price_label.add_theme_font_override("font", mono_font)
 	_fuel_price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(_fuel_price_label)
+
+	# Fuel price graph
+	_fuel_price_graph = _FuelPriceGraph.new()
+	_fuel_price_graph.custom_minimum_size = Vector2(236, 80)
+	vbox.add_child(_fuel_price_graph)
 
 	# Info text
 	_futures_info_label = Label.new()
@@ -563,7 +591,7 @@ func _build_futures_panel() -> void:
 	_futures_status_vbox.add_theme_constant_override("separation", 2)
 	vbox.add_child(_futures_status_vbox)
 
-	_futures_panel.position = Vector2(480, -340)
+	_futures_panel.position = _placeholder_positions.get("FuelFutures", Vector2(480, -340))
 	_futures_panel.size = Vector2(260, 0)
 	add_child(_futures_panel)
 
@@ -703,7 +731,7 @@ func _build_gm100_panel() -> void:
 		_gm100_withdraw_btns.append(btn)
 	vbox.add_child(wd_row)
 
-	_gm100_panel.position = Vector2(480, 20)
+	_gm100_panel.position = _placeholder_positions.get("GM100Index", Vector2(480, 20))
 	_gm100_panel.size = Vector2(260, 0)
 	add_child(_gm100_panel)
 
@@ -967,6 +995,9 @@ func _refresh_futures_buttons() -> void:
 func _refresh_fuel_price_display() -> void:
 	if _fuel_price_label:
 		_fuel_price_label.text = "Fuel Price: %d cr" % GameState.get_fuel_price()
+	if _fuel_price_graph and Market:
+		_fuel_price_graph.price_history = Market.get_fuel_price_history().duplicate()
+		_fuel_price_graph.queue_redraw()
 
 func _refresh_futures_status() -> void:
 	if not _futures_status_vbox:
@@ -1283,3 +1314,72 @@ class _GM100Graph extends Control:
 
 		# Border
 		draw_rect(Rect2(origin, Vector2(w, h)), Color(0.2, 0.5, 0.4, 0.6), false, 1.0)
+
+
+class _FuelPriceGraph extends Control:
+	var price_history: Array = []
+	const GRAPH_COLOR := Color(0.9, 0.6, 0.2)
+	const GRID_COLOR := Color(0.25, 0.2, 0.15, 0.5)
+	const BG_COLOR := Color(0.08, 0.06, 0.03, 0.9)
+	const MARGIN := 4.0
+
+	func _get_minimum_size() -> Vector2:
+		return Vector2(236, 80)
+
+	func _draw() -> void:
+		var w := size.x - MARGIN * 2
+		var h := size.y - MARGIN * 2
+		var origin := Vector2(MARGIN, MARGIN)
+
+		# Background
+		draw_rect(Rect2(origin, Vector2(w, h)), BG_COLOR, true)
+
+		# Grid lines
+		for i in range(1, 4):
+			var gy = origin.y + h * (float(i) / 4.0)
+			draw_line(Vector2(origin.x, gy), Vector2(origin.x + w, gy), GRID_COLOR, 1.0)
+
+		if price_history.is_empty():
+			return
+
+		# Determine value range
+		var min_val: float = price_history[0]
+		var max_val: float = price_history[0]
+		for p in price_history:
+			min_val = minf(min_val, p)
+			max_val = maxf(max_val, p)
+
+		# Add padding to range
+		var range_pad = maxf((max_val - min_val) * 0.1, 5.0)
+		min_val -= range_pad
+		max_val += range_pad
+		var val_range = max_val - min_val
+		if val_range < 1.0:
+			val_range = 1.0
+
+		var num_points = price_history.size()
+
+		# Draw line segments
+		if num_points >= 2:
+			for i in range(num_points - 1):
+				var p1: float = price_history[i]
+				var p2: float = price_history[i + 1]
+				var x1 = origin.x + (float(i) / (num_points - 1)) * w
+				var x2 = origin.x + (float(i + 1) / (num_points - 1)) * w
+				var y1 = origin.y + h - ((p1 - min_val) / val_range) * h
+				var y2 = origin.y + h - ((p2 - min_val) / val_range) * h
+				draw_line(Vector2(x1, y1), Vector2(x2, y2), GRAPH_COLOR, 2.0)
+
+		# Draw data points
+		for i in range(num_points):
+			var p: float = price_history[i]
+			var px: float
+			if num_points > 1:
+				px = origin.x + (float(i) / (num_points - 1)) * w
+			else:
+				px = origin.x + w * 0.5
+			var py = origin.y + h - ((p - min_val) / val_range) * h
+			draw_circle(Vector2(px, py), 3.0, GRAPH_COLOR)
+
+		# Border
+		draw_rect(Rect2(origin, Vector2(w, h)), Color(0.5, 0.4, 0.2, 0.6), false, 1.0)
