@@ -1,13 +1,61 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://Scripts/outpost.gd" id="1_outpost"]
+[ext_resource type="Texture2D" path="res://Assets/Outpost/outpost_hull.svg" id="2_hull"]
+[ext_resource type="Texture2D" path="res://Assets/Outpost/outpost_drill_bay.svg" id="3_drill_bay"]
+[ext_resource type="Texture2D" path="res://Assets/Outpost/outpost_silo_yard.svg" id="4_silo_yard"]
+[ext_resource type="Texture2D" path="res://Assets/Outpost/outpost_contracts_board.svg" id="5_contracts_board"]
+[ext_resource type="Texture2D" path="res://Assets/Outpost/outpost_beacon.svg" id="6_beacon"]
+[ext_resource type="Texture2D" path="res://Assets/Outpost/outpost_approach.svg" id="7_approach"]
 
 [node name="Outpost" type="Node2D"]
 script = ExtResource("1_outpost")
 
-[node name="OutpostSprite" type="Sprite2D" parent="."]
-position = Vector2(-200, 240)
-scale = Vector2(1.48, 1.48)
+[node name="OutpostSprite" type="Node2D" parent="."]
+position = Vector2(-150, 0)
+
+[node name="Hull" type="Sprite2D" parent="OutpostSprite"]
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("2_hull")
+
+[node name="DrillBayE" type="Sprite2D" parent="OutpostSprite"]
+position = Vector2(222, 0)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("3_drill_bay")
+
+[node name="SiloYardSE" type="Sprite2D" parent="OutpostSprite"]
+position = Vector2(111, 192)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("4_silo_yard")
+
+[node name="ContractsBoardSW" type="Sprite2D" parent="OutpostSprite"]
+position = Vector2(-111, 192)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("5_contracts_board")
+
+[node name="DrillBayW" type="Sprite2D" parent="OutpostSprite"]
+position = Vector2(-222, 0)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("3_drill_bay")
+
+[node name="SiloYardNW" type="Sprite2D" parent="OutpostSprite"]
+position = Vector2(-111, -192)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("4_silo_yard")
+
+[node name="ContractsBoardNE" type="Sprite2D" parent="OutpostSprite"]
+position = Vector2(111, -192)
+scale = Vector2(2.5, 2.5)
+texture = ExtResource("5_contracts_board")
+
+[node name="Beacon" type="Sprite2D" parent="OutpostSprite"]
+position = Vector2(0, -300)
+scale = Vector2(2.0, 2.0)
+texture = ExtResource("6_beacon")
+
+[node name="Approach" type="Sprite2D" parent="OutpostSprite"]
+position = Vector2(0, 300)
+texture = ExtResource("7_approach")
 
 [node name="BackButton" type="Button" parent="."]
 offset_left = -939.0

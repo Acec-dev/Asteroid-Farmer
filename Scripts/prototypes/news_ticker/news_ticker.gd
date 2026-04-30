@@ -3,7 +3,7 @@
 # Prototype: scrolling news headlines that telegraph upcoming market moves.
 #
 # How it works:
-#   • Listens to Market.prices_changed (no payload).
+#   • Listens to Market.prices_changed (Dictionary payload of new prices).
 #   • For each mineral, peeks at Market.get_price_history() and emits a
 #     forward-looking headline that hints at the next move.
 #   • 10% of headlines are flipped (misinformation) so the ticker stays a
@@ -119,7 +119,7 @@ func _process(delta: float) -> void:
 
 # ─── Headline generation ────────────────────────────────────────────────────
 
-func _on_prices_changed() -> void:
+func _on_prices_changed(_new_prices: Dictionary) -> void:
 	var market := get_node_or_null("/root/Market")
 	if market == null:
 		return
