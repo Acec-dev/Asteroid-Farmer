@@ -341,10 +341,10 @@ func _activate_bubble_shield() -> void:
 	# bubble even if they were moving when they triggered it.
 	_vel = Vector2.ZERO
 	if weapon_manager:
+		# weapons_blocked suppresses firing without touching each weapon's
+		# _is_active flag, so auto-firing weapons resume on their own when the
+		# shield drops.
 		weapon_manager.weapons_blocked = true
-		# Drop any currently-held activations (e.g. RMB laser).
-		for w in weapon_manager.weapons:
-			w.deactivate()
 	queue_redraw()
 
 func _deactivate_bubble_shield() -> void:
