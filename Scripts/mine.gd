@@ -80,7 +80,6 @@ func _explode() -> void:
 				t.timeout.connect(fx.queue_free)
 				t.start()
 		# Add to owner's scene root (works with SubViewport)
-		var scene_root = owner if owner else get_tree().current_scene
 		scene_root.add_child(fx)
 
 
