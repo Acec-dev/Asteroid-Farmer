@@ -8,8 +8,8 @@
 #     forward-looking headline that hints at the next move.
 #   • 10% of headlines are flipped (misinformation) so the ticker stays a
 #     skill check, not a cheat sheet.
-#   • Headlines scroll right-to-left across a 32px black bar at the top of
-#     the screen, in the standard monochrome palette.
+#   • Headlines scroll right-to-left through a bar mounted at the bottom of
+#     the GraphsPanel, so the ticker slides in/out with the menus.
 #
 # Read-only on Market/GameState. Removable by deleting this folder and the
 # matching mount in PrototypeFlags.
@@ -20,15 +20,12 @@ extends "res://Scripts/prototypes/prototype_base.gd"
 # MineralType enum order (from the Bible, Section 4.1):
 const MINERAL_NAMES: Array[String] = ["IRON", "NICKEL", "SILICA", "PLATINUM"]
 
-@export var bar_height: float          = 32.0
 @export var scroll_speed: float        = 90.0     # pixels per second
 @export var misinformation_rate: float = 0.10     # 0.0 disables the lying
 @export var max_queue: int             = 8
 @export var separator: String          = "   ◆   "
-@export var canvas_layer_index: int    = 50       # above gameplay, below modals
 
-var _canvas: CanvasLayer
-var _root: Control
+var _slot: Control
 var _bar: ColorRect
 var _label: Label
 var _queue: Array[String] = []
@@ -41,7 +38,8 @@ func _flag_name() -> String:
 
 
 func _setup_prototype() -> void:
-	_build_ui()
+	if not _build_ui():
+		return
 
 	var market := get_node_or_null("/root/Market")
 	if market == null:
@@ -53,40 +51,37 @@ func _setup_prototype() -> void:
 	_enqueue("MARKET BUREAU ONLINE — STANDING BY")
 
 
-func _build_ui() -> void:
-	_canvas = CanvasLayer.new()
-	_canvas.layer = canvas_layer_index
-	add_child(_canvas)
-
-	_root = Control.new()
-	_root.name = "TickerRoot"
-	_root.anchor_right = 1.0
-	_root.offset_bottom = bar_height
-	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_canvas.add_child(_root)
+func _build_ui() -> bool:
+	_slot = _find_slot()
+	if _slot == null:
+		push_warning("[NewsTicker] NewsTickerSlot not found under GraphsPanel — ticker will not render")
+		return false
 
 	_bar = ColorRect.new()
+	_bar.name = "TickerBar"
 	_bar.color = Color(0, 0, 0, 1)
 	_bar.anchor_right = 1.0
 	_bar.anchor_bottom = 1.0
 	_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(_bar)
+	_slot.add_child(_bar)
 
-	# 1px bottom border in the project's standard gray.
+	# 1px top border in the project's standard gray, separating the ticker
+	# from the graphs above it.
 	var border := Panel.new()
+	border.name = "TickerBorder"
 	var stylebox := StyleBoxFlat.new()
 	stylebox.bg_color = Color(0, 0, 0, 0)
 	stylebox.border_color = Color(0.6, 0.6, 0.6)
-	stylebox.border_width_top = 0
+	stylebox.border_width_top = 1
 	stylebox.border_width_left = 0
 	stylebox.border_width_right = 0
-	stylebox.border_width_bottom = 1
+	stylebox.border_width_bottom = 0
 	stylebox.set_corner_radius_all(0)
 	border.add_theme_stylebox_override("panel", stylebox)
 	border.anchor_right = 1.0
 	border.anchor_bottom = 1.0
 	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(border)
+	_slot.add_child(border)
 
 	_label = Label.new()
 	_label.name = "TickerLabel"
@@ -96,7 +91,19 @@ func _build_ui() -> void:
 	_label.text = ""
 	_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Inherits DM Mono from the project theme automatically.
-	_root.add_child(_label)
+	_slot.add_child(_label)
+	return true
+
+
+func _find_slot() -> Control:
+	var panels := get_tree().get_nodes_in_group("graphs_panel")
+	if panels.is_empty():
+		return null
+	var panel: Node = panels[0]
+	var slot := panel.find_child("NewsTickerSlot", true, false)
+	if slot is Control:
+		return slot
+	return null
 
 
 func _process(delta: float) -> void:
@@ -209,8 +216,8 @@ func _pull_next() -> void:
 	_label_width = _label.size.x
 	if _label_width <= 0.0:
 		_label_width = _label.get_minimum_size().x
-	var viewport_size := get_viewport().get_visible_rect().size
-	_label.position.x = viewport_size.x
+	var slot_width: float = _slot.size.x if _slot != null else get_viewport().get_visible_rect().size.x
+	_label.position.x = slot_width
 
 
 func _idle_headline() -> String:
