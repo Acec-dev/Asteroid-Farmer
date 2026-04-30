@@ -76,6 +76,11 @@ signal bank_bond_changed()
 signal bank_upgraded()
 signal fuel_futures_changed()
 signal gm100_changed()
+signal skim_drills_changed(new_count: int)
+signal bore_drills_changed(new_count: int)
+signal core_drills_changed(new_count: int)
+signal helium_changed(new_amount: float)
+signal silo_capacity_changed(new_capacity: int)
 
 var credits: int = 0
 var run_time: float = 0.0
@@ -170,6 +175,48 @@ const GM100_MIN_INVESTMENT := 25      # Minimum amount to invest
 var voyage_drone_count: int = 0
 var expedition_drone_count: int = 0
 const DRONE_COST: int = 75
+
+# === DRILL SYSTEM (Outpost) ===
+# Drills are owned assets, not in-world entities. Production is continuous
+# while a drill is alive and silos have room. Mirrors the voyage drone
+# purchase flow: check credits, deduct, increment count, emit signal.
+enum DrillTier { SKIM, BORE, CORE }
+
+const DRILL_DATA = {
+	DrillTier.SKIM: {
+		"name": "Skim",
+		"cost": 2000,
+		"helium_per_min": 0.5,
+		"fuel_per_min": 0.1,
+		"burnout_chance": 0.02,
+	},
+	DrillTier.BORE: {
+		"name": "Bore",
+		"cost": 8000,
+		"helium_per_min": 1.5,
+		"fuel_per_min": 0.4,
+		"burnout_chance": 0.05,
+	},
+	DrillTier.CORE: {
+		"name": "Core",
+		"cost": 30000,
+		"helium_per_min": 4.0,
+		"fuel_per_min": 1.2,
+		"burnout_chance": 0.10,
+	},
+}
+
+const SILO_DATA = {
+	"drum": {"name": "Drum", "capacity": 200, "cost": 1500},
+	"tank": {"name": "Tank", "capacity": 1000, "cost": 8000},
+	"reservoir": {"name": "Reservoir", "capacity": 5000, "cost": 35000},
+}
+
+var skim_drill_count: int = 0
+var bore_drill_count: int = 0
+var core_drill_count: int = 0
+var helium_stored: float = 0.0
+var silo_capacity: int = 0
 
 # Voyage/Expedition history
 var voyage_history: Array[Dictionary] = []
@@ -711,6 +758,88 @@ func buy_expedition_drone() -> bool:
 	emit_signal("expedition_drones_changed", expedition_drone_count)
 	return true
 
+# === DRILL SYSTEM ===
+
+func get_drill_count(tier: int) -> int:
+	match tier:
+		DrillTier.SKIM: return skim_drill_count
+		DrillTier.BORE: return bore_drill_count
+		DrillTier.CORE: return core_drill_count
+	return 0
+
+func _set_drill_count(tier: int, value: int) -> void:
+	match tier:
+		DrillTier.SKIM:
+			skim_drill_count = value
+			emit_signal("skim_drills_changed", skim_drill_count)
+		DrillTier.BORE:
+			bore_drill_count = value
+			emit_signal("bore_drills_changed", bore_drill_count)
+		DrillTier.CORE:
+			core_drill_count = value
+			emit_signal("core_drills_changed", core_drill_count)
+
+func buy_drill(tier: int) -> bool:
+	if not DRILL_DATA.has(tier):
+		return false
+	var cost: int = DRILL_DATA[tier].cost
+	if credits < cost:
+		return false
+	add_credits(-cost)
+	_set_drill_count(tier, get_drill_count(tier) + 1)
+	return true
+
+func remove_drill(tier: int, amount: int = 1) -> void:
+	_set_drill_count(tier, max(0, get_drill_count(tier) - amount))
+
+func get_total_helium_per_min() -> float:
+	var rate := 0.0
+	for tier in DRILL_DATA:
+		rate += DRILL_DATA[tier].helium_per_min * get_drill_count(tier)
+	return rate
+
+func get_total_fuel_burn_per_min() -> float:
+	var rate := 0.0
+	for tier in DRILL_DATA:
+		rate += DRILL_DATA[tier].fuel_per_min * get_drill_count(tier)
+	return rate
+
+func add_helium(amount: float) -> float:
+	# Returns the actual amount added (may be clamped by silo capacity).
+	if amount <= 0.0:
+		return 0.0
+	var room = max(0.0, float(silo_capacity) - helium_stored)
+	var actual = min(amount, room)
+	if actual > 0.0:
+		helium_stored += actual
+		emit_signal("helium_changed", helium_stored)
+	return actual
+
+func remove_helium(amount: float) -> float:
+	# Returns the actual amount removed.
+	if amount <= 0.0 or helium_stored <= 0.0:
+		return 0.0
+	var actual = min(amount, helium_stored)
+	helium_stored -= actual
+	emit_signal("helium_changed", helium_stored)
+	return actual
+
+func is_silo_full() -> bool:
+	return silo_capacity > 0 and helium_stored >= float(silo_capacity)
+
+# === SILO SYSTEM ===
+
+func buy_silo(silo_key: String) -> bool:
+	if not SILO_DATA.has(silo_key):
+		return false
+	var data = SILO_DATA[silo_key]
+	if credits < data.cost:
+		return false
+	add_credits(-data.cost)
+	silo_capacity += int(data.capacity)
+	emit_signal("silo_capacity_changed", silo_capacity)
+	return true
+
 func remove_voyage_drones(amount: int) -> void:
 	voyage_drone_count = max(0, voyage_drone_count - amount)
 	emit_signal("voyage_drones_changed", voyage_drone_count)
@@ -1074,6 +1203,11 @@ func reset_to_defaults() -> void:
 	}
 	voyage_drone_count = 0
 	expedition_drone_count = 0
+	skim_drill_count = 0
+	bore_drill_count = 0
+	core_drill_count = 0
+	helium_stored = 0.0
+	silo_capacity = 0
 	voyage_history.clear()
 	expedition_history.clear()
 	cargo_capacity = 40

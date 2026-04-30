@@ -26,6 +26,13 @@ offset_right = -843.0
 offset_bottom = -394.0
 text = "BANK"
 
+[node name="OutpostButton" type="Button" parent="."]
+offset_left = -939.0
+offset_top = -387.0
+offset_right = -843.0
+offset_bottom = -356.0
+text = "OUTPOST"
+
 [node name="Camera2D" type="Camera2D" parent="."]
 
 [node name="DrillTimer" type="Timer" parent="."]
@@ -81,6 +88,7 @@ text = "Buy Drill"
 
 [connection signal="pressed" from="BackButton" to="." method="_on_back_button_pressed"]
 [connection signal="pressed" from="BankButton" to="." method="_on_bank_button_pressed"]
+[connection signal="pressed" from="OutpostButton" to="." method="_on_outpost_button_pressed"]
 [connection signal="timeout" from="DrillTimer" to="." method="_on_drill_timer_timeout"]
 [connection signal="pressed" from="Control/HBoxContainer/VBoxContainer/SiloButton" to="." method="_on_silo_button_pressed"]
 [connection signal="pressed" from="Control/HBoxContainer/VBoxContainer2/DrillButton" to="." method="_on_drill_button_pressed"]

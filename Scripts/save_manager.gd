@@ -69,6 +69,11 @@ func _build_save_data() -> Dictionary:
 	data["exotic_minerals"] = _enum_dict_to_str(GameState.exotic_minerals)
 	data["voyage_drone_count"] = GameState.voyage_drone_count
 	data["expedition_drone_count"] = GameState.expedition_drone_count
+	data["skim_drill_count"] = GameState.skim_drill_count
+	data["bore_drill_count"] = GameState.bore_drill_count
+	data["core_drill_count"] = GameState.core_drill_count
+	data["helium_stored"] = GameState.helium_stored
+	data["silo_capacity"] = GameState.silo_capacity
 	data["cargo_capacity"] = GameState.cargo_capacity
 	data["max_shield"] = GameState.max_shield
 	data["current_shield"] = GameState.current_shield
@@ -117,6 +122,11 @@ func _restore_save_data(data: Dictionary) -> void:
 	_restore_exotic_minerals(data.get("exotic_minerals", {}))
 	GameState.voyage_drone_count = int(data.get("voyage_drone_count", 0))
 	GameState.expedition_drone_count = int(data.get("expedition_drone_count", 0))
+	GameState.skim_drill_count = int(data.get("skim_drill_count", 0))
+	GameState.bore_drill_count = int(data.get("bore_drill_count", 0))
+	GameState.core_drill_count = int(data.get("core_drill_count", 0))
+	GameState.helium_stored = float(data.get("helium_stored", 0.0))
+	GameState.silo_capacity = int(data.get("silo_capacity", 0))
 	GameState.cargo_capacity = int(data.get("cargo_capacity", 40))
 	GameState.max_shield = data.get("max_shield", 100.0)
 	GameState.current_shield = data.get("current_shield", 100.0)
@@ -167,6 +177,11 @@ func _restore_save_data(data: Dictionary) -> void:
 	GameState.emit_signal("gm100_changed")
 	GameState.emit_signal("voyage_drones_changed", GameState.voyage_drone_count)
 	GameState.emit_signal("expedition_drones_changed", GameState.expedition_drone_count)
+	GameState.emit_signal("skim_drills_changed", GameState.skim_drill_count)
+	GameState.emit_signal("bore_drills_changed", GameState.bore_drill_count)
+	GameState.emit_signal("core_drills_changed", GameState.core_drill_count)
+	GameState.emit_signal("helium_changed", GameState.helium_stored)
+	GameState.emit_signal("silo_capacity_changed", GameState.silo_capacity)
 
 
 # === SERIALIZATION HELPERS ===

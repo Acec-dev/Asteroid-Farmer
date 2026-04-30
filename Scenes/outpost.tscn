@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/outpost.gd" id="1_outpost"]
+
+[node name="Outpost" type="Node2D"]
+script = ExtResource("1_outpost")
+
+[node name="OutpostSprite" type="Sprite2D" parent="."]
+position = Vector2(-200, 240)
+scale = Vector2(1.48, 1.48)
+
+[node name="BackButton" type="Button" parent="."]
+offset_left = -939.0
+offset_top = -463.0
+offset_right = -843.0
+offset_bottom = -432.0
+text = "BACK"
+
+[node name="BaseButton" type="Button" parent="."]
+offset_left = -939.0
+offset_top = -425.0
+offset_right = -843.0
+offset_bottom = -394.0
+text = "BASE"
+
+[node name="BankButton" type="Button" parent="."]
+offset_left = -939.0
+offset_top = -387.0
+offset_right = -843.0
+offset_bottom = -356.0
+text = "BANK"
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="ProductionTimer" type="Timer" parent="."]
+wait_time = 1.0
+autostart = true
+
+[connection signal="pressed" from="BackButton" to="." method="_on_back_button_pressed"]
+[connection signal="pressed" from="BaseButton" to="." method="_on_base_button_pressed"]
+[connection signal="pressed" from="BankButton" to="." method="_on_bank_button_pressed"]
