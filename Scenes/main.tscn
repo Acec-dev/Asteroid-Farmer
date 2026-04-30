@@ -145,6 +145,10 @@ text = "Bank
 "
 metadata/_edit_use_anchors_ = true
 
+[node name="BubbleShieldButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
+layout_mode = 2
+text = "Toggle Bubble Shield"
+
 [node name="GraphsPanel" parent="CanvasLayer" unique_id=785029996 instance=ExtResource("11_6iyac")]
 
 [node name="Label" type="Label" parent="CanvasLayer" unique_id=527312066]
@@ -174,3 +178,4 @@ script = ExtResource("13_fdnlq")
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/GiveMoney" to="." method="_on_give_money_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/BaseButton" to="." method="_on_base_button_pressed"]
 [connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/BankButton" to="." method="_on_bank_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonContainer/DebugContainer/BubbleShieldButton" to="." method="_on_bubble_shield_button_pressed"]

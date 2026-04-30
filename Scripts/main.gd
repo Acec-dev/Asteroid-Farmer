@@ -682,3 +682,8 @@ func _on_give_money_pressed() -> void:
 
 func _on_bank_button_pressed() -> void:
 	get_tree().change_scene_to_file("res://Scenes/bank.tscn")
+
+
+func _on_bubble_shield_button_pressed() -> void:
+	if _player and _player.has_method("toggle_bubble_shield"):
+		_player.toggle_bubble_shield()

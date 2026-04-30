@@ -16,6 +16,10 @@ var secondary_weapons: Array[WeaponBase] = []
 ## Input mapping for weapons
 var input_map: Dictionary = {}
 
+## When true, all weapon firing (auto and player-triggered) is suppressed.
+## Used by the bubble shield, which forbids any firing while active.
+var weapons_blocked: bool = false
+
 func _ready() -> void:
 	# Owner should be set before ready
 	if not owner_node:
@@ -26,12 +30,16 @@ func _ready() -> void:
 		GameState.upgrades_changed.connect(_on_upgrades_changed)
 
 func _process(delta: float) -> void:
+	if weapons_blocked:
+		return
 	# Update all weapons each frame
 	for weapon in weapons:
 		if weapon.enabled:
 			weapon.update_weapon(delta)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if weapons_blocked:
+		return
 	# Handle weapon input
 	for input_action in input_map.keys():
 		if event.is_action_pressed(input_action):
@@ -77,6 +85,8 @@ func get_weapon(weapon_name: String) -> WeaponBase:
 
 ## Activate a specific weapon
 func activate_weapon(weapon_name: String) -> void:
+	if weapons_blocked:
+		return
 	var weapon = get_weapon(weapon_name)
 	if weapon and weapon.enabled:
 		weapon.activate()
