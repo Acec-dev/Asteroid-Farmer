@@ -28,6 +28,7 @@ VoyageManager="*res://Scripts/voyage_manager.gd"
 ExpeditionManager="*res://Scripts/expedition_manager.gd"
 AudioManager="*res://Scripts/audio_manager.gd"
 SaveManager="*res://Scripts/save_manager.gd"
+PrototypeFlags="*uid://82bg7dvnhrj"
 
 [display]
 
