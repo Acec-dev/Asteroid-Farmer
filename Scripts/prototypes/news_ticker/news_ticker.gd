@@ -18,7 +18,7 @@
 extends "res://Scripts/prototypes/prototype_base.gd"
 
 # MineralType enum order (from the Bible, Section 4.1):
-const MINERAL_NAMES := ["IRON", "NICKEL", "SILICA", "PLATINUM"]
+const MINERAL_NAMES: Array[String] = ["IRON", "NICKEL", "SILICA", "PLATINUM"]
 
 @export var bar_height: float          = 32.0
 @export var scroll_speed: float        = 90.0     # pixels per second
@@ -116,7 +116,7 @@ func _on_prices_changed() -> void:
 	var market := get_node_or_null("/root/Market")
 	if market == null:
 		return
-	for i in range(MINERAL_NAMES.size()):
+	for i in MINERAL_NAMES.size():
 		var headline := _predict_headline(market, i)
 		if headline.is_empty():
 			continue
@@ -214,7 +214,7 @@ func _pull_next() -> void:
 
 
 func _idle_headline() -> String:
-	var fillers := [
+	var fillers: Array[String] = [
 		"ASTEROID BUREAU ADVISES STEADY HANDS",
 		"CARGO INSURANCE PREMIUMS UNCHANGED",
 		"DRONE GUILD CALLS FOR CALM IN THE BELT",
