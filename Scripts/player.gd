@@ -23,6 +23,11 @@ var _vel: Vector2 = Vector2.ZERO
 var _mouse_delta := Vector2.ZERO
 var _railgun_key_was_pressed: bool = false  # Edge detection for railgun firing
 
+# --- Bubble Shield ---
+@export var bubble_shield_radius: float = 80.0
+var bubble_shield_active: bool = false
+const _MOVE_ACTIONS := ["move_left", "move_right", "move_up", "move_down"]
+
 @export var mouse_move_threshold := 0.5  # pixels per frame
 
 func _input(event: InputEvent) -> void:
@@ -37,6 +42,13 @@ func _draw() -> void:
 		Vector2(60, 0)
 	])
 	draw_polyline(points, Color.WHITE)
+
+	if bubble_shield_active:
+		# Bubble is in world space; counter-rotate so it stays a perfect circle
+		# regardless of ship rotation.
+		draw_set_transform(Vector2.ZERO, -rotation, Vector2.ONE)
+		draw_arc(Vector2.ZERO, bubble_shield_radius, 0.0, TAU, 64, Color.WHITE, 2.0, true)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 func _ready() -> void:
 	add_to_group("player")
@@ -57,6 +69,7 @@ func _physics_process(delta: float) -> void:
 	_handle_aim()
 	_handle_mineral_deposit()
 	_handle_weapon_input()
+	_handle_bubble_shield_collisions()
 	_mouse_delta = Vector2.ZERO  # Reset after processing
 
 ## Setup weapon management system
@@ -146,6 +159,11 @@ func _clamp_to_camera_bounds() -> void:
 
 ## Handle weapon input
 func _handle_weapon_input() -> void:
+	# While the bubble shield is up, the player cannot fire and auto-fire is
+	# suppressed by WeaponManager.weapons_blocked.
+	if bubble_shield_active:
+		return
+
 	# Primary weapon auto-fires (already handled by weapon manager)
 
 	# Laser - right mouse button
@@ -166,6 +184,20 @@ func _handle_weapon_input() -> void:
 	_railgun_key_was_pressed = r_pressed
 
 func _handle_move(delta: float) -> void:
+	# Bubble shield freezes the player. To cancel it, the player must
+	# *intentionally* press a movement key (just-pressed edge), so a movement
+	# key already held from before activation will not cancel.
+	if bubble_shield_active:
+		_vel = Vector2.ZERO
+		for action in _MOVE_ACTIONS:
+			if Input.is_action_just_pressed(action):
+				_deactivate_bubble_shield()
+				break
+		_clamp_to_camera_bounds()
+		if bubble_shield_active:
+			return
+		# Fall through to normal movement this frame using the just-pressed input.
+
 	# WASD movement - completely independent of aiming
 	var speed_mult := GameState.get_speed_multiplier()
 	var effective_max_speed := max_speed * speed_mult
@@ -287,8 +319,52 @@ func _spawn_falling_mineral(mineral_type: GameState.MineralType) -> void:
 
 ## Damage forwarding to shield component
 func take_damage(amount: float) -> void:
+	if bubble_shield_active:
+		return
 	if shield_component:
 		shield_component.take_damage(amount)
+
+# === Bubble Shield ===
+
+func is_bubble_shield_active() -> bool:
+	return bubble_shield_active
+
+func toggle_bubble_shield() -> void:
+	if bubble_shield_active:
+		_deactivate_bubble_shield()
+	else:
+		_activate_bubble_shield()
+
+func _activate_bubble_shield() -> void:
+	bubble_shield_active = true
+	# Stop the ship so the shield doesn't drift, and so the player can hold the
+	# bubble even if they were moving when they triggered it.
+	_vel = Vector2.ZERO
+	if weapon_manager:
+		weapon_manager.weapons_blocked = true
+		# Drop any currently-held activations (e.g. RMB laser).
+		for w in weapon_manager.weapons:
+			w.deactivate()
+	queue_redraw()
+
+func _deactivate_bubble_shield() -> void:
+	bubble_shield_active = false
+	if weapon_manager:
+		weapon_manager.weapons_blocked = false
+	queue_redraw()
+
+func _handle_bubble_shield_collisions() -> void:
+	if not bubble_shield_active:
+		return
+	var asteroids = get_tree().get_nodes_in_group("asteroids")
+	for ast in asteroids:
+		if not is_instance_valid(ast):
+			continue
+		var ast_radius: float = ast.radius if "radius" in ast else 0.0
+		var combined := bubble_shield_radius + ast_radius
+		if global_position.distance_squared_to(ast.global_position) <= combined * combined:
+			if ast.has_method("break_no_minerals"):
+				ast.break_no_minerals()
 
 # === LEGACY FUNCTIONS FOR BACKWARD COMPATIBILITY ===
 # These are kept for any existing code that might call them

@@ -84,6 +84,11 @@ func _on_body_entered(body: Node) -> void:
 	"""Damage player shield when asteroid collides with them"""
 	if _is_breaking:
 		return
+	# If the player has the bubble shield up, the asteroid breaks without
+	# damaging the player and without dropping minerals.
+	if body.has_method("is_bubble_shield_active") and body.is_bubble_shield_active():
+		break_no_minerals()
+		return
 	# Check if the colliding body is the player
 	if body.has_method("take_damage"):
 		var damage_amount := 20.0  # Base damage per collision
@@ -133,7 +138,15 @@ func _spawn_particles() -> void:
 	var scene_root = owner if owner else get_tree().current_scene
 	scene_root.add_child(fx)
 
-func _break_safe() -> void:
+## Break the asteroid without dropping any minerals (e.g. bubble-shield kill).
+func break_no_minerals() -> void:
+	if _is_breaking:
+		return
+	_is_breaking = true
+	hit_points = 0
+	call_deferred("_break_safe", true)
+
+func _break_safe(skip_minerals: bool = false) -> void:
 	var child_radius = radius * split_radius_factor
 	var is_big = child_radius >= min_split_radius
 	if is_big:
@@ -143,21 +156,22 @@ func _break_safe() -> void:
 	_spawn_particles()
 
 	# Drop minerals (always drops, whether splitting or not)
-	for i in mineral_drop_count:
-		if mineral_drop_scene:
-			var m = mineral_drop_scene.instantiate()
-			# Gold only spawns after the time threshold with a small chance
-			var can_spawn_gold = GameState.run_time >= GameState.GOLD_SPAWN_TIME_THRESHOLD
-			if can_spawn_gold and randf() < 0.1:
-				m.kind = GameState.MineralType.GOLD
-			else:
-				# Pick from standard minerals (exclude Gold)
-				var standard_count = GameState.MineralType.size() - 1
-				m.kind = GameState.MineralType.values()[randi() % standard_count]
-			m.global_position = global_position + Vector2(randf_range(-8,8), randf_range(-8,8))
-			# Add to owner's scene root (works with SubViewport)
-			var scene_root = owner if owner else get_tree().current_scene
-			scene_root.add_child(m)
+	if not skip_minerals:
+		for i in mineral_drop_count:
+			if mineral_drop_scene:
+				var m = mineral_drop_scene.instantiate()
+				# Gold only spawns after the time threshold with a small chance
+				var can_spawn_gold = GameState.run_time >= GameState.GOLD_SPAWN_TIME_THRESHOLD
+				if can_spawn_gold and randf() < 0.1:
+					m.kind = GameState.MineralType.GOLD
+				else:
+					# Pick from standard minerals (exclude Gold)
+					var standard_count = GameState.MineralType.size() - 1
+					m.kind = GameState.MineralType.values()[randi() % standard_count]
+				m.global_position = global_position + Vector2(randf_range(-8,8), randf_range(-8,8))
+				# Add to owner's scene root (works with SubViewport)
+				var scene_root = owner if owner else get_tree().current_scene
+				scene_root.add_child(m)
 
 	# Only split if child would be large enough
 	if is_big:
