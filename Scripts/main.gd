@@ -102,6 +102,8 @@ func _ready() -> void:
 	# Create styled "Go to Base!" button
 	_create_base_button()
 
+	PrototypeFlags.mount_all(self)
+
 func _process(delta: float) -> void:
 	_run_time += delta
 	GameState.run_time = _run_time
