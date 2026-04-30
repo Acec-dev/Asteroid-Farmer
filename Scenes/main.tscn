@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://c6c6wf1l6nudr"]
 
 [ext_resource type="Script" uid="uid://b78u8tc2qckls" path="res://Scripts/main.gd" id="1_bo1nx"]
-[ext_resource type="Script" path="res://Scripts/prototypes/prototype_flag_overrides.gd" id="1_pfovr"]
 [ext_resource type="PackedScene" uid="uid://cw77j44xrwsi7" path="res://Scenes/player.tscn" id="1_jjgbg"]
+[ext_resource type="Script" uid="uid://3wfjeiryi5gr" path="res://Scripts/prototypes/prototype_flag_overrides.gd" id="1_pfovr"]
 [ext_resource type="PackedScene" uid="uid://c6cbnimduidb3" path="res://Scenes/asteroid.tscn" id="3_8gbba"]
 [ext_resource type="PackedScene" uid="uid://b6yaf544oid0q" path="res://Scenes/floating_text_2d.tscn" id="6_6bp64"]
 [ext_resource type="PackedScene" uid="uid://n22orxsm6s66" path="res://Scenes/market_menu.tscn" id="7_6bp64"]
@@ -18,7 +18,7 @@ player_scene = ExtResource("1_jjgbg")
 asteroid_scene = ExtResource("3_8gbba")
 floating_text = ExtResource("6_6bp64")
 
-[node name="PrototypeFlags" type="Node" parent="."]
+[node name="PrototypeFlags" type="Node" parent="." unique_id=1794320429]
 script = ExtResource("1_pfovr")
 
 [node name="SpawnTimer" type="Timer" parent="." unique_id=82769458]
