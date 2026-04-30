@@ -18,32 +18,32 @@ extends Node
 
 const _SOUND_REGISTRY := {
 	"gun_1": {
-		"path": "res://Assets/gun-1.wav",
+		"path": "res://Assets/Sounds/gun-1.wav",
 		"volume_db": -14.0,
 		"bus": "Primary Cannon",
 	},
 	"explode_rocket": {
-		"path": "res://Assets/explode-7.wav",
+		"path": "res://Assets/Sounds/explode-7.wav",
 		"volume_db": -10.0,
 	},
 	"explode_big": {
-		"path": "res://Assets/explode-5.wav",
+		"path": "res://Assets/Sounds/explode-5.wav",
 		"volume_db": -10.0,
 	},
 	"explode_small": {
-		"path": "res://Assets/explode-2.wav",
+		"path": "res://Assets/Sounds/explode-2.wav",
 		"volume_db": -10.0,
 	},
 	"hit_asteroid": {
-		"path": "res://Assets/hit-7.wav",
+		"path": "res://Assets/Sounds/hit-7.wav",
 		"volume_db": -10.0,
 	},
 	"collect": {
-		"path": "res://Assets/collect-5.wav",
+		"path": "res://Assets/Sounds/collect-5.wav",
 		"volume_db": -12.0,
 	},
 	"mine_explode": {
-		"path": "res://Assets/explode-5.wav",
+		"path": "res://Assets/Sounds/explode-5.wav",
 		"volume_db": -18.0,
 	},
 	"going_up": {
