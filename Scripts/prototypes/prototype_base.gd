@@ -17,7 +17,7 @@ class_name PrototypeBase
 extends Node
 
 # Each entry: [source: Object, signal_name: String, callable: Callable]
-var _registered_connections: Array = []
+var _registered_connections: Array[Array] = []
 
 
 func _ready() -> void:
@@ -64,7 +64,7 @@ func _connect_signal(source: Object, signal_name: String, callable: Callable) ->
 	if not source.has_signal(signal_name):
 		push_warning("[%s] source has no signal '%s'" % [name, signal_name])
 		return false
-	var err := source.connect(signal_name, callable)
+	var err: int = source.connect(signal_name, callable)
 	if err != OK:
 		push_warning("[%s] connect '%s' failed (err=%d)" % [name, signal_name, err])
 		return false
@@ -73,7 +73,7 @@ func _connect_signal(source: Object, signal_name: String, callable: Callable) ->
 
 
 func _exit_tree() -> void:
-	for entry in _registered_connections:
+	for entry: Array in _registered_connections:
 		var source: Object = entry[0]
 		var signal_name: String = entry[1]
 		var callable: Callable = entry[2]

@@ -69,7 +69,7 @@ func _try_mount(script_path: String, parent: Node, label: String) -> void:
 	if script == null:
 		push_warning("[PrototypeFlags] failed to load %s" % script_path)
 		return
-	var node := script.new()
+	var node: Node = script.new()
 	if node == null:
 		push_warning("[PrototypeFlags] failed to instance %s" % script_path)
 		return
