@@ -4,13 +4,16 @@
 # Register as an autoload named "PrototypeFlags" in project.godot.
 #
 # Lifecycle:
-#   1. Flip a flag below to enable/disable a prototype globally.
+#   1. Flip a flag below (or override via the PrototypeFlagsOverrides node in
+#      main.tscn) to enable/disable a prototype globally.
 #   2. From main.gd's _ready(), call:   PrototypeFlags.mount_all(self)
 #   3. mount_all() instantiates every enabled prototype and parents it under
 #      the main scene. Disabled prototypes never load.
 #
 # To add a new prototype:
-#   - Add a flag constant here.
+#   - Add a flag var here.
+#   - Mirror it as an @export bool in prototype_flag_overrides.gd so it's
+#     toggleable from the inspector.
 #   - Add a matching entry in mount_all() below pointing at its script.
 #   - Drop the prototype's folder under Scripts/prototypes/.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -19,21 +22,21 @@ extends Node
 
 
 # ─── Tier 1 — pure additions, no GameState changes ──────────────────────────
-const NEWS_TICKER          := true
-const SHIP_DAMAGE_STATES   := true
-const PARALLAX_STARFIELD   := false
-const MINERAL_GLYPHS       := false
-const MARKET_PULSE         := false
+var NEWS_TICKER          := true
+var SHIP_DAMAGE_STATES   := true
+var PARALLAX_STARFIELD   := false
+var MINERAL_GLYPHS       := false
+var MARKET_PULSE         := false
 
 # ─── Tier 2 — needs one new public method on GameState/Market ───────────────
-const SOLAR_FLARE          := false
-const HEAT_OVERDRIVE       := false
-const BOSS_TELEGRAPH       := false
+var SOLAR_FLARE          := false
+var HEAT_OVERDRIVE       := false
+var BOSS_TELEGRAPH       := false
 
 # ─── Tier 3 — heavy state changes; leave off until tier 1/2 is shipping ─────
-const PIRATE_CORSAIRS      := false
-const MINERAL_FUTURES      := false
-const REFINERY             := false
+var PIRATE_CORSAIRS      := false
+var MINERAL_FUTURES      := false
+var REFINERY             := false
 
 
 # ─── Mount API ──────────────────────────────────────────────────────────────
