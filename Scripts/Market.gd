@@ -57,7 +57,7 @@ var fuel_price_history: Array = []
 # fluctuates with random boom/bust cycles.
 enum GM100Phase { NORMAL, BOOM, BUST }
 
-const GM100_BASE_VALUE := 100.0
+const GM100_BASE_VALUE := 200.0
 const GM100_MIN_VALUE := 20.0
 const GM100_MAX_VALUE := 500.0
 const GM100_NORMAL_VOLATILITY := 1.5    # Normal random walk magnitude
@@ -244,7 +244,10 @@ func get_price_history(mineral: GameState.MineralType) -> Array:
 
 
 ## GM100 uses a random walk with boom/bust phase transitions
+## Index stays locked at base value until the player makes their first investment
 func _update_gm100() -> void:
+	if not GameState.gm100_has_invested:
+		return
 	# Phase timer management
 	if gm100_phase != GM100Phase.NORMAL:
 		gm100_phase_timer += update_interval
