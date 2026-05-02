@@ -145,7 +145,7 @@ text = "Bank
 "
 metadata/_edit_use_anchors_ = true
 
-[node name="BubbleShieldButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer"]
+[node name="BubbleShieldButton" type="Button" parent="CanvasLayer/ButtonContainer/DebugContainer" unique_id=1880028234]
 layout_mode = 2
 text = "Toggle Bubble Shield"
 
